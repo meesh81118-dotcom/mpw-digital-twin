@@ -546,7 +546,7 @@ function alarmTime(arr, lim) { let run = 0; for (let i = 0; i < arr.length; i++)
 function drawFault() {
   const f = FDD.faults[FK], t = +$('ft').value; $('o-ft').value = fmt(t);
   logChart($('cT'), f.T2, FDD.T2lim, t, 0.1, 1000); logChart($('cQ'), f.Q, FDD.Qlim, t, 0.01, 10000);
-  const aT = alarmTime(f.T2, FDD.T2lim), aQ = alarmTime(f.Q, FDD.Qlim); const first = Math.min(aT === null ? 1e9 : aT, aQ === null ? 1e9 : aQ);
+  const first = 100 + Math.min(f.dT === null ? 1e9 : f.dT, f.dQ === null ? 1e9 : f.dQ);
   const al = $('falarm'); if (t >= first) { al.className = 'alarm bad'; al.textContent = 'ALARM at ' + fmt(first) + ' min (' + fmt(first - 100) + ' min after the start of the fault)'; }
   else { al.className = 'alarm ok'; al.textContent = t < 100 ? 'Normal operation' : 'Fault developing – no alarm yet'; }
   $('finfo').innerHTML = `<table><tr><th>Statistic</th><th>Detection delay</th></tr><tr><td>T²</td><td>${f.dT === null ? '—' : f.dT + ' min'}</td></tr><tr><td>Q</td><td>${f.dQ === null ? '—' : f.dQ + ' min'}</td></tr></table>`;
