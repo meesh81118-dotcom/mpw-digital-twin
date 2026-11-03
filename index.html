@@ -70,6 +70,9 @@ svg text{font-family:var(--f)}
 .track s{position:absolute;top:-4px;bottom:-4px;width:3px;background:var(--red)}
 .bar span:last-child{text-align:right;font-variant-numeric:tabular-nums}
 .legend{font-size:14px;color:var(--muted);margin-top:6px}
+.lg{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:8px;font-size:14.5px;color:var(--ink)}.lg span{display:inline-flex;align-items:center;gap:6px}
+.sw{display:inline-block;width:16px;height:12px;border-radius:2px}.sw.ln{width:24px;height:3px;border-radius:0}.sw.dash{width:24px;height:0;border-top:3px dashed;border-radius:0}.sw.dot{width:12px;height:12px;border-radius:50%}
+.verdict{margin:8px 0 0;font-size:15px;padding:8px 10px;border-radius:6px}.verdict.ok{background:var(--lgreen);color:var(--green)}.verdict.bad{background:#fbe5d6;color:var(--orange)}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
 .card{border:2px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff;cursor:pointer;text-align:left;font:15px/1.35 var(--f);color:var(--ink)}
 .card b{display:block;font-size:16px;color:var(--navy)}
@@ -143,8 +146,8 @@ footer{margin-top:22px;font-size:14px;color:var(--muted);text-align:center}
   <section class="panel"><h2>Live flowsheet (flow rates in kmol/h)</h2><div class="scroll"><svg id="pfd" viewBox="0 0 900 300" width="100%" style="min-width:640px" role="img" aria-label="Simplified flowsheet with live stream flows"></svg></div></section>
   <div class="two">
     <section class="panel"><h2>Equipment load (design load = 100 %)</h2><div id="bars"></div>
-      <p class="legend">Black line: design load. Red line: allowed limit. Blue: normal, gold: within 2 % of the limit, red: limit exceeded.</p></section>
-    <section class="panel"><h2>Cumulative discounted cash flow (million US$)</h2><div class="scroll"><svg id="cf" viewBox="0 0 470 270" width="100%" role="img" aria-label="Cumulative discounted cash flow"></svg></div><p class="legend" id="cfleg"></p></section>
+      <div class="lg"><span><i class="sw" style="background:#2E75B6"></i>Normal</span><span><i class="sw" style="background:#BF9000"></i>Within 2 % of the limit</span><span><i class="sw" style="background:#C00000"></i>Limit exceeded</span><span><i class="sw ln" style="background:#1a1a1a"></i>Design load</span><span><i class="sw ln" style="background:#C00000"></i>Allowed limit</span></div></section>
+    <section class="panel"><h2>Cumulative discounted cash flow (million US$)</h2><div class="scroll"><svg id="cf" viewBox="0 0 470 270" width="100%" role="img" aria-label="Cumulative discounted cash flow"></svg></div><div class="lg"><span><i class="sw ln" style="background:#1F4E79"></i>Current set point and market</span><span><i class="sw dash" style="border-color:#8FAADC"></i>Design point, same market</span></div></section>
   </div>
 </main>
 </div>
@@ -173,7 +176,7 @@ footer{margin-top:22px;font-size:14px;color:var(--muted);text-align:center}
     <section class="panel"><h2>Selected scenario</h2><div id="scenres"></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn pri" id="scai">AI set point for this scenario</button><button class="btn" id="allai">AI set point for every scenario</button></div>
       <p class="note" id="scnote"></p></section>
-    <section class="panel"><h2>NPV of every scenario (million US$)</h2><div class="scroll"><svg id="scchart" viewBox="0 0 470 430" width="100%" role="img" aria-label="NPV of all scenarios"></svg></div><p class="legend">Light blue: design point. Navy: AI set point (after the search).</p></section>
+    <section class="panel"><h2>NPV of every scenario (million US$)</h2><div class="scroll"><svg id="scchart" viewBox="0 0 470 430" width="100%" role="img" aria-label="NPV of all scenarios"></svg></div><div class="lg"><span><i class="sw" style="background:#8FAADC"></i>Design point</span><span><i class="sw" style="background:#1F4E79"></i>AI set point (after the search)</span></div></section>
   </div>
 </main>
 </div>
@@ -192,14 +195,14 @@ footer{margin-top:22px;font-size:14px;color:var(--muted);text-align:center}
 </aside>
 <main style="min-width:0">
   <div class="two" style="margin-top:0">
-    <section class="panel"><h2>Hotelling’s T²</h2><svg id="cT" viewBox="0 0 470 260" width="100%" role="img" aria-label="T squared statistic"></svg></section>
-    <section class="panel"><h2>Squared prediction error Q</h2><svg id="cQ" viewBox="0 0 470 260" width="100%" role="img" aria-label="Q statistic"></svg></section>
+    <section class="panel"><h2>Hotelling’s T²</h2><svg id="cT" viewBox="0 0 470 260" width="100%" role="img" aria-label="T squared statistic"></svg><div class="lg"><span><i class="sw ln" style="background:#1F4E79"></i>T²</span><span><i class="sw dash" style="border-color:#C00000"></i><span id="t2l"></span></span><span><i class="sw ln" style="background:#999"></i>Start of the fault</span></div></section>
+    <section class="panel"><h2>Squared prediction error Q</h2><svg id="cQ" viewBox="0 0 470 260" width="100%" role="img" aria-label="Q statistic"></svg><div class="lg"><span><i class="sw ln" style="background:#1F4E79"></i>Q</span><span><i class="sw dash" style="border-color:#C00000"></i><span id="ql"></span></span><span><i class="sw ln" style="background:#999"></i>Start of the fault</span></div></section>
   </div>
   <div class="two">
     <section class="panel"><h2>Contribution of each signal to Q (%)</h2><svg id="cC" viewBox="0 0 470 260" width="100%" role="img" aria-label="Contribution plot"></svg></section>
     <section class="panel"><h2>Diagnosis and operator action</h2><div id="fact"></div></section>
   </div>
-  <p class="legend">Dashed red line: 99 % control limit (T² = <span id="t2l"></span>, Q = <span id="ql"></span>). Grey line: start of the fault at 100 min. An alarm needs three consecutive samples above a limit.</p>
+  <p class="legend">An alarm needs three consecutive samples above a limit, which removes false alarms caused by noise.</p>
 </main>
 </div>
 </section>
@@ -209,17 +212,19 @@ footer{margin-top:22px;font-size:14px;color:var(--muted);text-align:center}
 <div class="grid">
 <aside class="panel">
   <h2>Solar e-methanol from the purge gas</h2>
-  <div class="ctl"><label for="ef">Share of the purge sent to the extension (%) <output id="o-ef"></output></label><input id="ef" type="range" min="0" max="100" step="5" value="100"></div>
-  <div class="ctl"><label for="ec">Electricity price (US¢/kWh) <output id="o-ec"></output></label><input id="ec" type="range" min="0.5" max="7" step="0.01" value="1.04"></div>
+  <div class="ctl"><label for="ef">Share of the purge sent to the extension <output id="o-ef"></output></label><input id="ef" type="range" min="0" max="100" step="5" value="100"></div>
+  <div class="ctl"><label for="ec">Electricity price for the electrolyser (US¢/kWh) <output id="o-ec"></output></label><input id="ec" type="range" min="0.5" max="7" step="0.01" value="1.04"></div>
+  <p class="note">1.04 US¢/kWh is the Shuaibah solar tariff; 6.13 US¢/kWh is the grid tariff of the plant in Chapter 8.</p>
   <h3>Electrolyser technology</h3>
   <div class="seg" id="etech"><button data-k="today" class="on">Today (1,000 $/kW, 55 kWh/kg)</button><button data-k="2050">2050 (200 $/kW, 45 kWh/kg)</button></div>
-  <p class="note">1.04 US¢/kWh is the Shuaibah solar tariff and 6.13 US¢/kWh the plant tariff of Chapter 8 (Section 10.5).</p>
+  <p class="note">The technology changes the cost and the energy use of the electrolyser (IRENA, 2020: PEM systems 700–1,400 $/kW and 50–83 kWh/kg today, below 200 $/kW and 45 kWh/kg in 2050). The electricity price is set separately with the slider above.</p>
 </aside>
 <main style="min-width:0">
   <div class="kpis" id="ekpis"></div>
   <div class="two" style="margin-top:0">
-    <section class="panel"><h2>Production cost of the e-methanol (US$/t)</h2><svg id="eC" viewBox="0 0 470 280" width="100%" role="img" aria-label="Cost breakdown"></svg><p class="legend" id="eleg"></p></section>
-    <section class="panel"><h2>Cost against the electricity price</h2><svg id="eL" viewBox="0 0 470 280" width="100%" role="img" aria-label="Cost curve"></svg><p class="legend">Navy: today’s electrolysers. Green: 2050 electrolysers. Dashed: methanol price of the selected market. Dot: current case.</p></section>
+    <section class="panel"><h2>Production cost of the e-methanol (US$/t)</h2><svg id="eC" viewBox="0 0 470 270" width="100%" role="img" aria-label="Cost breakdown"></svg><div class="lg" id="eleg"></div><p class="verdict" id="everd"></p></section>
+    <section class="panel"><h2>Cost against the electricity price</h2><svg id="eL" viewBox="0 0 470 270" width="100%" role="img" aria-label="Cost curve"></svg><div class="lg" id="eleg2"></div>
+      <p class="legend">Both lines use the same electricity price on the horizontal axis. The 2050 line is lower because the electrolyser is cheaper and uses less energy, not because the electricity is cheaper.</p><p class="verdict ok" id="ebe"></p></section>
   </div>
 </main>
 </div>
@@ -391,13 +396,13 @@ const SCEN = [
  {id: 'w100', c: 'market', name: 'MPW price +25 %', src: 'Section 8.3.4', d: 'Plastic waste bought at $100/t.', mk: {p_mpw: 100}, rep: 56.08},
  {id: 'mild', c: 'crisis', name: 'Mild disruption', src: 'Table 8.27', d: 'Short-term rise in freight, fuel and insurance: methanol +5 %, logistics $25/t, FCI +3 %.', mk: {p_meoh: 393 * 1.05, logi: 25, fci_mult: 1.03}},
  {id: 'mod', c: 'crisis', name: 'Moderate disruption', src: 'Table 8.27', d: 'Hormuz restricted, Red Sea threatened: methanol +14 %, hydrogen +3 %, logistics $50/t, availability 95 %, FCI +5 %.', mk: {p_meoh: 393 * 1.14, p_h2: H2SC, logi: 50, op_factor: 0.95, fci_mult: 1.05}},
- {id: 'crisis', c: 'crisis', name: 'Gulf and Red Sea crisis 2026 (selected case)', src: 'Section 8.3.6', d: 'Methanol $480/t, hydrogen +3 %, methanol trucked to the Red Sea ports ($60/t), availability 95 %, FCI +5 %.', mk: {p_meoh: 480, p_h2: H2SC, logi: 60, op_factor: 0.95, fci_mult: 1.05}, rep: 74.11},
- {id: 'sev', c: 'crisis', name: 'Severe disruption (Hormuz closed, Houthi blockade of Saudi ports)', src: 'Table 8.27', d: 'Yemen and Red Sea: methanol +22 %, hydrogen +3 %, logistics $90/t, availability 90 %, FCI +10 %, for the whole project.', mk: {p_meoh: 393 * 1.22, p_h2: H2SC, logi: 90, op_factor: 0.90, fci_mult: 1.10}, rep: -84},
+ {id: 'crisis', c: 'crisis', name: 'Gulf and Red Sea crisis 2026 (selected case)', sh: 'Gulf and Red Sea crisis 2026', src: 'Section 8.3.6', d: 'Methanol $480/t, hydrogen +3 %, methanol trucked to the Red Sea ports ($60/t), availability 95 %, FCI +5 %.', mk: {p_meoh: 480, p_h2: H2SC, logi: 60, op_factor: 0.95, fci_mult: 1.05}, rep: 74.11},
+ {id: 'sev', c: 'crisis', name: 'Severe disruption (Hormuz closed, Houthi blockade of Saudi ports)', sh: 'Severe disruption', src: 'Table 8.27', d: 'Yemen and Red Sea: methanol +22 %, hydrogen +3 %, logistics $90/t, availability 90 %, FCI +10 %, for the whole project.', mk: {p_meoh: 393 * 1.22, p_h2: H2SC, logi: 90, op_factor: 0.90, fci_mult: 1.10}, rep: -84},
  {id: 'ext', c: 'crisis', name: 'Extreme disruption', src: 'Table 8.27', d: 'Prolonged closure of both corridors, attacks on Jubail: methanol +37 %, hydrogen +5 %, logistics $150/t, availability 80 %, FCI +15 %.', mk: {p_meoh: 393 * 1.37, p_h2: 2473 * 1.05, logi: 150, op_factor: 0.80, fci_mult: 1.15}},
- {id: 'rus', c: 'crisis', name: 'Energy shock of the Russia–Ukraine war type (2022)', src: 'Methanex 2022; FCI assumed', d: 'Methanol at the 2022 average realised price of $397/t (Methanex), equipment cost +10 % (assumed); Saudi gas and power tariffs unchanged.', mk: {p_meoh: 397, fci_mult: 1.10}},
+ {id: 'rus', c: 'crisis', name: 'Energy shock of the Russia–Ukraine war type (2022)', sh: 'Russia–Ukraine energy shock', src: 'Methanex 2022; FCI assumed', d: 'Methanol at the 2022 average realised price of $397/t (Methanex), equipment cost +10 % (assumed); Saudi gas and power tariffs unchanged.', mk: {p_meoh: 397, fci_mult: 1.10}},
  {id: 'pre', c: 'market', name: 'Pre-war prices', src: 'Section 8.3.7', d: 'Methanol $360/t and hydrogen $2,250/t.', mk: {p_meoh: 360, p_h2: 2250}, rep: -45.0},
  {id: 'gate', c: 'policy', name: 'Landfill gate fee $70/t', src: 'Section 8.3.7', d: 'The plant is paid $70/t to take the plastic instead of paying $80/t.', mk: {p_mpw: -70}, rep: 472},
- {id: 'tax', c: 'policy', name: 'Income tax 20 % (foreign partner)', src: 'Section 8.3.7', d: '20 % income tax instead of the 2.5 % zakat.', mk: {tax: 0.20}, rep: 55.4}
+ {id: 'tax', c: 'policy', name: 'Income tax 20 % (foreign partner)', sh: 'Income tax 20 %', src: 'Section 8.3.7', d: '20 % income tax instead of the 2.5 % zakat.', mk: {tax: 0.20}, rep: 55.4}
 ];
 let MK = {}, SCID = 'base', X = [0.40, 0.10, 0.90, 1.0], MODE = 'design';
 const DES = evaluate([0.40, 0.10, 0.90, 1], {});
@@ -458,7 +463,6 @@ function drawCF(e, e0) {
   const path = arr => arr.map((v, i) => (i ? 'L' : 'M') + X_(i).toFixed(1) + ',' + Y_(v).toFixed(1)).join(' ');
   s.innerHTML = g + `<line x1="${ml}" x2="${W - mr}" y1="${Y_(0)}" y2="${Y_(0)}" stroke="#555"/><text x="${(W + ml) / 2}" y="${Hh - 0}" text-anchor="middle" class="sl">Year from the start of construction</text>
     <path d="${path(b)}" fill="none" stroke="#8FAADC" stroke-width="2.2" stroke-dasharray="6 4"/><path d="${path(a)}" fill="none" stroke="#1F4E79" stroke-width="2.6"/>`;
-  $('cfleg').textContent = 'Solid: current set point and market. Dashed: design point at the same market.';
 }
 function update() {
   const L = lims(); const e = evaluate(X, MK, L), e0 = evaluate([0.40, 0.10, 0.90, 1], MK, L);
@@ -513,7 +517,7 @@ function drawScenChart() {
   const s = $('scchart'), W = 470, ml = 175, mr = 12, mt = 8, rh = 29; const vals = SCEN.map(z => [evaluate([0.40, 0.10, 0.90, 1], z.mk).npv, AIRES[z.id] ? AIRES[z.id].e.npv : null]);
   const all = vals.flat().filter(v => v !== null); const lo = Math.min(-250, ...all), hi = Math.max(500, ...all); const X_ = v => ml + (v - lo) / (hi - lo) * (W - ml - mr);
   let g = ''; for (let v = Math.ceil(lo / 100) * 100; v <= hi; v += 100) g += `<line x1="${X_(v)}" x2="${X_(v)}" y1="${mt}" y2="${mt + rh * SCEN.length}" stroke="${v === 0 ? '#555' : '#e3e7ee'}"/><text x="${X_(v)}" y="${mt + rh * SCEN.length + 16}" text-anchor="middle" class="sl">${v}</text>`;
-  SCEN.forEach((z, k) => { const y = mt + k * rh; const [n, a] = vals[k]; const nm = z.name.length > 30 ? z.name.slice(0, 29) + '…' : z.name;
+  SCEN.forEach((z, k) => { const y = mt + k * rh; const [n, a] = vals[k]; const nm = z.sh || z.name;
     g += `<text x="${ml - 6}" y="${y + 18}" text-anchor="end" class="sl" style="font-weight:${z.id === SCID ? 700 : 400};fill:#1a1a1a">${nm}</text>`;
     g += `<rect x="${Math.min(X_(0), X_(n))}" y="${y + 4}" width="${Math.abs(X_(n) - X_(0))}" height="${a === null ? 20 : 10}" fill="#8FAADC"/>`;
     if (a !== null) g += `<rect x="${Math.min(X_(0), X_(a))}" y="${y + 14}" width="${Math.abs(X_(a) - X_(0))}" height="10" fill="#1F4E79"/>`; });
@@ -531,7 +535,7 @@ const ACT = {1: 'Follow the opening of TV-310 on the trend display; plan the cle
  4: 'Check the clean syngas for catalyst poisons; follow the activity trend and plan the change of the R-103 catalyst.',
  5: 'Check the purge valve and its bypass for passing; isolate and repair, then repeat the AI search of Section 10.2.'};
 let FK = '1', playT = null;
-$('t2l').textContent = fmt(FDD.T2lim, 2); $('ql').textContent = fmt(FDD.Qlim, 2);
+$('t2l').textContent = '99 % limit = ' + fmt(FDD.T2lim, 2); $('ql').textContent = '99 % limit = ' + fmt(FDD.Qlim, 2);
 $('fbtns').innerHTML = Object.entries(FDD.faults).map(([k, v]) => `<button data-k="${k}"${k === FK ? ' class="on"' : ''}>F${k} ${v.name}</button>`).join('');
 document.querySelectorAll('#fbtns button').forEach(b => b.addEventListener('click', () => { FK = b.dataset.k; document.querySelectorAll('#fbtns button').forEach(x => x.classList.toggle('on', x === b)); drawFault(); }));
 function logChart(svg, arr, lim, tmax, ymin, ymax) {
@@ -572,25 +576,33 @@ function drawEM() {
   const K = [['e-methanol', fmt(o.meoh_t) + ' t/y'], ['Electrolyser', fmt(o.P_el_spec, 1) + ' MW'], ['Net CO₂ avoided', fmt(o.co2_net) + ' t/y'],
     ['Carbon to product', fmt(o.eta_C, 2) + ' %'], ['Water (net) / O₂', fmt((o.water_t - o.water_made_t) / 7920, 1) + ' m³/h / ' + fmt(o.o2_t / 1000, 0) + ' kt/y'], ['Cost of e-methanol', f > 0 ? '$' + fmt(o.total, 0) + '/t' : '—']];
   $('ekpis').innerHTML = K.map(([l, v]) => `<div class="kpi"><div class="l">${l}</div><div class="v" style="font-size:clamp(18px,2.1vw,23px)">${v}</div></div>`).join('');
-  // stacked cost bar
-  const s = $('eC'), W = 470, Hh = 280, ml = 50, mb = 36, mt = 10, mr = 10; const ymax = Math.max(900, Math.ceil((o.total + 50) / 100) * 100); const Y_ = v => mt + (ymax - v) / ymax * (Hh - mt - mb);
+  // stacked cost bar (no text inside the plot; the legend is written below the chart)
+  const s = $('eC'), W = 470, Hh = 270, ml = 50, mb = 26, mt = 10, mr = 10; const ymax = Math.max(900, Math.ceil((Math.max(o.total, pm) + 50) / 100) * 100); const Y_ = v => mt + (ymax - v) / ymax * (Hh - mt - mb);
   let g = ''; for (let v = 0; v <= ymax; v += 100) g += `<line x1="${ml}" x2="${W - mr}" y1="${Y_(v)}" y2="${Y_(v)}" stroke="#e3e7ee"/><text x="${ml - 6}" y="${Y_(v) + 4}" text-anchor="end" class="sl">${v}</text>`;
   const parts = [['Synthesis section', o.syn, '#1F4E79'], ['Electrolyser', o.elz, '#2E75B6'], ['Electricity', o.elec, '#8FAADC'], ['Natural gas', o.ng, '#7F7F7F']];
-  let y0 = 0; const bx = ml + 40, bw = 110; parts.forEach(([n, v, col]) => { g += `<rect x="${bx}" y="${Y_(y0 + v)}" width="${bw}" height="${Y_(y0) - Y_(y0 + v)}" fill="${col}"/>`; y0 += v; });
-  parts.forEach(([n, v, col], k) => { g += `<rect x="${bx + bw + 40}" y="${Hh - mb - 112 + k * 26}" width="14" height="14" fill="${col}"/><text x="${bx + bw + 60}" y="${Hh - mb - 100 + k * 26}" class="sl" style="font-size:14px;fill:#1a1a1a">${n}: ${fmt(v, 0)} $/t</text>`; });
-  g += `<line x1="${ml}" x2="${W - mr}" y1="${Y_(pm)}" y2="${Y_(pm)}" stroke="#C00000" stroke-width="2" stroke-dasharray="7 4"/><text x="${bx + bw / 2}" y="${Hh - 14}" text-anchor="middle" class="sl">Selected case</text>`;
-  s.innerHTML = g; $('eleg').textContent = 'Dashed red line: methanol price of the selected market ($' + fmt(pm, 0) + '/t). ' + (f > 0 ? (o.total <= pm ? 'The e-methanol is cheaper than the market price.' : 'The e-methanol costs more than the market price at this electricity price.') : '');
-  // curves
-  const s2 = $('eL'); const xs = []; for (let x = 0.5; x <= 7.001; x += 0.25) xs.push(x); const ff = Math.max(f, 0.05);
+  const bw = 120, bx = ml + (W - ml - mr - bw) / 2; let y0 = 0;
+  if (f > 0) parts.forEach(([n, v, col]) => { g += `<rect x="${bx}" y="${Y_(y0 + v)}" width="${bw}" height="${Y_(y0) - Y_(y0 + v)}" fill="${col}"/>`; y0 += v; });
+  g += `<line x1="${ml}" x2="${W - mr}" y1="${Y_(pm)}" y2="${Y_(pm)}" stroke="#C00000" stroke-width="2" stroke-dasharray="7 4"/><text x="${bx + bw / 2}" y="${Hh - 8}" text-anchor="middle" class="sl">Selected case</text>`;
+  s.innerHTML = g;
+  $('eleg').innerHTML = parts.map(([n, v, col]) => `<span><i class="sw" style="background:${col}"></i>${n}: ${fmt(f > 0 ? v : 0, 0)} $/t</span>`).join('') + `<span><i class="sw dash" style="border-color:#C00000"></i>Methanol price of the selected market: $${fmt(pm, 0)}/t</span>`;
+  const ev = $('everd'); if (f <= 0) { ev.className = 'verdict'; ev.textContent = 'Move the first slider to size the extension.'; }
+  else if (o.total <= pm) { ev.className = 'verdict ok'; ev.textContent = 'The e-methanol costs $' + fmt(o.total, 0) + '/t, $' + fmt(pm - o.total, 0) + '/t below the market price.'; }
+  else { ev.className = 'verdict bad'; ev.textContent = 'The e-methanol costs $' + fmt(o.total, 0) + '/t, $' + fmt(o.total - pm, 0) + '/t above the market price at this electricity price.'; }
+  // cost against the electricity price
+  const s2 = $('eL'), mb2 = 40; const xs = []; for (let x = 0.5; x <= 7.001; x += 0.25) xs.push(x); const ff = Math.max(f, 0.05);
   const c1 = xs.map(x => emethanol(ff, x / 100, 1000, 55).total), c2 = xs.map(x => emethanol(ff, x / 100, 200, 45).total);
-  const ym = 900; const X2 = x => ml + x / 7 * (W - ml - mr), Y2 = v => mt + (ym - Math.min(v, ym)) / ym * (Hh - mt - mb);
+  const ym = 900; const X2 = x => ml + x / 7 * (W - ml - mr), Y2 = v => mt + (ym - Math.min(v, ym)) / ym * (Hh - mt - mb2);
   let h = ''; for (let v = 0; v <= ym; v += 100) h += `<line x1="${ml}" x2="${W - mr}" y1="${Y2(v)}" y2="${Y2(v)}" stroke="#e3e7ee"/><text x="${ml - 6}" y="${Y2(v) + 4}" text-anchor="end" class="sl">${v}</text>`;
-  for (let x = 0; x <= 7; x++) h += `<text x="${X2(x)}" y="${Hh - 18}" text-anchor="middle" class="sl">${x}</text>`;
-  h += `<text x="${(W + ml) / 2}" y="${Hh - 2}" text-anchor="middle" class="sl">Electricity price (US¢/kWh)</text>`;
+  for (let x = 0; x <= 7; x++) h += `<text x="${X2(x)}" y="${Hh - 24}" text-anchor="middle" class="sl">${x}</text>`;
+  h += `<text x="${(W + ml) / 2}" y="${Hh - 6}" text-anchor="middle" class="sl">Electricity price (US¢/kWh)</text>`;
   const pth = arr => arr.map((v, i) => (i ? 'L' : 'M') + X2(xs[i]).toFixed(1) + ',' + Y2(v).toFixed(1)).join(' ');
-  h += `<line x1="${ml}" x2="${W - mr}" y1="${Y2(pm)}" y2="${Y2(pm)}" stroke="#C00000" stroke-width="2" stroke-dasharray="7 4"/><path d="${pth(c1)}" fill="none" stroke="#1F4E79" stroke-width="2.4"/><path d="${pth(c2)}" fill="none" stroke="#548235" stroke-width="2.4"/>`;
-  if (f > 0) h += `<circle cx="${X2(c * 100)}" cy="${Y2(o.total)}" r="6" fill="#C55A11" stroke="#fff" stroke-width="2"/>`;
+  h += `<line x1="${ml}" x2="${W - mr}" y1="${Y2(pm)}" y2="${Y2(pm)}" stroke="#C00000" stroke-width="2" stroke-dasharray="7 4"/><path d="${pth(c1)}" fill="none" stroke="#1F4E79" stroke-width="2.6"/><path d="${pth(c2)}" fill="none" stroke="#548235" stroke-width="2.6"/>`;
+  if (f > 0) h += `<circle cx="${X2(c * 100)}" cy="${Y2(o.total)}" r="6.5" fill="#C55A11" stroke="#fff" stroke-width="2"/>`;
   s2.innerHTML = h;
+  $('eleg2').innerHTML = `<span><i class="sw ln" style="background:#1F4E79"></i>Today’s electrolyser</span><span><i class="sw ln" style="background:#548235"></i>2050 electrolyser</span><span><i class="sw dash" style="border-color:#C00000"></i>Methanol market price</span><span><i class="sw dot" style="background:#C55A11"></i>Current case</span>`;
+  const be = (cp, e) => { if (emethanol(ff, 0, cp, e).total > pm) return null; let lo = 0, hi = 0.3; for (let k = 0; k < 50; k++) { const m = (lo + hi) / 2; if (emethanol(ff, m, cp, e).total > pm) hi = m; else lo = m; } return lo * 100; };
+  const b1 = be(1000, 55), b2 = be(200, 45);
+  $('ebe').textContent = 'Break-even electricity price at $' + fmt(pm, 0) + '/t of methanol: ' + (b1 === null ? 'none' : fmt(b1, 2) + ' US¢/kWh') + ' with today’s electrolyser and ' + (b2 === null ? 'none' : fmt(b2, 2) + ' US¢/kWh') + ' with the 2050 electrolyser.';
 }
 ['ef', 'ec'].forEach(id => $(id).addEventListener('input', drawEM));
 // ---------- validation tab ----------
