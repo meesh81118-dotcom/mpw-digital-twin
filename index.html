@@ -183,7 +183,7 @@ footer{margin-top:22px;font-size:14px;color:var(--muted);text-align:center}
 <section id="t3" class="tab">
 <div class="grid">
 <aside class="panel">
-  <h2>Fault scenario (Section 10.3)</h2>
+  <h2>Fault scenario (Section 10.4)</h2>
   <div class="fbtn" id="fbtns"></div>
   <div class="ctl" style="margin-top:12px"><label for="ft">Time (min) <output id="o-ft"></output></label><input id="ft" type="range" min="0" max="598" step="2" value="598"></div>
   <button class="btn pri" id="play" style="width:100%">Play the fault from the start</button>
@@ -213,7 +213,7 @@ footer{margin-top:22px;font-size:14px;color:var(--muted);text-align:center}
   <div class="ctl"><label for="ec">Electricity price (US¢/kWh) <output id="o-ec"></output></label><input id="ec" type="range" min="0.5" max="7" step="0.01" value="1.04"></div>
   <h3>Electrolyser technology</h3>
   <div class="seg" id="etech"><button data-k="today" class="on">Today (1,000 $/kW, 55 kWh/kg)</button><button data-k="2050">2050 (200 $/kW, 45 kWh/kg)</button></div>
-  <p class="note">1.04 US¢/kWh is the Shuaibah solar tariff and 6.13 US¢/kWh the plant tariff of Chapter 8 (Section 10.4.3).</p>
+  <p class="note">1.04 US¢/kWh is the Shuaibah solar tariff and 6.13 US¢/kWh the plant tariff of Chapter 8 (Section 10.5).</p>
 </aside>
 <main style="min-width:0">
   <div class="kpis" id="ekpis"></div>
@@ -228,7 +228,7 @@ footer{margin-top:22px;font-size:14px;color:var(--muted);text-align:center}
 <!-- ======================= TAB 5 ======================= -->
 <section id="t5" class="tab">
 <section class="panel"><h2>How the twin works</h2>
-<p>The twin runs, in the browser, the same equations as the Python codes of Appendix H: the split of the clean syngas at D-102 and the water-gas shift (Equations 10.1–10.2), the membrane ME-101 with the plug-flow Sieverts model (Equation 10.3), the synthesis loop with its recycle (Equations 10.4–10.5) and the cash-flow model of Chapter 8 (Appendix G). One evaluation takes less than one millisecond, so the AI buttons can run a full differential-evolution search (2,664 evaluations) in a few seconds. The design limits are those of Table 10.5: R-102 at its design load (fixed catalyst charge), the installed membrane area of ME-101, the R-101 feed and the other units 5 % above their design loads. In safe operation every unit stays below its design load by the selected margin.</p></section>
+<p>The twin runs, in the browser, the same equations as the Python codes of Appendix H: the split of the clean syngas at D-102 and the water-gas shift of Chapter 2, the membrane ME-101 with the plug-flow Sieverts model of Section 3.5, the synthesis loop with its recycle and the cash-flow model of Chapter 8 (Appendix G). One evaluation takes less than one millisecond, so the AI buttons can run a full differential-evolution search (2,664 evaluations) in a few seconds. The design limits are those of Section 10.2: R-102 at its design load (fixed catalyst charge), the installed membrane area of ME-101, and the R-101 feed and the other units 5 % above their design loads. In safe operation every unit stays below its design load by the selected margin.</p></section>
 <section class="panel" style="margin-top:14px"><h2>Validation against the report</h2><div class="scroll" id="valtab"></div></section>
 </section>
 
@@ -600,7 +600,7 @@ function drawVal() {
    ['Methanol product (t/y)', '266,915', fmt(DES.p.meoh_kgh * 7.92, 0)], ['Hydrogen product (t/y)', '61,831', fmt(DES.p.h2_kgh * 7.92, 0)],
    ['NPV, base case (million US$)', '105.04', fmt(DES.npv, 2)], ['DCFROR, base case (%)', '12.80', fmt(DES.irr * 100, 2)], ['Discounted payback, base case (years)', '13.06', fmt(DES.dpb, 2)]];
   SCEN.filter(s => s.rep !== undefined && s.id !== 'base').forEach(s => rows.push(['NPV, ' + s.name + ' (million US$)', fmt(s.rep, Number.isInteger(s.rep) && Math.abs(s.rep) >= 80 ? 0 : 2), fmt(evaluate([0.4, 0.1, 0.9, 1], s.mk).npv, 2)]));
-  rows.push(['AI set point at $393/t, NPV (million US$)', '106.49 (Section 10.2.7)', '—']);
+  rows.push(['AI set point at $393/t, NPV (million US$)', '106.49 (Section 10.2)', '—']);
   $('valtab').innerHTML = '<table><tr><th>Quantity</th><th>Report</th><th>Digital twin</th></tr>' + rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td class="okc">${r[2]}</td></tr>`).join('') + '</table>';
   setTimeout(() => { const o = optimise({}, {feed: 1}); const tds = $('valtab').querySelectorAll('tr:last-child td'); tds[2].textContent = fmt(o.e.npv, 2); }, 300);
 }

@@ -11,3 +11,7 @@ The page runs entirely in the browser (no installation, no server):
 3. **Fault monitoring** – PCA monitoring (T² and Q) of the five faults of Section 10.3 with diagnosis and operator action.
 4. **e-Methanol extension** – solar e-methanol from the purge gas (Section 10.4).
 5. **Model and validation** – comparison with the values of the report.
+
+## Codes
+
+The folder `code` contains the Python scripts of Appendix H (NumPy, SciPy and scikit-learn). Run `plant_model.py` first; each script prints its results and saves them to a small JSON file.
