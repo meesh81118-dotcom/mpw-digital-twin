@@ -1,0 +1,625 @@
+// ===================================================================== helpers
+const $ = id => document.getElementById(id), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const fmt = (v, d = 0) => (v === null || v === undefined || !isFinite(v)) ? '—' : (v < 0 && Math.abs(v) >= 0.5 * Math.pow(10, -d) ? '−' : '') + Math.abs(v).toLocaleString('en-US', {minimumFractionDigits: d, maximumFractionDigits: d});
+const money = (v, d = 2) => (v < 0 ? '−$' : '$') + fmt(Math.abs(v), d);
+const clone = o => JSON.parse(JSON.stringify(o));
+const cssv = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const tip = $('tip');
+function showTip(html, e) { tip.innerHTML = html; tip.style.opacity = 1; const x = e.clientX + 16, y = e.clientY + 14; tip.style.left = Math.min(x, innerWidth - tip.offsetWidth - 10) + 'px'; tip.style.top = Math.min(y, innerHeight - tip.offsetHeight - 10) + 'px'; }
+function hideTip() { tip.style.opacity = 0; }
+let toastT; function toast(m) { const t = $('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2600); }
+function fillRange(el) { const p = (el.value - el.min) / (el.max - el.min) * 100; el.style.setProperty('--p', p + '%'); }
+document.addEventListener('input', e => { if (e.target.type === 'range') fillRange(e.target); });
+// ===================================================================== state
+const DEF = {X: [0.40, 0.10, 0.90, 1.0], MODE: 'design', margin: 2, MK: {}, SCID: 'base', HI: true, dT: 10, cpm: 550,
+  pid: {mode: 'PID', meth: 'CC', Kc: 1.07, ti: 0.675, td: 0.112, test: 'load', step: 10}, FK: '1', ft: 598, em: {f: 100, c: 1.04, tech: 'today'},
+  pfdHI: false, pfdFlow: true, sec: 'all', scf: 'all', iSeg: 'all', iq: '', stq: '', pidSel: 'base'};
+let ST = clone(DEF), PAGE = 'overview', AIRES = {}, MC = null, MCKEY = '';
+const MKX = () => Object.assign({}, ST.MK, {hi: ST.HI});
+const lims = () => ST.MODE === 'safe' ? limitsFor('safe', ST.margin / 100) : limitsFor('max', 0);
+let E, E0, DES = evaluate([0.40, 0.10, 0.90, 1], {});
+function compute() { const L = lims(); E = evaluate(ST.X, MKX(), L); E0 = evaluate([0.40, 0.10, 0.90, 1], MKX(), L); }
+const UNITNAME = {S15: 'R-102', S18: 'C-101', S20: 'R-103', S23: 'F-101', S26: 'T-101', H2p: 'C-102', feed: 'R-101', 'ME-101 area': 'ME-101'};
+// ===================================================================== charts
+function plot(id, c) {
+  const svg = $(id); if (!svg) return; const vb = svg.viewBox.baseVal; const W = vb.width, H = vb.height; const m = Object.assign({l: 56, r: 14, t: 12, b: 40}, c.m || {});
+  const [x0, x1] = c.x, [y0, y1] = c.y; const X = v => m.l + (v - x0) / (x1 - x0) * (W - m.l - m.r);
+  const Y = c.logy ? v => m.t + (Math.log10(y1) - Math.log10(Math.max(v, y0))) / (Math.log10(y1) - Math.log10(y0)) * (H - m.t - m.b) : v => m.t + (y1 - v) / (y1 - y0) * (H - m.t - m.b);
+  const dec = (a, b, st) => { const t = ticks(a, b, st); const d = t.length > 1 ? Math.abs(t[1] - t[0]) : 1; return d >= 1 ? 0 : d >= 0.1 ? 1 : 2; };
+  const xd = dec(x0, x1, c.xt), yd = c.logy ? 0 : dec(y0, y1, c.yt); const xf = c.xf || (v => fmt(v, xd)), yf = c.yf || (v => fmt(v, yd)); let g = '';
+  const yt = c.logy ? (() => { const a = []; for (let e = Math.ceil(Math.log10(y0)); e <= Math.log10(y1) + 1e-9; e++) a.push(Math.pow(10, e)); return a; })() : ticks(y0, y1, c.yt);
+  yt.forEach(v => g += `<line class="gl" x1="${m.l}" x2="${W - m.r}" y1="${Y(v)}" y2="${Y(v)}"/><text class="ax" x="${m.l - 7}" y="${Y(v) + 4}" text-anchor="end">${yf(v)}</text>`);
+  ticks(x0, x1, c.xt).forEach(v => g += `<line class="gl" x1="${X(v)}" x2="${X(v)}" y1="${m.t}" y2="${H - m.b}" style="opacity:.55"/><text class="ax" x="${X(v)}" y="${H - m.b + 17}" text-anchor="middle">${xf(v)}</text>`);
+  if (y0 < 0 && y1 > 0 && !c.logy) g += `<line class="zl" x1="${m.l}" x2="${W - m.r}" y1="${Y(0)}" y2="${Y(0)}"/>`;
+  if (c.xl) g += `<text class="ax" x="${(W + m.l - m.r) / 2}" y="${H - 4}" text-anchor="middle">${c.xl}</text>`;
+  if (c.yl) g += `<text class="ax" transform="translate(13,${(H - m.b + m.t) / 2}) rotate(-90)" text-anchor="middle">${c.yl}</text>`;
+  (c.bands || []).forEach(b => g += `<rect x="${X(b.x0 ?? x0)}" width="${X(b.x1 ?? x1) - X(b.x0 ?? x0)}" y="${Y(b.y1 ?? y1)}" height="${Y(b.y0 ?? y0) - Y(b.y1 ?? y1)}" fill="${b.c}"/>`);
+  (c.polys || []).forEach(p => g += `<polygon points="${p.d.map(q => X(q[0]).toFixed(1) + ',' + Y(q[1]).toFixed(1)).join(' ')}" fill="${p.c}" stroke="none"/>`);
+  (c.bars || []).forEach(b => { const ya = Y(Math.max(b.y, 0)), yb = Y(Math.min(b.y, 0)); g += `<rect class="hb" data-t="${b.t || ''}" x="${X(b.x) - b.w / 2}" y="${ya}" width="${b.w}" height="${Math.max(0.5, yb - ya)}" fill="${b.c}" rx="2"/>`; });
+  (c.hl || []).forEach(h => g += `<line x1="${m.l}" x2="${W - m.r}" y1="${Y(h.y)}" y2="${Y(h.y)}" stroke="${h.c}" stroke-width="${h.w || 2}" ${h.dash ? `stroke-dasharray="${h.dash}"` : ''}/>`);
+  (c.vl || []).forEach(h => g += `<line x1="${X(h.x)}" x2="${X(h.x)}" y1="${m.t}" y2="${H - m.b}" stroke="${h.c}" stroke-width="${h.w || 2}" ${h.dash ? `stroke-dasharray="${h.dash}"` : ''}/>`);
+  (c.series || []).forEach(s => { if (!s.d.length) return; const d = s.d.map((p, i) => (i ? 'L' : 'M') + X(p[0]).toFixed(1) + ',' + Y(p[1]).toFixed(1)).join(' ');
+    g += `<path d="${d}" fill="none" stroke="${s.c}" stroke-width="${s.w || 2.4}" ${s.dash ? `stroke-dasharray="${s.dash}"` : ''} stroke-linejoin="round" stroke-linecap="round" ${s.anim ? 'class="anim"' : ''}/>`; });
+  (c.pts || []).forEach(p => g += `<circle cx="${X(p.x)}" cy="${Y(p.y)}" r="${p.r || 6}" fill="${p.c}" stroke="var(--panel)" stroke-width="2.2"/>`);
+  (c.texts || []).forEach(t => g += `<text x="${t.px ?? X(t.x)}" y="${t.py ?? Y(t.y)}" text-anchor="${t.a || 'middle'}" style="font-size:${t.fs || 13}px;fill:${t.c || 'var(--ink2)'};font-weight:${t.b ? 700 : 400}">${t.t}</text>`);
+  g += `<line class="guide" x1="0" x2="0" y1="${m.t}" y2="${H - m.b}" stroke="var(--muted)" stroke-dasharray="3 3" style="opacity:0"/>`;
+  svg.innerHTML = g; svg._c = {c, X, Y, m, W, H};
+  if (!svg._h) { svg._h = 1;
+    svg.addEventListener('mousemove', e => { const o = svg._c; if (!o || !o.c.tip) return; const r = svg.getBoundingClientRect(); const px = (e.clientX - r.left) / r.width * o.W;
+      if (px < o.m.l || px > o.W - o.m.r) { hideTip(); svg.querySelector('.guide').style.opacity = 0; return; }
+      const xv = o.c.x[0] + (px - o.m.l) / (o.W - o.m.l - o.m.r) * (o.c.x[1] - o.c.x[0]); const gl = svg.querySelector('.guide'); gl.setAttribute('x1', px); gl.setAttribute('x2', px); gl.style.opacity = 1;
+      showTip(o.c.tip(xv), e); });
+    svg.addEventListener('mouseleave', () => { hideTip(); const gl = svg.querySelector('.guide'); if (gl) gl.style.opacity = 0; }); }
+  return {X, Y};
+}
+function ticks(a, b, st) { if (Array.isArray(st)) return st; if (!st) { const r = b - a, p = Math.pow(10, Math.floor(Math.log10(r / 5))); st = [1, 2, 2.5, 5, 10].map(k => k * p).find(s => r / s <= 7) || p * 10; }
+  const o = []; for (let v = Math.ceil(a / st - 1e-9) * st; v <= b + 1e-9; v += st) o.push(+v.toFixed(10)); return o; }
+const interp = (d, x) => { if (!d.length) return null; if (x <= d[0][0]) return d[0][1]; for (let k = 1; k < d.length; k++) if (x <= d[k][0]) { const a = d[k - 1], b = d[k]; return b[0] === a[0] ? b[1] : a[1] + (b[1] - a[1]) * (x - a[0]) / (b[0] - a[0]); } return d[d.length - 1][1]; };
+function donut(id, parts, center) {
+  const svg = $(id), W = svg.viewBox.baseVal.width, H = svg.viewBox.baseVal.height, cx = W / 2, cy = H / 2, R = Math.min(W, H) / 2 - 18, r = R * 0.6;
+  const tot = parts.reduce((a, p) => a + Math.max(0, p[1]), 0); let a0 = -Math.PI / 2, g = '';
+  parts.forEach(([n, v, c]) => { const a1 = a0 + Math.max(0, v) / tot * 2 * Math.PI, big = a1 - a0 > Math.PI ? 1 : 0; const P = (a, rr) => [cx + rr * Math.cos(a), cy + rr * Math.sin(a)];
+    const [x1, y1] = P(a0, R), [x2, y2] = P(a1, R), [x3, y3] = P(a1, r), [x4, y4] = P(a0, r);
+    g += `<path class="seg" data-t="${n}: ${fmt(v / 1e6, 2)} M$ (${fmt(v / tot * 100, 1)} %)" d="M${x1},${y1} A${R},${R} 0 ${big} 1 ${x2},${y2} L${x3},${y3} A${r},${r} 0 ${big} 0 ${x4},${y4} Z" fill="${c}" stroke="var(--panel)" stroke-width="2"/>`; a0 = a1; });
+  g += `<text x="${cx}" y="${cy - 4}" text-anchor="middle" style="font-size:26px;font-weight:700;fill:var(--ink)">${center[0]}</text><text x="${cx}" y="${cy + 18}" text-anchor="middle" style="font-size:13.5px;fill:var(--muted)">${center[1]}</text>`;
+  svg.innerHTML = g; bindTips(svg, '.seg');
+}
+function bindTips(root, sel) { $$(sel, root).forEach(el => { el.addEventListener('mousemove', e => showTip(el.dataset.t, e)); el.addEventListener('mouseleave', hideTip); }); }
+// ===================================================================== router
+const PAGES = ['overview', 'process', 'operations', 'heat', 'control', 'economics', 'market', 'safety', 'emethanol', 'validation'];
+const TITLES = {overview: 'Overview', process: 'Process flow diagram', operations: 'Operations and AI set points', heat: 'Heat integration', control: 'Process control', economics: 'Economics', market: 'Market and scenarios', safety: 'Process monitoring', emethanol: 'e-Methanol extension', validation: 'Validation'};
+function show(p) {
+  if (!PAGES.includes(p)) p = 'overview'; PAGE = p;
+  const doit = () => { $$('.page').forEach(s => s.classList.toggle('on', s.dataset.page === p)); $$('nav.main a').forEach(a => a.classList.toggle('on', a.dataset.go === p));
+    window.scrollTo(0, 0); render(); requestAnimationFrame(reveal); document.title = TITLES[p] + ' – MPW Gasification Complex'; };
+  if (document.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches) document.startViewTransition(doit); else doit();
+  $('nav').classList.remove('open');
+}
+function go(p) { if (location.hash !== '#/' + p) location.hash = '#/' + p; else show(p); }
+window.addEventListener('hashchange', () => show(location.hash.replace('#/', '')));
+document.addEventListener('click', e => { const t = e.target.closest('[data-go]'); if (t) { e.preventDefault(); go(t.dataset.go); } const r = e.target.closest('[data-reset]'); if (r) resetPage(r.dataset.reset); });
+$('menu').addEventListener('click', () => $('nav').classList.toggle('open'));
+window.addEventListener('scroll', () => { const h = document.documentElement; $('prog').style.width = (h.scrollTop / Math.max(1, h.scrollHeight - h.clientHeight) * 100) + '%'; }, {passive: true});
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); if (e.target._count) e.target._count(); } }), {threshold: 0.12});
+function reveal() { $$('.page.on .reveal:not(.in)').forEach(el => io.observe(el)); }
+// theme
+function setTheme(t) { document.documentElement.dataset.theme = t; try { localStorage.setItem('mpw-theme', t); } catch (e) {} if (PAGE) render(); }
+$('theme').addEventListener('click', () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'));
+try { const t = localStorage.getItem('mpw-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+// ===================================================================== reset
+function resetPage(p, quiet) {
+  const D = clone(DEF);
+  if (p === 'operations' || p === 'all') { ST.X = D.X; ST.MODE = 'design'; ST.margin = 2; }
+  if (p === 'process' || p === 'all') { ST.pfdHI = false; ST.pfdFlow = true; ST.sec = 'all'; ST.stq = ''; closeDrawer(); }
+  if (p === 'heat' || p === 'all') { ST.HI = true; ST.dT = 10; ST.cpm = 550; }
+  if (p === 'control' || p === 'all') { ST.pid = D.pid; ST.iSeg = 'all'; ST.iq = ''; ST.pidSel = 'base'; pidZoom = null; }
+  if (p === 'economics' || p === 'all') { MC = null; }
+  if (p === 'market' || p === 'all') { ST.MK = {}; ST.SCID = 'base'; ST.scf = 'all'; AIRES = {}; }
+  if (p === 'safety' || p === 'all') { ST.FK = '1'; ST.ft = 598; stopPlay(); }
+  if (p === 'emethanol' || p === 'all') { ST.em = D.em; }
+  syncInputs(); render(); if (!quiet) toast(p === 'all' ? 'Every page has returned to the design point.' : 'This page has returned to its starting point.');
+}
+$('resetAll').addEventListener('click', () => { resetPage('all'); window.scrollTo({top: 0, behavior: 'smooth'}); });
+function syncInputs() {
+  const set = (id, v) => { const el = $(id); if (el) { el.value = v; fillRange(el); } };
+  set('beta', ST.X[0]); set('phi', ST.X[1]); set('rho', ST.X[2]); set('feed', ST.X[3] * 100); set('margin', ST.margin);
+  $$('#modes button').forEach(b => b.classList.toggle('on', b.dataset.m === ST.MODE));
+  $('pfdHI').checked = ST.pfdHI; $('pfdFlow').checked = ST.pfdFlow; $$('#secSeg button').forEach(b => b.classList.toggle('on', b.dataset.s === ST.sec)); $('stq').value = ST.stq;
+  $('hiOn').checked = ST.HI; set('dtmin', ST.dT); set('cpm', ST.cpm);
+  set('kc', ST.pid.Kc); set('ti', ST.pid.ti); set('td', ST.pid.td); set('stp', ST.pid.step);
+  $$('#pidMode button').forEach(b => b.classList.toggle('on', b.dataset.k === ST.pid.mode)); $$('#pidTest button').forEach(b => b.classList.toggle('on', b.dataset.k === ST.pid.test));
+  $$('#iSeg button').forEach(b => b.classList.toggle('on', b.dataset.k === ST.iSeg)); $('iq').value = ST.iq; $$('#pidSel button').forEach(b => b.classList.toggle('on', b.dataset.k === ST.pidSel));
+  MS.forEach(([id, k, dflt, , inv]) => set(id, inv(k in ST.MK ? ST.MK[k] : dflt))); $$('#scFilt button').forEach(b => b.classList.toggle('on', b.dataset.k === ST.scf));
+  set('ft', ST.ft); set('ef', ST.em.f); set('ec', ST.em.c); $$('#etech button').forEach(b => b.classList.toggle('on', b.dataset.k === ST.em.tech));
+  $$('input[type=range]').forEach(fillRange);
+}
+// ===================================================================== global render
+function render() {
+  compute(); headerChips();
+  ({overview: rOverview, process: rProcess, operations: rOps, heat: rHeat, control: rControl, economics: rEcon, market: rMarket, safety: rFault, emethanol: rEM, validation: rVal})[PAGE]();
+}
+function scenName() { const s = SCEN.find(z => z.id === ST.SCID); return s ? (s.sh || s.name) : 'Custom scenario'; }
+function headerChips() {
+  const c = $('opChip'); if (!E.ok) { c.className = 'chip bad'; c.innerHTML = `<i></i>Limit exceeded: ${UNITNAME[E.limiting] || ''} at ${fmt(E.worst * 100, 1)} %`; }
+  else if (E.worst > 0.98) { c.className = 'chip warn'; c.innerHTML = `<i></i>${UNITNAME[E.limiting] || ''} at ${fmt(E.worst * 100, 1)} % of its limit`; } else { c.className = 'chip'; c.innerHTML = '<i></i>All units within design limits'; }
+  ['mkChip', 'mkChip2', 'ecChip'].forEach(id => { const el = $(id); if (el) el.innerHTML = `<i style="background:#8fb8e6;box-shadow:none"></i>Market: ${scenName()}${ST.HI ? '' : ' · without heat integration'}`; });
+  $('hiChip').className = 'chip' + (ST.HI ? '' : ' bad'); $('hiChip').innerHTML = `<i></i>Heat integration ${ST.HI ? 'ON' : 'OFF'} · ΔTmin = ${fmt(ST.dT, 1)} °C`;
+}
+// ===================================================================== OVERVIEW
+const HERO = [[300000, 0, ' t/y', 'mixed plastic waste'], [266915, 0, ' t/y', 'methanol, 99.5 mol%'], [61831, 0, ' t/y', 'hydrogen, 99.99 %'], [478.4, 1, ' M$', 'fixed capital', '$'], [105.04, 2, ' M$', 'NPV at 10 %', '$'], [81.7, 1, ' %', 'less hot utility', '−']];
+function countUp(el, v, d, pre, suf) { const t0 = performance.now(), dur = 1500; const step = t => { const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3); el.textContent = pre + fmt(v * e, d) + suf; if (k < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); }
+function buildOverview() {
+  $('heroStats').innerHTML = HERO.map(([v, d, s, l, p]) => `<div class="stat"><b data-v="${v}" data-d="${d}" data-s="${s}" data-p="${p || ''}">${p || ''}${fmt(v, d)}${s}</b><span>${l}</span></div>`).join('');
+  const st = $('heroStats'); st._count = () => $$('b', st).forEach(b => countUp(b, +b.dataset.v, +b.dataset.d, b.dataset.p, b.dataset.s)); st.classList.add('reveal');
+  const IC = {feed: '<path d="M4 18h16M6 18l2-9h8l2 9M9 9V5h6v4"/>', gas: '<path d="M8 21h8M9 21V9a3 3 0 0 1 6 0v12M12 3v3"/>', wgs: '<circle cx="12" cy="12" r="7"/><path d="M12 5v14M5 12h14"/>', syn: '<path d="M4 8h16v8H4zM8 8v8M12 8v8M16 8v8"/>', pur: '<path d="M10 3h4v18h-4zM10 8h4M10 13h4M10 18h4"/>'};
+  const CH = [['feed', 'var(--sec-feed)', '01', 'Feed preparation', 'Two shredders and the steam train: 37,879 kg/h of MPW and 50,400 kg/h of steam at 600 °C.'],
+   ['gas', 'var(--sec-gas)', '02', 'Gasification', 'Five fluidised-bed gasifiers at 1,200 °C on olivine; 15 cyclones remove the char.'],
+   ['wgs', 'var(--sec-wgs)', '03', 'Shift and hydrogen', 'Six-bed shift reactor at 270 °C and a 6,040 m² Pd–Ag membrane give 99.99 % hydrogen.'],
+   ['syn', 'var(--sec-syn)', '04', 'Methanol synthesis', 'Five-stage compression to 50 bar and a 3,447-tube boiling-water reactor with recycle.'],
+   ['pur', 'var(--sec-pur)', '05', 'Purification', 'A 52-tray column delivers 99.5 mol% methanol; the purge can feed solar e-methanol.']];
+  $('chain').innerHTML = CH.map(([k, c, n, h, p]) => `<div class="st" style="--sc:${c}" data-sec="${k}"><div class="ic"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">${IC[k]}</svg></div><div class="n">${n}</div><h4>${h}</h4><p>${p}</p></div>`).join('');
+  $$('#chain .st').forEach(s => s.addEventListener('click', () => { ST.sec = s.dataset.sec; syncInputs(); go('process'); }));
+  const F = [['process', 'Live flowsheet', 'Every unit drawn with its real symbol, live flows and a data sheet for each piece of equipment.', '<path d="M3 6h6v5H3zM15 13h6v5h-6zM9 8h3v8h3"/>'],
+   ['operations', 'AI set points', 'Differential evolution finds the most profitable, safest or largest operation inside the equipment limits.', '<path d="M12 3v3M12 18v3M3 12h3M18 12h3M6 6l2 2M16 16l2 2M6 18l2-2M16 8l2-2"/><circle cx="12" cy="12" r="3"/>'],
+   ['heat', 'Heat integration', 'Composite curves, ΔTmin trade-off and the effect of the network on energy, cost and control.', '<path d="M12 2c3 4 5 6 5 10a5 5 0 0 1-10 0c0-2 1-4 2-5 0 2 1 3 3 3 0-3-2-5 0-8z"/>'],
+   ['control', 'Loop simulator', 'Tune the TC-310 loop with five methods, follow the response and browse 34 control loops and both P&IDs.', '<path d="M3 17l5-5 4 4 8-8"/><path d="M14 8h6v6"/>'],
+   ['economics', 'Economics', 'Cash flow, cost structure, tornado sensitivity and a 4,000-trial Monte Carlo of the NPV.', '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'],
+   ['market', 'Market and crises', 'Prices of 2025–2026 and fourteen scenarios, from the base case to the 2026 Gulf and Red Sea crisis.', '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>'],
+   ['safety', 'Fault monitoring', 'PCA monitoring of eight signals with T², Q and a k-NN diagnosis of five faults.', '<path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17v.5"/>'],
+   ['emethanol', 'Solar e-methanol', 'Turns the purge carbon into extra methanol with electrolytic hydrogen and Saudi solar power.', '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"/>']];
+  $('feats').innerHTML = F.map(([p, h, t, ic]) => `<div class="card lift feat reveal" data-go="${p}"><div class="ic"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">${ic}</svg></div><div><h4>${h}</h4><p>${t}</p></div></div>`).join('');
+  const GL = [['Carbon conversion in R-101', '97.16 %'], ['Raw syngas', '7,852 kmol/h'], ['Shift CO conversion', '90 %'], ['Membrane area', '6,040 m²'], ['C-101 power', '22.5 MW'], ['Methanol reactor', '3,447 tubes'],
+   ['Column T-101', '52 trays, 33.6 m'], ['Heat recovered', '115.6 MW'], ['Control loops', '34'], ['Site score (Jubail)', '860 / 1,000'], ['DCFROR', '12.80 %'], ['Payback (discounted)', '13.06 years']];
+  $('glance').innerHTML = GL.map(([l, v]) => `<div class="kpi" style="--c:var(--navy)"><div class="l">${l}</div><div class="v">${v}</div></div>`).join('');
+  heroCanvas();
+}
+function rOverview() {
+  const K = [['Methanol', fmt(E.p.meoh_kgh * 7.92, 0) + ' t/y', 'var(--navy)'], ['Hydrogen', fmt(E.p.h2_kgh * 7.92, 0) + ' t/y', 'var(--green)'], ['NPV (10 %)', money(E.npv) + ' M', 'var(--orange)'],
+   ['Market', scenName(), 'var(--blue)'], ['Heat integration', ST.HI ? 'ON (ΔTmin 10 °C)' : 'OFF', ST.HI ? 'var(--green)' : 'var(--red)'], ['Equipment', E.ok ? 'Within limits' : 'Limit exceeded', E.ok ? 'var(--green)' : 'var(--red)']];
+  $('snap').innerHTML = K.map(([l, v, c]) => `<div class="kpi" style="--c:${c}"><div class="l">${l}</div><div class="v" style="font-size:22px">${v}</div></div>`).join('');
+}
+let heroAnim = null;
+function heroCanvas() {
+  const cv = $('heroCanvas'), ctx = cv.getContext('2d'); let w, h, P = [];
+  const size = () => { const r = cv.getBoundingClientRect(); w = cv.width = r.width * devicePixelRatio; h = cv.height = r.height * devicePixelRatio; P = Array.from({length: Math.round(Math.min(90, r.width / 16))}, () => ({x: Math.random() * w, y: Math.random() * h, vx: (Math.random() - .5) * .35 * devicePixelRatio, vy: (Math.random() - .5) * .35 * devicePixelRatio, r: (Math.random() * 1.8 + .8) * devicePixelRatio})); };
+  size(); addEventListener('resize', size);
+  const D = 140 * devicePixelRatio;
+  const tick = () => { if (PAGE === 'overview' && !matchMedia('(prefers-reduced-motion: reduce)').matches) { ctx.clearRect(0, 0, w, h);
+      for (const p of P) { p.x += p.vx; p.y += p.vy; if (p.x < 0 || p.x > w) p.vx *= -1; if (p.y < 0 || p.y > h) p.vy *= -1; }
+      for (let i = 0; i < P.length; i++) for (let j = i + 1; j < P.length; j++) { const a = P[i], b = P[j], d = Math.hypot(a.x - b.x, a.y - b.y); if (d < D) { ctx.strokeStyle = `rgba(243,178,127,${(1 - d / D) * .22})`; ctx.lineWidth = devicePixelRatio; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); } }
+      for (const p of P) { ctx.fillStyle = 'rgba(255,217,170,.55)'; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7); ctx.fill(); } }
+    heroAnim = requestAnimationFrame(tick); };
+  tick();
+}
+// ===================================================================== PROCESS
+const SECBOX = {feed: [14, 16, 470, 420], gas: [490, 16, 960, 420], wgs: [980, 16, 1786, 420], syn: [14, 462, 1340, 978], pur: [1360, 462, 1786, 978]};
+function liveFlow(n, r) {
+  const b = DES.r, f = r.feed, sc = v => v * f; const s = STREAMS[n]; const base = s ? s[2] : null;
+  const m = {3: r.water, 6: r.S6, 7: 2797.67 * f, 11: r.S11, 12: r.S12, 13: r.S12 + r.S6, 14: r.S12 + r.S6, 15: r.S15, 16: r.H2p, 17: r.S17, 18: r.S18, 19: r.S20, 20: r.S20,
+    21: r.S23 + r.S26, 22: r.S23 + r.S26, 23: r.S23, 24: r.S24, 25: r.purge, 26: r.S26, 27: r.S26, 29: r.MeOH, 31: r.S24, 28: base * r.S26 / b.S26, 4: r.water, 5: r.water};
+  if (m[n] !== undefined) return m[n]; if ([8, 9, 10, 30].includes(+n)) return sc(base); return base;
+}
+function buildPFD() {
+  const svg = $('pfd'); svg.innerHTML = PFD.build() + '<g id="dimG"></g>';
+  $$('#pfd .dg').forEach(g => { g.addEventListener('mousemove', e => { const n = +g.dataset.st, s = STREAMS[n], fl = liveFlow(n, E.r);
+    showTip(`<b>Stream ${n}</b> – ${SNAME[n] || ''}<br>${s ? `T = ${fmt(s[0], 2)} °C · P = ${fmt(s[1], 3)} bar<br>` : HI_STREAM_T[n] ? `T = ${fmt(HI_STREAM_T[n], 2)} °C<br>` : ''}${fl !== null && n > 2 ? `Flow = ${fmt(fl, 2)} kmol/h` : n <= 2 ? `MPW = ${fmt(37879 * E.r.feed, 0)} kg/h` : ''}`, e); }); g.addEventListener('mouseleave', hideTip); });
+  $$('#pfd .u').forEach(u => u.addEventListener('click', () => openUnit(u.dataset.u)));
+}
+function rProcess() {
+  const svg = $('pfd'); svg.classList.toggle('hi', ST.pfdHI); svg.classList.toggle('noflow', !ST.pfdFlow);
+  $('dimG').innerHTML = ST.sec === 'all' ? '' : Object.entries(SECBOX).filter(([k]) => k !== ST.sec).map(([k, [x0, y0, x1, y1]]) => `<rect x="${x0 - 6}" y="${y0 - 6}" width="${x1 - x0 + 12}" height="${y1 - y0 + 12}" fill="var(--panel)" opacity=".72" rx="12"/>`).join('');
+  $$('#pfd [data-fl]').forEach(p => { const n = +p.dataset.fl, fl = liveFlow(n, E.r), b = liveFlow(n, DES.r); if (fl && b) p.style.animationDuration = Math.min(4, Math.max(0.4, 1.2 * b / fl)) + 's'; });
+  secPanel();
+  $('pfdChip').innerHTML = `<i></i>β = ${ST.X[0].toFixed(3)} · φ = ${ST.X[1].toFixed(3)} · ρ = ${ST.X[2].toFixed(3)} · feed ${fmt(ST.X[3] * 100, 1)} %`;
+  const K = [['MPW feed', fmt(37879 * E.r.feed, 0) + ' kg/h', 'var(--sec-feed)'], ['Steam to R-101', fmt(50400 * E.r.feed, 0) + ' kg/h', 'var(--sec-gas)'], ['Hydrogen (16)', fmt(E.r.H2p, 1) + ' kmol/h', 'var(--green)'],
+   ['Methanol (29)', fmt(E.r.MeOH, 1) + ' kmol/h', 'var(--navy)'], ['Purge (25)', fmt(E.r.purge, 1) + ' kmol/h', 'var(--orange)'], ['Recycle (24)', fmt(E.r.S24, 0) + ' kmol/h', 'var(--blue)']];
+  $('pfdK').innerHTML = K.map(([l, v, c]) => `<div class="kpi" style="--c:${c}"><div class="l">${l}</div><div class="v" style="font-size:22px">${v}</div></div>`).join('');
+  const q = ST.stq.toLowerCase(); const ids = Object.keys(SNAME).map(Number).filter(n => n <= 31 || ST.pfdHI);
+  $('sttab').innerHTML = '<thead><tr><th>Stream</th><th>Description</th><th>T (°C)</th><th>P (bar)</th><th>Design (kmol/h)</th><th>Live (kmol/h)</th></tr></thead><tbody>' + ids.filter(n => !q || (n + ' ' + SNAME[n]).toLowerCase().includes(q)).map(n => { const s = STREAMS[n];
+    const fl = n > 31 ? null : liveFlow(n, E.r); const ch = s && fl && Math.abs(fl / s[2] - 1) > 0.0005;
+    return `<tr><td><b>${n}</b>${n > 31 ? ' <span class="tag hi">HI</span>' : ''}</td><td>${SNAME[n]}</td><td>${s ? fmt(s[0], 2) : fmt(HI_STREAM_T[n], 2)}</td><td>${s ? fmt(s[1], 3) : '—'}</td><td>${s && n > 2 ? fmt(s[2], 2) : n <= 2 ? '37,879 kg/h' : '—'}</td><td class="${ch ? 'okc' : ''}">${n <= 2 ? fmt(37879 * E.r.feed, 0) + ' kg/h' : fl ? fmt(fl, 2) : '—'}</td></tr>`; }).join('') + '</tbody>';
+}
+const SECINFO = {all: ['Whole plant', 'Select a section above to highlight it, or select a unit for its data sheet.', ['R-101', 'R-102', 'ME-101', 'C-101', 'R-103', 'T-101']],
+ feed: ['Feed preparation', 'Two shredders reduce the MPW; the process water is preheated, boiled in E-101 and superheated to 600 °C in E-102. D-101 splits the steam between the gasifier and the shift.', ['CR-101', 'E-101', 'E-102', 'D-101']],
+ gas: ['Gasification and gas cleaning', 'Five allothermal fluidised-bed trains gasify the plastic with steam at 1,200 °C; 15 Stairmand cyclones remove the char, and D-102 sends β of the clean syngas to the methanol loop.', ['R-101', 'CY-101', 'D-102']],
+ wgs: ['Water-gas shift and hydrogen separation', 'The syngas is mixed with steam, cooled in E-103 and shifted in R-102 at 270 °C; the Pd–Ag membrane ME-101 recovers 99.99 % hydrogen at 0.04 bar, compressed to 30 bar by C-102.', ['M-101', 'E-103', 'R-102', 'ME-101', 'C-102']],
+ syn: ['Methanol synthesis', 'The retentate and the bypass are cooled, compressed to 50 bar in five stages, mixed with the recycle, heated in E-104 and converted in R-103; F-101 separates the crude methanol and D-103 purges φ of the gas.', ['SC-1', 'SC-2', 'KO', 'C-101', 'M-102', 'E-104', 'R-103', 'E-105', 'F-101', 'D-103', 'C-101R']],
+ pur: ['Methanol purification', 'V-101 lets the crude methanol down to 1 bar and the 52-tray column T-101 delivers 99.5 mol% methanol at a reflux ratio of 0.8231.', ['V-101', 'T-101', 'REB']]};
+function secPanel() { const [t, d, us] = SECINFO[ST.sec]; $('secT').textContent = t; $('secD').textContent = d;
+  $('secU').innerHTML = us.map(u => `<button class="btn sm" data-u="${u}">${u === 'KO' ? 'KO drum' : u === 'REB' ? 'Reboiler' : u}</button>`).join(''); $$('#secU button').forEach(b => b.addEventListener('click', () => openUnit(b.dataset.u))); }
+function openUnit(id) {
+  let u = UNITS[id]; if (!u) return; if (u.alias) { id = u.alias; u = UNITS[id]; }
+  $$('#pfd .u').forEach(g => g.classList.toggle('sel', g.dataset.u === id || (UNITS[g.dataset.u] && UNITS[g.dataset.u].alias === id)));
+  const r = E.r, b = DES.r; const live = {feed: ['Feed load', r.feed], S15: ['Load (Stream 15)', r.S15 / b.S15], A: ['Membrane area needed', r.A / A_INST], H2p: ['Load (Stream 16)', r.H2p / b.H2p], S18: ['Load (Stream 18)', r.S18 / b.S18],
+    S24: ['Recycle load', r.S24 / b.S24], S20: ['Load (Stream 20)', r.S20 / b.S20], S23: ['Vapour load', r.S23 / b.S23], S26: ['Feed load', r.S26 / b.S26]}[u.live];
+  const rows = u.d.map(([k, v]) => { if (v === 'live') { v = {beta: ['β = ' + ST.X[0].toFixed(4), fmt(r.S12, 0) + ' kmol/h', fmt(r.S11, 0) + ' kmol/h'], phi: ['φ = ' + ST.X[1].toFixed(4)]}[u.live]; v = Array.isArray(v) ? v[u.d.filter(x => x[1] === 'live').findIndex(x => x[0] === k)] : v; }
+    if (typeof v === 'string' && v.startsWith('live')) v = 'ρ = ' + ST.X[2].toFixed(4) + v.slice(4); return `<dt>${k}</dt><dd>${v}</dd>`; }).join('');
+  $('dbody').innerHTML = `<div class="sec" style="color:${u.c}">${u.s}</div><h3>${id}</h3><p style="margin:0 0 6px;color:var(--muted)">${u.n}</p>
+    ${live ? `<div class="bar" style="grid-template-columns:120px minmax(0,1fr) 62px"><span>${live[0]}</span><div class="track"><i class="${live[1] > 1.0001 ? 'warn' : ''}" style="width:${Math.min(100, live[1] / 1.15 * 100)}%"></i><b style="left:${100 / 1.15}%"></b></div><span>${fmt(live[1] * 100, 1)} %</span></div>` : ''}
+    <dl>${rows}</dl><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm pri" data-go="operations">Change the set points →</button><button class="btn sm" data-go="economics">Costs →</button></div>`;
+  $('drawer').classList.add('open'); $('drawer').setAttribute('aria-hidden', 'false');
+}
+function closeDrawer() { $('drawer').classList.remove('open'); $('drawer').setAttribute('aria-hidden', 'true'); $$('#pfd .u').forEach(g => g.classList.remove('sel')); }
+$('dclose').addEventListener('click', closeDrawer);
+$('pfdHI').addEventListener('change', e => { ST.pfdHI = e.target.checked; rProcess(); });
+$('pfdFlow').addEventListener('change', e => { ST.pfdFlow = e.target.checked; rProcess(); });
+$$('#secSeg button').forEach(b => b.addEventListener('click', () => { ST.sec = b.dataset.s; $$('#secSeg button').forEach(x => x.classList.toggle('on', x === b)); rProcess(); }));
+$('stq').addEventListener('input', e => { ST.stq = e.target.value; rProcess(); });
+// ===================================================================== OPERATIONS
+const MODETXT = {design: 'The set points of Chapter 2 (β = 0.40, φ = 0.10, ρ = 0.90) at the design feed of 37,879 kg/h.',
+ safe: 'The AI keeps every unit below its design load by the selected margin and finds the most profitable point inside this safe window, reducing the feed if needed.',
+ npv: 'The AI finds the set point with the highest NPV at the selected feed rate, using the design margins of the units (Section 10.2).',
+ feed: 'The AI raises the MPW feed as far as the equipment allows and adjusts β, φ and ρ so that no unit exceeds its allowed limit.',
+ meoh: 'The AI makes as much methanol as the equipment allows at the selected feed rate.', h2: 'The AI makes as much hydrogen as the equipment allows at the selected feed rate.'};
+function dlt(v, b) { const x = (v - b) / Math.abs(b) * 100; return Math.abs(x) < 0.05 ? ['design value', ''] : [(x > 0 ? '+' : '') + fmt(x, 1) + ' % vs design', x > 0 ? 'up' : 'dn']; }
+function rOps() {
+  $('o-beta').value = ST.X[0].toFixed(4); $('o-phi').value = ST.X[1].toFixed(4); $('o-rho').value = ST.X[2].toFixed(4); $('o-feed').value = fmt(ST.X[3] * 100, 1) + ' %'; $('o-margin').value = fmt(ST.margin, 1) + ' %'; $('modetxt').textContent = MODETXT[ST.MODE];
+  const dn = E.npv - E0.npv; const K = [['Methanol product', fmt(E.p.meoh_kgh * 7.92, 0) + ' t/y', dlt(E.r.MeOH, DES.r.MeOH), 'var(--navy)'], ['Hydrogen product', fmt(E.p.h2_kgh * 7.92, 0) + ' t/y', dlt(E.r.H2p, DES.r.H2p), 'var(--green)'],
+   ['NPV at ' + fmt(E.p.i * 100, 1) + ' %', money(E.npv) + ' M', [Math.abs(dn) < 0.005 ? 'equal to the design point' : (dn > 0 ? '+' : '') + fmt(dn, 2) + ' M vs design point', dn > 0.005 ? 'up' : dn < -0.005 ? 'dn' : ''], 'var(--orange)'],
+   ['DCFROR', E.irr === null ? '—' : fmt(E.irr * 100, 2) + ' %', ['payback ' + (E.dpb === null ? 'beyond the project life' : fmt(E.dpb, 2) + ' years'), ''], 'var(--blue)'],
+   ['MPW carbon in methanol', fmt(E.r.MeOH / (2556.14 * E.r.feed) * 100, 1) + ' %', ['purge CO + CO₂ ' + fmt(E.r.purgeCO + E.r.purgeCO2, 0) + ' kmol/h', ''], 'var(--gold)'],
+   ['Limiting unit', UNITNAME[E.limiting] || E.limiting, [fmt(E.worst * 100, 1) + ' % of its allowed limit', E.ok ? '' : 'dn'], E.ok ? 'var(--grey)' : 'var(--red)']];
+  $('opK').innerHTML = K.map(([l, v, [d, c], col]) => `<div class="kpi" style="--c:${col}"><div class="l">${l}</div><div class="v">${v}</div><div class="d ${c}">${d}</div></div>`).join('');
+  const L = lims(), r = E.r; const rows = [['R-101 feed (MPW)', r.feed, L.feed], ['R-102 (Stream 15)', r.S15 / DES.r.S15, L.S15], ['ME-101 area', r.A / A_INST, L.A], ['C-101 (Stream 18)', r.S18 / DES.r.S18, L.S18],
+    ['R-103 (Stream 20)', r.S20 / DES.r.S20, L.S20], ['F-101 vapour (23)', r.S23 / DES.r.S23, L.S23], ['T-101 feed (26)', r.S26 / DES.r.S26, L.S26], ['C-102 (Stream 16)', r.H2p / DES.r.H2p, L.H2p]];
+  const sc = v => Math.max(0, Math.min(100, (v - 0.75) / 0.37 * 100));
+  $('bars').innerHTML = rows.map(([n, v, l]) => { const c = v > l * (1 + 1e-6) ? 'bad' : v > l * 0.98 ? 'warn' : ''; return `<div class="bar"><span>${n}</span><div class="track"><i class="${c}" style="width:${sc(v)}%"></i><b style="left:${sc(1)}%"></b><s style="left:${sc(l)}%"></s></div><span>${fmt(v * 100, 1)} %</span></div>`; }).join('');
+  const cum = (cf, i) => { let d = 0; return cf.map((c, y) => [y, (d += c / Math.pow(1 + i, y)) / 1e6]); }; const a = cum(E.cf, E.p.i), bb = cum(E0.cf, E0.p.i);
+  const ys = a.concat(bb).map(p => p[1]); plot('opCF', {x: [0, 22], y: [Math.min(-500, ...ys) - 20, Math.max(200, ...ys) + 30], xt: 2, xl: 'Year from the start of construction', series: [{d: bb, c: '#8FAADC', dash: '6 4'}, {d: a, c: cssv('--navy'), w: 2.8}],
+    tip: x => { const y = Math.round(x); return `<b>Year ${y}</b><br>Current: ${fmt(interp(a, y), 1)} M$<br>Design point: ${fmt(interp(bb, y), 1)} M$`; }});
+  const ks = [11, 12, 15, 16, 17, 18, 20, 23, 24, 25, 26, 29];
+  $('opStreams').innerHTML = '<thead><tr><th>Stream</th><th>Description</th><th>Design (kmol/h)</th><th>Now (kmol/h)</th><th>Change</th></tr></thead><tbody>' + ks.map(n => { const v = liveFlow(n, E.r), b = liveFlow(n, DES.r), x = (v / b - 1) * 100;
+    return `<tr><td><b>${n}</b></td><td>${SNAME[n]}</td><td>${fmt(b, 2)}</td><td>${fmt(v, 2)}</td><td class="${Math.abs(x) < 0.05 ? '' : x > 0 ? 'okc' : 'badc'}">${Math.abs(x) < 0.05 ? '—' : (x > 0 ? '+' : '') + fmt(x, 2) + ' %'}</td></tr>`; }).join('') + '</tbody>';
+}
+function runMode(m) {
+  ST.MODE = m; $$('#modes button').forEach(b => b.classList.toggle('on', b.dataset.m === m));
+  if (m === 'design') { ST.X = [0.40, 0.10, 0.90, 1.0]; syncInputs(); $('ainote').textContent = 'Design point of Chapter 2.'; render(); return; }
+  $$('#modes button').forEach(b => b.disabled = true); $('ainote').innerHTML = '<span class="spin"></span> AI search running…';
+  setTimeout(() => { const o = optimise(MKX(), {objective: m === 'safe' ? 'npv' : m, mode: m === 'safe' ? 'safe' : 'max', margin: ST.margin / 100, feed: m === 'safe' ? 1 : ST.X[3]});
+    ST.X = o.x.slice(); syncInputs(); $$('#modes button').forEach(b => b.disabled = false); $('ainote').textContent = 'AI set point found after ' + fmt(o.n) + ' evaluations of the plant model.'; render(); toast('AI set point applied: ' + $$('#modes button').find(b => b.dataset.m === m).textContent); }, 40);
+}
+$$('#modes button').forEach(b => b.addEventListener('click', () => runMode(b.dataset.m)));
+$('margin').addEventListener('input', () => { ST.margin = +$('margin').value; $('o-margin').value = fmt(ST.margin, 1) + ' %'; });
+$('margin').addEventListener('change', () => { if (ST.MODE === 'safe') runMode('safe'); else render(); });
+['beta', 'phi', 'rho', 'feed'].forEach((id, j) => $(id).addEventListener('input', () => { ST.X[j] = j === 3 ? +$(id).value / 100 : +$(id).value; ST.MODE = 'manual'; $$('#modes button').forEach(b => b.classList.remove('on')); $('ainote').textContent = 'Manual set point.'; render(); }));
+$('toDesign').addEventListener('click', () => runMode('design'));
+// ===================================================================== HEAT INTEGRATION
+const HEATC = 2060796.77 / 25927.58, CWC = 0.45 * 28.512, CHWC = 17.037 / 5 * 28.512, CRF = 0.1 * Math.pow(1.1, 20) / (Math.pow(1.1, 20) - 1), FCIF = 478400128.68 / 298183405.96;
+const P10 = pinchAnalysis(10), A10 = areaTarget(P10);
+const CO2 = cost => cost / (2.5 / 1.055056) * 0.0561;
+function econDT(dT, cpm) {
+  const P = pinchAnalysis(dT), A = areaTarget(P);
+  const mk = Object.assign(MKX(), {hi: true, qh_add: (P.QH - P10.QH) / 1000, qc_add: (P.QC - P10.QC) / 1000, fci_add: FCIF * cpm * (A - A10)});
+  return Object.assign(evaluate([0.40, 0.10, 0.90, 1], mk), {P, A});
+}
+let HICACHE = {};
+function rHeat() {
+  const dT = ST.dT, cpm = ST.cpm; $('o-dtmin').value = fmt(dT, 1) + ' °C'; $('o-cpm').value = '$' + fmt(cpm);
+  const P = pinchAnalysis(dT), A = areaTarget(P); const chwH = 4052.93, cwH = P.QC - chwH;
+  const K = [['Minimum hot utility', fmt(P.QH / 1000, 2) + ' MW', 'var(--orange)', `${fmt((1 - P.QH / 141540) * 100, 1)} % below 141.54 MW`], ['Minimum cold utility', fmt(P.QC / 1000, 2) + ' MW', 'var(--blue)', `CW ${fmt(cwH / 1000, 2)} · CHW ${fmt(chwH / 1000, 2)} MW`],
+   ['Pinch temperatures', fmt(P.Thot, 2) + ' / ' + fmt(P.Tcold, 2) + ' °C', 'var(--gold)', 'hot / cold side'], ['Heat recovered', fmt(P.recovered / 1000, 2) + ' MW', 'var(--green)', 'between process streams'],
+   ['Area target', fmt(A, 0) + ' m²', 'var(--navy)', `Aspen at 10 °C: 33,692 m²`], ['Minimum units', '14', 'var(--grey)', 'N = 12 + 3 − 1']];
+  $('hiK').innerHTML = K.map(([l, v, c, d]) => `<div class="kpi" style="--c:${c}"><div class="l">${l}</div><div class="v" style="font-size:24px">${v}</div><div class="d">${d}</div></div>`).join('');
+  $('ccNote').textContent = 'ΔTmin = ' + fmt(dT, 1) + ' °C';
+  const hot = P.hot.map(p => [p.H / 1000, p.T]), cold = P.cold.map(p => [p.H / 1000, p.T]); const Hmax = Math.max(hot[hot.length - 1][0], cold[cold.length - 1][0]);
+  const lo = P.QC / 1000, hi = hot[hot.length - 1][0]; const xs = []; for (let k = 0; k <= 80; k++) xs.push(lo + (hi - lo) * k / 80);
+  const poly = xs.map(x => [x, interp(hot, x)]).concat(xs.slice().reverse().map(x => [x, interp(cold, x)]));
+  const pinH = (() => { let best = 1e9, bh = 0; xs.forEach(x => { const d = interp(hot, x) - interp(cold, x); if (d < best) { best = d; bh = x; } }); return bh; })();
+  plot('ccChart', {x: [0, Math.ceil(Hmax / 25) * 25], y: [0, 1000], xt: 25, yt: 200, xl: 'Enthalpy (MW)', yl: 'Temperature (°C)', polys: [{d: poly, c: 'rgba(84,130,53,.22)'}],
+    series: [{d: hot, c: '#C00000', w: 2.8}, {d: cold, c: '#2E75B6', w: 2.8}], pts: [{x: pinH, y: P.Thot, c: '#BF9000', r: 6}, {x: pinH, y: P.Tcold, c: '#BF9000', r: 6}],
+    texts: [{px: 500, py: 30, t: 'QH,min = ' + fmt(P.QH / 1000, 2) + ' MW', a: 'end', c: '#C55A11', b: 1}, {px: 70, py: 300 - 52, t: 'QC,min = ' + fmt(P.QC / 1000, 2) + ' MW', a: 'start', c: '#2E75B6', b: 1}],
+    tip: x => `<b>${fmt(x, 1)} MW</b><br>Hot: ${fmt(interp(hot, x), 1)} °C<br>Cold: ${x >= lo ? fmt(interp(cold, x), 1) + ' °C' : '—'}`});
+  const g = P.casc.map(c => [c.R / 1000, c.T]).sort((a, b) => b[1] - a[1]); const gx = g.slice().sort((a, b) => a[1] - b[1]);
+  const Tcw = 40 - dT / 2; const below = gx.filter(p => p[1] <= P.Tp + 1e-6); const cwPoly = [[0, Tcw]].concat(below.filter(p => p[1] >= Tcw).map(p => [p[0], p[1]])).concat([[0, P.Tp]]);
+  const chwPoly = [[0, below[0][1]]].concat(below.filter(p => p[1] <= Tcw)).concat([[interp(gx.map(p => [p[1], p[0]]).sort((a, b) => a[0] - b[0]), Tcw) || 0, Tcw], [0, Tcw]]);
+  plot('gccChart', {x: [0, Math.ceil(Math.max(...g.map(p => p[0])) / 20) * 20], y: [0, 1000], xt: 20, yt: 200, xl: 'Net heat flow (MW)', yl: 'Shifted temperature (°C)',
+    polys: [{d: [[0, 1000], [P.QH / 1000, 1000], [P.QH / 1000, g[0][1]], [0, g[0][1]]], c: 'rgba(197,90,17,.22)'}, {d: cwPoly, c: 'rgba(46,117,182,.22)'}, {d: chwPoly, c: 'rgba(106,76,147,.28)'}],
+    series: [{d: gx.map(p => [p[0], p[1]]), c: cssv('--navy'), w: 2.6}], pts: [{x: 0, y: P.Tp, c: '#BF9000', r: 6}], texts: [{px: 500, py: 34, t: 'Pinch at T* = ' + fmt(P.Tp, 2) + ' °C', a: 'end', c: cssv('--ink2'), b: 1}],
+    tip: x => { const pts = gx.filter(p => Math.abs(p[0] - x) < 2); return `<b>${fmt(x, 1)} MW</b>` + (pts.length ? '<br>T* = ' + pts.map(p => fmt(p[1], 1)).join(', ') + ' °C' : ''); }});
+  // impacts
+  const eHI = econDT(dT, cpm), eNo = evaluate([0.40, 0.10, 0.90, 1], Object.assign(MKX(), {hi: false}));
+  const heatCost = HEATC * P.QH, heatNo = 12200135.49, co2 = CO2(heatCost), co2No = CO2(heatNo), cwflow = cwH / 41.8;
+  const IMP = [['Energy', fmt(P.QH / 1000, 2) + ' MW fired heat', [`Hot utility ${fmt((1 - P.QH / 141540) * 100, 1)} % below the base plant (141.54 MW)`, `Cold utility ${fmt(P.QC / 1000, 2)} MW instead of 171.53 MW`, `Firing of E-101 ${fmt((1 - P.QH / 70379) * 100, 0)} % lower`, `${fmt(P.recovered / 1000, 1)} MW exchanged between process streams`]],
+   ['Economics', money(eHI.npv) + ' M NPV', [`Without integration: ${money(eNo.npv)} M (×${fmt(eHI.npv / eNo.npv, 1)})`, `DCFROR ${fmt(eHI.irr * 100, 2)} % against ${fmt(eNo.irr * 100, 2)} %`, `Discounted payback ${fmt(eHI.dpb, 2)} against ${eNo.dpb === null ? '—' : fmt(eNo.dpb, 2)} years`, `Fired-heat cost ${money(heatCost / 1e6)} M/y against $12.20 M/y`]],
+   ['Environment', fmt((co2No - co2) / 1000, 0) + ' kt/y less CO₂', [`CO₂ from the fired heat: ${fmt(co2 / 1000, 1)} kt/y instead of ${fmt(co2No / 1000, 1)} kt/y`, `Cooling water ${fmt(cwflow, 0)} kg/s instead of 2,891 kg/s (10 °C rise)`, `${fmt((1 - cwflow / 2891) * 100, 1)} % less cooling water pumped`, 'Natural gas at 56.1 kg CO₂/GJ']],
+   ['Equipment', '2 new exchangers', ['E-106 (H2 – C2, 15.36 MW) and E-107 (H3 – C2, 1.33 MW)', 'Nine existing units re-piped (E-101 to E-105, reboiler, SC-1 …)', `Area target ${fmt(A, 0)} m² at ΔTmin = ${fmt(dT, 1)} °C`, `FCI ${money(eHI.p ? (FCI + (eHI.p.fci_add || 0)) / 1e6 : 478.4, 2)} M (base plant $477.23 M)`]],
+   ['Control', '5 new bypass loops', ['TC-114: effluent bypass of the E-101 preheater', 'TC-105 and TC-202: syngas bypasses of E-102 and E-103', 'TC-310: suction-gas bypass of E-104; TC-406: reboiler bypass', 'Disturbances now pass from one stream to the stream it heats']],
+   ['Operation', 'Once-through steam train', ['FC-103 fixes the steam production (4 → 32 → 33 → 34 → 5)', 'Start-up heaters and the LP-steam connection are kept as spare', 'E-104 no longer needs the 40-bar steam of E-103', 'Steam export falls from 22.81 MW to zero']]];
+  $('impact').innerHTML = IMP.map(([k, big, li]) => `<div class="imp"><div class="k">${k}</div><div class="big">${big}</div><ul>${li.map(l => `<li>${l}</li>`).join('')}</ul></div>`).join('');
+  $('hiBox').innerHTML = ST.HI ? `The heat-integrated design is selected. Its NPV is <b>${money(eNo.npv === undefined ? 0 : evaluate([0.4, 0.1, 0.9, 1], Object.assign(MKX(), {hi: true})).npv)} M</b> in the selected market.` : `The base flowsheet without heat integration is selected: NPV <b>${money(eNo.npv)} M</b>. All other pages now use this plant.`;
+  // ΔTmin trade-off
+  const key = ST.cpm + '|' + JSON.stringify(ST.MK); if (HICACHE.key !== key) { const rows = []; for (let d = 5; d <= 40.001; d += 1) { const Pd = pinchAnalysis(d), Ad = areaTarget(Pd), en = HEATC * Pd.QH + CWC * Pd.CW + CHWC * Pd.CHW, cap = Ad * cpm * FCIF * CRF; rows.push([d, en / 1e6, cap / 1e6, (en + cap) / 1e6, econDT(d, cpm).npv]); } HICACHE = {key, rows}; }
+  const R = HICACHE.rows; const opt = R.reduce((a, b) => b[3] < a[3] ? b : a); const best = R.reduce((a, b) => b[4] > a[4] ? b : a);
+  const en0 = HEATC * P.QH + CWC * P.CW + CHWC * P.CHW, cap0 = A * cpm * FCIF * CRF;
+  plot('stChart', {x: [5, 40], y: [0, Math.ceil(Math.max(...R.map(r => r[3])) / 2) * 2], xt: 5, xl: 'ΔTmin (°C)', series: [{d: R.map(r => [r[0], r[1]]), c: '#C55A11'}, {d: R.map(r => [r[0], r[2]]), c: '#2E75B6'}, {d: R.map(r => [r[0], r[3]]), c: cssv('--navy'), w: 3}],
+    vl: [{x: dT, c: cssv('--muted'), dash: '4 4', w: 1.5}], pts: [{x: opt[0], y: opt[3], c: '#548235', r: 7}, {x: dT, y: (en0 + cap0) / 1e6, c: '#C55A11', r: 5}],
+    tip: x => { const rr = R[Math.max(0, Math.min(R.length - 1, Math.round(x) - 5))]; return `<b>ΔTmin = ${rr[0]} °C</b><br>Energy ${fmt(rr[1], 2)} M$/y<br>Area ${fmt(rr[2], 2)} M$/y<br>Total ${fmt(rr[3], 2)} M$/y`; }});
+  $('stNote').textContent = `Lowest total annual cost at ΔTmin ≈ ${opt[0]} °C (${fmt(opt[3], 2)} M$/y) with ${fmt(cpm)} $/m² and a capital recovery factor of ${fmt(CRF, 4)} (10 %, 20 years). The design value of 10 °C is ${Math.abs(opt[0] - 10) <= 3 ? 'close to this optimum' : 'a common industrial choice for gas–liquid services'}.`;
+  const nNo = eNo.npv; const ny = R.map(r => r[4]).concat([nNo]);
+  plot('npvDt', {x: [5, 40], y: [Math.floor(Math.min(...ny) / 20) * 20 - 10, Math.ceil(Math.max(...ny) / 20) * 20 + 10], xt: 5, xl: 'ΔTmin (°C)', series: [{d: R.map(r => [r[0], r[4]]), c: cssv('--navy'), w: 3}],
+    hl: [{y: nNo, c: '#C00000', dash: '7 5'}], pts: [{x: dT, y: eHI.npv, c: '#C55A11', r: 7}], tip: x => { const rr = R[Math.max(0, Math.min(R.length - 1, Math.round(x) - 5))]; return `<b>ΔTmin = ${rr[0]} °C</b><br>NPV ${fmt(rr[4], 2)} M$<br>Without HI ${fmt(nNo, 2)} M$`; }});
+  drawHEN();
+  $('utilT').innerHTML = '<thead><tr><th>Item</th><th>Before</th><th>After</th><th>Reduction (%)</th></tr></thead><tbody>' + UTILHI.map(([n, a, b, r]) => `<tr><td>${n}</td><td>${Math.abs(a) > 1000 ? money(a, 0) : fmt(a, 2)}</td><td>${Math.abs(b) > 1000 ? money(b, 0) : fmt(b, 2)}</td><td>${r}</td></tr>`).join('') + '</tbody>';
+  $('aeaT').innerHTML = '<thead><tr><th>Quantity</th><th>Hand</th><th>Aspen EA</th><th>Twin</th></tr></thead><tbody>' + AEA.map(([n, a, b, e], k) => { const tw = [fmt(P10.QH, 2), fmt(P10.QC, 2), fmt(P10.CHW, 2), fmt(P10.CW, 2), fmt(P10.Thot, 2) + ' / ' + fmt(P10.Tcold, 2), fmt(P10.recovered, 2), '14', fmt(A10, 0)][k];
+    return `<tr><td>${n}</td><td>${a}</td><td>${b}</td><td class="okc">${tw}</td></tr>`; }).join('') + '</tbody>';
+  $('aeaNote').textContent = 'The twin repeats the problem-table algorithm in the browser (Twin column, ΔTmin = 10 °C). Chilled water follows the Aspen convention: cooling water takes all the heat above a shifted 35 °C (Eq. 4.21).';
+}
+function drawHEN() {
+  const svg = $('hen'); const W = 1180, x0 = 230, x1 = 1090, colX = c => x0 + 40 + (c - 1) * ((x1 - x0 - 80) / 13) + (c >= 9 ? 26 : 0) - (c <= 8 ? 6 : 0);
+  const pinchX = (colX(8) + colX(9)) / 2; const rows = {}; let y = 44; HEN.hot.forEach(h => { rows[h[0]] = y; y += 46; }); y += 30; HEN.cold.forEach(c => { rows[c[0]] = y; y += 62; });
+  const cols = {}; [...HEN.m, ...HEN.u].forEach(m => { [m[1], m[2]].forEach(s => { if (!rows[s]) return; (cols[s] = cols[s] || []).push(m[4]); }); });
+  let g = `<line x1="${pinchX}" x2="${pinchX}" y1="14" y2="${y - 10}" stroke="${cssv('--muted')}" stroke-width="1.6" stroke-dasharray="7 5"/><text class="halo" x="${pinchX - 8}" y="24" text-anchor="end" style="font-size:13px;fill:var(--muted)">above the pinch</text><text class="halo" x="${pinchX + 8}" y="24" style="font-size:13px;fill:var(--muted)">below the pinch</text>`;
+  const ext = {H1: [1, 2], H2: [3, 12], H3: [5, 6], H4: [7, 11], H5: [13, 13], H6: [12, 12], H7: [14, 14], C1: [8, 10], C2: [2, 8], C3: [1, 1], C4: [6, 7], C5: [4, 9]};
+  HEN.hot.concat(HEN.cold).forEach(([id, ts, tt, nm]) => { const hot = id[0] === 'H', yy = rows[id], [ca, cb] = ext[id]; const xa = colX(ca) - 44, xb = colX(cb) + 44, c = hot ? '#C00000' : '#2E75B6';
+    g += `<text class="halo" x="12" y="${yy + 5}" style="font-size:13.5px;font-weight:700;fill:${c}">${id}</text><text class="halo" x="40" y="${yy + 5}" style="font-size:12.5px;fill:var(--muted)">${nm}</text>`;
+    g += hot ? `<line class="st" x1="${xa}" x2="${xb}" y1="${yy}" y2="${yy}" stroke="${c}"/><path d="M${xb},${yy - 6} l10,6 l-10,6z" fill="${c}"/><text class="halo" x="${xa - 6}" y="${yy + 4}" text-anchor="end" style="font-size:11.5px;fill:var(--muted)">${fmt(ts, 2)}</text><text class="halo" x="${xb + 14}" y="${yy + 4}" style="font-size:11.5px;fill:var(--muted)">${fmt(tt, 2)} °C</text>`
+      : `<line class="st" x1="${xa}" x2="${xb}" y1="${yy}" y2="${yy}" stroke="${c}"/><path d="M${xa},${yy - 6} l-10,6 l10,6z" fill="${c}"/><text class="halo" x="${xb + 6}" y="${yy + 4}" style="font-size:11.5px;fill:var(--muted)">${fmt(ts, 2)}</text><text class="halo" x="${xa - 14}" y="${yy + 4}" text-anchor="end" style="font-size:11.5px;fill:var(--muted)">${fmt(tt, 2)} °C</text>`; });
+  HEN.m.forEach(([n, h, c, q, col]) => { const xx = colX(col), ya = rows[h], yb = rows[c]; g += `<g class="hx" data-t="<b>${n}</b>: ${h} – ${c}<br>Q = ${fmt(q, 2)} kW"><line x1="${xx}" x2="${xx}" y1="${ya}" y2="${yb}" stroke="${cssv('--ink2')}" stroke-width="1.6"/><circle cx="${xx}" cy="${ya}" r="11" fill="#C55A11" stroke="var(--panel)" stroke-width="2"/><circle cx="${xx}" cy="${yb}" r="11" fill="#C55A11" stroke="var(--panel)" stroke-width="2"/>
+    <text class="halo" x="${xx}" y="${yb + 28}" text-anchor="middle" style="font-size:11.5px;font-weight:700;fill:var(--ink)">${n}</text><text class="halo" x="${xx}" y="${yb + 42}" text-anchor="middle" style="font-size:11px;fill:var(--muted)">${fmt(q / 1000, 2)} MW</text></g>`; });
+  HEN.u.forEach(([n, h, c, q, col]) => { const xx = colX(col), s = h === 'HU' ? c : h, yy = rows[s], col2 = h === 'HU' ? '#BF9000' : '#5aa0e6', lab = h === 'HU' ? 'H' : c === 'CHW' ? 'CH' : 'C';
+    g += `<g class="hx" data-t="<b>${n}</b>: ${h === 'HU' ? 'fired heat' : c === 'CHW' ? 'chilled water' : 'cooling water'} on ${s}<br>Q = ${fmt(q, 2)} kW"><circle cx="${xx}" cy="${yy}" r="13" fill="${col2}" stroke="var(--panel)" stroke-width="2"/><text x="${xx}" y="${yy + 4}" text-anchor="middle" style="font-size:11px;font-weight:700;fill:#fff">${lab}</text>
+    <text class="halo" x="${xx}" y="${yy + (h === 'HU' ? 30 : -18)}" text-anchor="middle" style="font-size:11.5px;font-weight:700;fill:var(--ink)">${n}${h === 'HU' ? '' : ' · ' + fmt(q / 1000, 2) + ' MW'}</text>${h === 'HU' ? `<text class="halo" x="${xx}" y="${yy + 44}" text-anchor="middle" style="font-size:11px;fill:var(--muted)">${fmt(q / 1000, 2)} MW</text>` : ''}</g>`; });
+  svg.setAttribute('viewBox', `0 0 ${W} ${y + 30}`); svg.innerHTML = g; bindTips(svg, '.hx');
+}
+$('hiOn').addEventListener('change', e => { ST.HI = e.target.checked; HICACHE = {}; render(); toast(ST.HI ? 'Heat-integrated plant selected on every page.' : 'Base plant without heat integration selected on every page.'); });
+$('dtmin').addEventListener('input', e => { ST.dT = +e.target.value; render(); });
+$('cpm').addEventListener('input', e => { ST.cpm = +e.target.value; render(); });
+// ===================================================================== CONTROL
+function blockDiagram() {
+  const b = (x, w, t1, t2, c) => `<rect x="${x}" y="70" width="${w}" height="60" rx="10" fill="var(--fill)" stroke="${c}" stroke-width="2"/><text x="${x + w / 2}" y="96" text-anchor="middle" style="font-size:15px;font-weight:700;fill:var(--ink)">${t1}</text><text x="${x + w / 2}" y="116" text-anchor="middle" style="font-size:13.5px;fill:var(--muted)">${t2}</text>`;
+  const a = (x1, x2, y = 100) => `<path d="M${x1},${y} H${x2}" stroke="var(--ink2)" stroke-width="2" marker-end="url(#bA)" fill="none"/>`;
+  $('blk').innerHTML = `<defs><marker id="bA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="var(--ink2)"/></marker></defs>
+   <text x="30" y="94" style="font-size:14px;fill:var(--muted)">SP</text><text x="22" y="112" style="font-size:13px;fill:var(--muted)">200 °C</text>${a(60, 96)}<rect x="98" y="88" width="24" height="24" rx="12" fill="var(--panel)" stroke="var(--ink2)" stroke-width="2"/><text x="110" y="105" text-anchor="middle" style="font-size:14px;fill:var(--ink)">Σ</text>
+   ${a(122, 160)}${b(160, 170, 'Controller TC-310', 'Kc(1 + 1/τIs + τDs)', 'var(--orange)')}${a(330, 370)}${b(370, 170, 'Valve TV-310', '1.3125 / (0.10s + 1)', 'var(--blue)')}${a(540, 600)}
+   ${b(600, 190, 'E-104 (steam heater)', '9.195 / (0.475s + 1)', 'var(--navy)')}<rect x="822" y="88" width="24" height="24" rx="12" fill="var(--panel)" stroke="var(--ink2)" stroke-width="2"/><text x="834" y="105" text-anchor="middle" style="font-size:14px;fill:var(--ink)">Σ</text>${a(790, 822)}${a(846, 1070)}<text x="1000" y="92" style="font-size:14px;fill:var(--ink)">T20</text>
+   <path d="M834,40 V88" stroke="var(--ink2)" stroke-width="2" marker-end="url(#bA)"/><text x="834" y="22" text-anchor="middle" style="font-size:13.5px;fill:var(--muted)">Disturbance T19: 1.000 / (0.475s + 1)</text>
+   <path d="M950,100 V170 H700" stroke="var(--ink2)" stroke-width="2" fill="none"/>${b(470, 230, 'Transmitter TT-310', '0.16 / (0.25s + 1)', 'var(--green)').replace(/y="70"/, 'y="150"').replace(/y="96"/, 'y="174"').replace(/y="116"/, 'y="192"').replace('height="60"', 'height="48"')}
+   <path d="M470,174 H110 V112" stroke="var(--ink2)" stroke-width="2" fill="none" marker-end="url(#bA)"/><text x="118" y="140" style="font-size:13px;fill:var(--muted)">−</text>`;
+}
+let pidRun = null;
+function pidSettings() { const P = ST.pid; return {Kc: P.Kc, ti: P.ti, td: P.mode === 'PID' ? P.td : 0, mode: P.mode}; }
+function rControl(anim) {
+  const P = ST.pid; $('o-kc').value = fmt(P.Kc, 2); $('o-ti').value = fmt(P.ti, 3); $('o-td').value = fmt(P.td, 3); $('o-stp').value = (P.step > 0 ? '+' : '') + fmt(P.step) + ' °C';
+  $('ti').disabled = P.mode === 'P'; $('td').disabled = P.mode !== 'PID';
+  $('pidMeth').innerHTML = Object.entries(PIDM).map(([k, m]) => `<button data-k="${k}" class="${P.meth === k ? 'on' : ''}">${m.n.replace(' (selected)', '').replace('Ziegler–Nichols', 'Z–N')}</button>`).join('') + `<button data-k="custom" class="${P.meth === 'custom' ? 'on' : ''}">Custom</button>`;
+  $$('#pidMeth button').forEach(b => b.addEventListener('click', () => { const k = b.dataset.k; ST.pid.meth = k; if (k !== 'custom') { const s = PIDM[k][P.mode === 'P' ? 'PID' : P.mode]; ST.pid.Kc = P.mode === 'P' ? s[0] : s[0]; ST.pid.ti = s[1]; ST.pid.td = s[2] || 0; } syncInputs(); rControl(true); }));
+  const S = pidSettings(), dist = P.test === 'load' ? P.step : 0, sp = P.test === 'sp' ? P.step : 0;
+  const R = simLoop({Kc: S.Kc, ti: S.ti, td: S.td, mode: S.mode, sp, dist, N: 10, tEnd: 8});
+  const Rr = simLoop({Kc: 1.07, ti: 0.675, td: 0.112, mode: 'PID', sp, dist, N: 10, tEnd: 8});
+  const amp = (t0, t1) => Math.max(0, ...R.pts.filter(p => p[0] >= t0 && p[0] < t1).map(p => Math.abs(p[1] - R.final)));
+  const unstable = !isFinite(R.final) || Math.abs(R.final) > 1e3 || (S.mode === 'P' && S.Kc >= routh().Kcu) || (amp(6, 8) > 0.05 && amp(6, 8) > 1.02 * amp(4, 6));
+  const rt = routh(); const gm = rt.Kcu / S.Kc; const ov = sp ? (Math.max(...R.pts.map(p => p[1] * Math.sign(sp))) - Math.abs(sp)) / Math.abs(sp) * 100 : null; const offset = S.mode === 'P' ? R.final - sp : 0;
+  const K = [['Maximum deviation', unstable ? '∞' : fmt(R.maxdev, 2) + ' °C', 'var(--orange)'], ['IAE', unstable ? '∞' : fmt(R.iae, 2) + ' °C·min', 'var(--blue)'], ['Settling (±0.1 °C)', unstable ? '—' : (R.settle > 7.5 ? '> 7.8 min' : fmt(Math.max(0, R.settle), 2) + ' min'), 'var(--navy)'],
+   [sp ? 'Overshoot' : 'Offset', sp ? (unstable ? '—' : fmt(Math.max(0, ov), 1) + ' %') : (S.mode === 'P' ? fmt(offset, 2) + ' °C' : '0 (integral action)'), 'var(--gold)'], ['Kc / Kcu', fmt(S.Kc / rt.Kcu, 3) + (S.mode === 'P' ? ' (GM ' + fmt(gm, 2) + ')' : ''), 'var(--green)'], ['Loop', unstable ? 'UNSTABLE' : 'Stable', unstable ? 'var(--red)' : 'var(--green)']];
+  $('pidK').innerHTML = K.map(([l, v, c]) => `<div class="kpi" style="--c:${c}"><div class="l">${l}</div><div class="v" style="font-size:22px">${v}</div></div>`).join('');
+  $('pidChip').className = 'chip' + (unstable ? ' bad' : ''); $('pidChip').innerHTML = `<i></i>${unstable ? 'Loop unstable' : 'Loop stable'} · ${S.mode} Kc = ${fmt(S.Kc, 2)}`;
+  const tT = R.pts.map(p => [p[0], Math.max(-60, Math.min(60, p[1]))]), tR = Rr.pts.map(p => [p[0], p[1]]), tU = R.pts.map(p => [p[0], Math.max(-40, Math.min(40, p[2]))]);
+  const yA = Math.max(4, ...tT.map(p => Math.abs(p[1])), ...tR.map(p => Math.abs(p[1]))) * 1.12;
+  const lim = [Math.min(-0.5, ...tT.map(p => p[1]), ...tR.map(p => p[1])) - 0.6, Math.max(0.5, ...tT.map(p => p[1]), ...tR.map(p => p[1])) + 0.6].map(v => Math.max(-yA, Math.min(yA, v)));
+  const draw = n => { const k = Math.max(2, Math.round(tT.length * n));
+    plot('pidT', {x: [0, 8], y: lim, xt: 1, xl: 'Time (min)', bands: [{y0: sp - 0.1, y1: sp + 0.1, c: 'rgba(84,130,53,.25)'}], hl: [{y: sp, c: cssv('--muted'), dash: '3 3', w: 1.2}], series: [{d: tR.slice(0, k), c: '#8FAADC', dash: '6 4'}, {d: tT.slice(0, k), c: cssv('--navy'), w: 2.8}],
+      tip: x => `<b>t = ${fmt(x, 2)} min</b><br>Selected: ${fmt(interp(tT, x), 3)} °C<br>Cohen–Coon: ${fmt(interp(tR, x), 3)} °C`});
+    const um = Math.max(1, ...tU.map(p => Math.abs(p[1]))) * 1.15;
+    plot('pidU', {x: [0, 8], y: [-um, um], xt: 1, xl: 'Time (min)', series: [{d: tU.slice(0, k), c: '#C55A11', w: 2.6}], tip: x => `<b>t = ${fmt(x, 2)} min</b><br>u = ${fmt(interp(tU, x), 3)} mA`}); };
+  if (pidRun) cancelAnimationFrame(pidRun);
+  if (anim) { const t0 = performance.now(); const st = t => { const n = Math.min(1, (t - t0) / 1600); draw(n); if (n < 1) pidRun = requestAnimationFrame(st); }; pidRun = requestAnimationFrame(st); } else draw(1);
+  const rowsM = Object.entries(PIDM).map(([k, m]) => { const a = simLoop({Kc: m.PID[0], ti: m.PID[1], td: m.PID[2], mode: 'PID', dist: 10, N: 10, tEnd: 8}); const bsp = simLoop({Kc: m.PID[0], ti: m.PID[1], td: m.PID[2], mode: 'PID', sp: 10, dist: 0, N: 10, tEnd: 8});
+    const os = (Math.max(...bsp.pts.map(p => p[1])) - 10) / 10 * 100; return `<tr${k === P.meth ? ' style="font-weight:700"' : ''}><td>${m.n}</td><td>${m.PID.map(v => fmt(v, 3)).join(' / ')}</td><td>${fmt(m.rep[0], 2)} | <span class="okc">${fmt(a.maxdev, 2)}</span></td><td>${fmt(m.rep[1], 2)} | <span class="okc">${fmt(a.iae, 2)}</span></td><td>${fmt(m.rep[2], 2)} | <span class="okc">${fmt(a.settle, 2)}</span></td><td>${m.rep[3]} | <span class="okc">${fmt(os, 0)}</span></td></tr>`; }).join('');
+  $('pidTab').innerHTML = `<thead><tr><th>Method</th><th>Kc / τI / τD</th><th>Max. dev. (°C)</th><th>IAE (°C·min)</th><th>Settling (min)</th><th>SP overshoot (%)</th></tr></thead><tbody>${rowsM}</tbody>`;
+  $('routhNote').innerHTML = `Report | <span class="okc">twin</span>, for a 10 °C disturbance in T19. Routh: 0.011875s³ + 0.19125s² + 0.825s + (1 + 1.931Kc) = 0, so the loop is stable under P control for Kc < Kcu = <b>${fmt(rt.Kcu, 3)}</b>, with ωu = ${fmt(rt.wu, 3)} rad/min (Pu = ${fmt(2 * Math.PI / rt.wu, 3)} min).`;
+  const q = ST.iq.toLowerCase(); const hiTags = ['TC-114 *', 'TC-105', 'TC-202', 'TC-310', 'TC-406 / FC-408', 'FC-103'];
+  const rows = INSTR.filter(r => (ST.iSeg === 'all' || (ST.iSeg === 'HI' ? hiTags.includes(r[0]) : r[0].replace('FY/', '').startsWith(ST.iSeg)) || (ST.iSeg === 'P' && r[0].startsWith('PC'))) && (!q || r.join(' ').toLowerCase().includes(q)));
+  $('iTab').innerHTML = '<thead><tr><th>Loop</th><th>Service</th><th>Mode</th><th>Final control element</th><th>Section</th></tr></thead><tbody>' + rows.map(r => `<tr><td><b>${r[0]}</b>${hiTags.includes(r[0]) ? ' <span class="tag hi">HI</span>' : ''}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`).join('') + '</tbody>';
+  $('hicT').innerHTML = '<thead><tr><th>Exchanger</th><th>Base flowsheet</th><th>Heat-integrated flowsheet</th><th>New control action</th></tr></thead><tbody>' + HICTRL.map(r => `<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('') + '</tbody>';
+  const img = $('pidimg'), want = ST.pidSel === 'hi' ? 'pid_hi.webp' : 'pid_base.webp'; if (!img.src.endsWith(want)) { img.src = want; pidZoom = null; }
+  if (!pidZoom && img.complete && img.naturalWidth) fitPid();
+}
+$$('#pidMode button').forEach(b => b.addEventListener('click', () => { ST.pid.mode = b.dataset.k; $$('#pidMode button').forEach(x => x.classList.toggle('on', x === b)); if (ST.pid.meth !== 'custom') { const s = PIDM[ST.pid.meth][b.dataset.k === 'P' ? 'PID' : b.dataset.k]; ST.pid.Kc = b.dataset.k === 'P' ? s[0] : s[0]; ST.pid.ti = s[1]; ST.pid.td = s[2] || 0; syncInputs(); } rControl(true); }));
+$$('#pidTest button').forEach(b => b.addEventListener('click', () => { ST.pid.test = b.dataset.k; $$('#pidTest button').forEach(x => x.classList.toggle('on', x === b)); rControl(true); }));
+[['kc', 'Kc'], ['ti', 'ti'], ['td', 'td']].forEach(([id, k]) => $(id).addEventListener('input', e => { ST.pid[k] = +e.target.value; ST.pid.meth = 'custom'; rControl(); }));
+$('stp').addEventListener('input', e => { ST.pid.step = +e.target.value || 1; rControl(); });
+$('pidPlay').addEventListener('click', () => rControl(true));
+$$('#iSeg button').forEach(b => b.addEventListener('click', () => { ST.iSeg = b.dataset.k; $$('#iSeg button').forEach(x => x.classList.toggle('on', x === b)); rControl(); }));
+$('iq').addEventListener('input', e => { ST.iq = e.target.value; rControl(); });
+$$('#pidSel button').forEach(b => b.addEventListener('click', () => { ST.pidSel = b.dataset.k; $$('#pidSel button').forEach(x => x.classList.toggle('on', x === b)); rControl(); }));
+// P&ID pan and zoom
+let pidZoom = null; const pv = $('pidv'), pimg = $('pidimg');
+function applyPid() { pimg.style.transform = `translate(${pidZoom.x}px,${pidZoom.y}px) scale(${pidZoom.s})`; }
+function fitPid() { const r = pv.getBoundingClientRect(); if (!pimg.naturalWidth || !r.width) return; const s = Math.min(r.width / pimg.naturalWidth, r.height / pimg.naturalHeight); pidZoom = {s, x: (r.width - pimg.naturalWidth * s) / 2, y: (r.height - pimg.naturalHeight * s) / 2, s0: s}; applyPid(); }
+pimg.addEventListener('load', fitPid);
+function zoomAt(f, cx, cy) { if (!pidZoom) fitPid(); const s2 = Math.max(pidZoom.s0 * 0.8, Math.min(pidZoom.s0 * 8, pidZoom.s * f)); const k = s2 / pidZoom.s; pidZoom.x = cx - (cx - pidZoom.x) * k; pidZoom.y = cy - (cy - pidZoom.y) * k; pidZoom.s = s2; applyPid(); }
+pv.addEventListener('wheel', e => { e.preventDefault(); const r = pv.getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.15 : 1 / 1.15, e.clientX - r.left, e.clientY - r.top); }, {passive: false});
+let drag = null; pv.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; drag = {x: e.clientX, y: e.clientY, ox: pidZoom ? pidZoom.x : 0, oy: pidZoom ? pidZoom.y : 0}; pv.setPointerCapture(e.pointerId); pv.style.cursor = 'grabbing'; });
+pv.addEventListener('pointermove', e => { if (!drag || !pidZoom) return; pidZoom.x = drag.ox + e.clientX - drag.x; pidZoom.y = drag.oy + e.clientY - drag.y; applyPid(); });
+pv.addEventListener('pointerup', () => { drag = null; pv.style.cursor = 'grab'; });
+$('zin').addEventListener('click', () => { const r = pv.getBoundingClientRect(); zoomAt(1.35, r.width / 2, r.height / 2); });
+$('zout').addEventListener('click', () => { const r = pv.getBoundingClientRect(); zoomAt(1 / 1.35, r.width / 2, r.height / 2); });
+$('zfit').addEventListener('click', fitPid);
+// ===================================================================== ECONOMICS
+function rEcon() {
+  const p = E0.p, D = econDetail(p), ind = indicators(E0.cf, p.i), full = D.full;
+  const K = [['Fixed-capital investment', money(D.F / 1e6) + ' M', 'var(--navy)', ST.HI ? 'Turton module method, CEPCI 840.9' : 'without heat integration'], ['Annual revenue', money(full.R / 1e6) + ' M', 'var(--green)', 'full capacity'],
+   ['Cost of manufacturing', money(full.C / 1e6) + ' M/y', 'var(--orange)', 'COMd, Turton correlation'], ['Net present value', money(ind.npv) + ' M', 'var(--blue)', 'at ' + fmt(p.i * 100, 1) + ' %, 20 years'],
+   ['DCFROR', ind.irr === null ? '—' : fmt(ind.irr * 100, 2) + ' %', 'var(--gold)', 'discounted payback ' + (ind.dpb === null ? '—' : fmt(ind.dpb, 2) + ' years')], ['ROROI / payback', fmt(D.roroi * 100, 2) + ' % · ' + fmt(D.pbp, 2) + ' y', 'var(--grey)', 'non-discounted']];
+  $('ecK').innerHTML = K.map(([l, v, c, d]) => `<div class="kpi" style="--c:${c}"><div class="l">${l}</div><div class="v" style="font-size:24px">${v}</div><div class="d">${d}</div></div>`).join('');
+  let cu = 0, cd = 0; const cum = [], cdis = []; D.rows.forEach(r => { cu += r.cf; cd += r.cf / Math.pow(1 + p.i, r.y); cum.push([r.y, cu / 1e6]); cdis.push([r.y, cd / 1e6]); });
+  const all = D.rows.map(r => r.cf / 1e6).concat(cum.map(c => c[1]), cdis.map(c => c[1]));
+  plot('ecCF', {x: [-0.6, 22.6], y: [Math.floor(Math.min(...all) / 100) * 100, Math.ceil(Math.max(...all) / 100) * 100], xt: 2, xl: 'Year', bars: D.rows.map(r => ({x: r.y, y: r.cf / 1e6, w: 13, c: r.cf < 0 ? '#C0504D' : '#8FAADC'})),
+    series: [{d: cum, c: '#C55A11', dash: '6 4'}, {d: cdis, c: cssv('--navy'), w: 2.8}], tip: x => { const y = Math.max(0, Math.min(22, Math.round(x))), r = D.rows[y]; return `<b>Year ${y}</b><br>Cash flow ${fmt(r.cf / 1e6, 2)} M$${r.R ? `<br>Revenue ${fmt(r.R / 1e6, 1)} · COMd ${fmt(r.C / 1e6, 1)}` : ''}<br>Cumulative ${fmt(cum[y][1], 1)} · discounted ${fmt(cdis[y][1], 1)}`; }});
+  const ir = []; for (let i = 0; i <= 0.2001; i += 0.005) ir.push([i * 100, npvAt(E0.cf, i) / 1e6]);
+  plot('ecIR', {x: [0, 20], y: [Math.floor(Math.min(...ir.map(v => v[1])) / 200) * 200, Math.ceil(Math.max(...ir.map(v => v[1])) / 200) * 200], xt: 2, xl: 'Interest rate (%)', series: [{d: ir, c: cssv('--navy'), w: 2.8}],
+    pts: [{x: p.i * 100, y: ind.npv, c: '#C55A11'}].concat(ind.irr !== null ? [{x: ind.irr * 100, y: 0, c: '#548235'}] : []), tip: x => `<b>i = ${fmt(x, 1)} %</b><br>NPV ${fmt(interp(ir, x), 1)} M$`});
+  const tot = CBM.reduce((a, c) => a + c[2], 0), SC = {gas: 'var(--sec-gas)', syn: 'var(--sec-syn)', wgs: 'var(--sec-wgs)', pur: 'var(--sec-pur)', feed: 'var(--sec-feed)', hi: 'var(--red)'};
+  $('cbm').innerHTML = CBM.slice(0, 14).map(([n, d, v, s]) => `<div class="bar" style="grid-template-columns:132px minmax(0,1fr) 86px" title="${d}"><span>${n}</span><div class="track"><i style="width:${v / CBM[0][2] * 100}%;background:${SC[s]}"></i></div><span>${fmt(v / 1e6, 2)} M$</span></div>`).join('') +
+    `<div class="bar" style="grid-template-columns:132px minmax(0,1fr) 86px"><span>Others (${CBM.length - 14})</span><div class="track"><i style="width:${CBM.slice(14).reduce((a, c) => a + c[2], 0) / CBM[0][2] * 100}%;background:var(--grey)"></i></div><span>${fmt(CBM.slice(14).reduce((a, c) => a + c[2], 0) / 1e6, 2)} M$</span></div>
+    <div class="lg"><span><i class="sw" style="background:var(--sec-gas)"></i>Gasification</span><span><i class="sw" style="background:var(--sec-wgs)"></i>Shift and H₂</span><span><i class="sw" style="background:var(--sec-syn)"></i>Synthesis</span><span><i class="sw" style="background:var(--sec-pur)"></i>Purification</span><span><i class="sw" style="background:var(--sec-feed)"></i>Feed</span><span class="mini">Total ${money(tot / 1e6)} M</span></div>`;
+  const pr = full.parts, com = full.C; const parts = [['Raw materials (1.23 CRM)', 1.23 * pr.CRM * p.com_mult, '#548235'], ['Utilities (1.23 CUT)', 1.23 * pr.CUT * p.com_mult, '#C55A11'], ['FCI-related (0.153 FCI)', pr.coefF * p.com_mult, '#1F4E79'], ['Operating labour (2.73 COL)', 2.73 * pr.COL * p.com_mult, '#BF9000'], ['Waste treatment (1.23 CWT)', 1.23 * pr.CWT * p.com_mult, '#7F7F7F']];
+  donut('comD', parts, [money(com / 1e6, 1) + ' M', 'COMd per year']); $('comTot').textContent = 'year 5, full capacity'; $('comLg').innerHTML = parts.map(([n, v, c]) => `<span><i class="sw" style="background:${c}"></i>${n}: ${fmt(v / 1e6, 2)} M$</span>`).join('');
+  const base = ind.npv; const ev = mk => evaluate([0.4, 0.1, 0.9, 1], Object.assign(MKX(), mk)).npv; const m0 = MKX(); const pm = m0.p_meoh || 393, ph = m0.p_h2 || 2473, pw = m0.p_mpw ?? 80, ii = m0.i || 0.1;
+  const T = [['Product prices', ev({p_meoh: pm * 1.2, p_h2: ph * 1.2}), ev({p_meoh: pm * 0.8, p_h2: ph * 0.8})], ['Cost of manufacturing', ev({com_mult: 0.8}), ev({com_mult: 1.2})], ['Fixed capital (FCI)', ev({fci_mult: (m0.fci_mult || 1) * 0.8}), ev({fci_mult: (m0.fci_mult || 1) * 1.2})],
+ ['Interest rate', ev({i: ii * 0.8}), ev({i: ii * 1.2})], ['MPW price', ev({p_mpw: pw * (pw >= 0 ? 0.8 : 1.2)}), ev({p_mpw: pw * (pw >= 0 ? 1.2 : 0.8)})],
+   ['Electricity tariff', ev({elec_mult: 0.8}), ev({elec_mult: 1.2})], ['Natural-gas price', ev({p_ng: (m0.p_ng || 2.5) * 0.8}), ev({p_ng: (m0.p_ng || 2.5) * 1.2})]].sort((a, b) => Math.abs(b[1] - b[2]) - Math.abs(a[1] - a[2]));
+  const lo = Math.min(...T.map(t => Math.min(t[1], t[2])), base), hi = Math.max(...T.map(t => Math.max(t[1], t[2])), base); const svg = $('torn'), W = 520, ml = 150, mr = 16, X = v => ml + (v - lo) / (hi - lo) * (W - ml - mr), rh = 34;
+  let g = ''; ticks(lo, hi).forEach(v => g += `<line class="gl" x1="${X(v)}" x2="${X(v)}" y1="8" y2="${8 + rh * T.length}"/><text class="ax" x="${X(v)}" y="${26 + rh * T.length}" text-anchor="middle">${fmt(v)}</text>`);
+  T.forEach(([n, a, b], k) => { const y = 12 + k * rh; g += `<text x="${ml - 8}" y="${y + 17}" text-anchor="end" style="font-size:14px;fill:var(--ink)">${n}</text><rect class="tb" data-t="<b>${n}</b><br>−20 %: ${fmt(Math.min(a, b) === a ? a : b, 1)} M$<br>+20 %: ${fmt(Math.min(a, b) === a ? b : a, 1)} M$" x="${Math.min(X(base), X(a))}" y="${y + 2}" width="${Math.abs(X(a) - X(base))}" height="22" fill="#548235" rx="3"/><rect class="tb" data-t="<b>${n}</b>" x="${Math.min(X(base), X(b))}" y="${y + 2}" width="${Math.abs(X(b) - X(base))}" height="22" fill="#C00000" rx="3"/>`; });
+  g += `<line x1="${X(base)}" x2="${X(base)}" y1="4" y2="${10 + rh * T.length}" stroke="var(--ink)" stroke-width="2"/><text x="${X(base)}" y="${44 + rh * T.length}" text-anchor="middle" style="font-size:13px;fill:var(--ink);font-weight:700">Base NPV ${fmt(base, 1)} M$</text>`;
+  svg.innerHTML = g; bindTips(svg, '.tb');
+  drawMC();
+  const S = [['Fixed-capital investment', money(D.F, 2), 'Turton module method, CEPCI = 840.9'], ['Total capital investment', money(D.F + D.WC, 2), 'WC = 10 % of FCI'], ['Annual revenue', money(full.R, 2) + '/yr', `MeOH $${fmt(m0.p_meoh || 393, 2)}/t, H₂ $${fmt(m0.p_h2 || 2473, 2)}/t`],
+   ['Cost of manufacturing', money(full.C, 2) + '/yr', 'Turton correlation (KSA)'], ['Gross margin', money(full.R - full.C, 2) + '/yr', 'Before depreciation and tax'], ['Average net profit', money(D.npavg, 2) + '/yr', 'After depreciation and zakat'],
+   ['Net present value', money(ind.npv * 1e6, 2), ind.npv > 0 ? 'NPV > 0 ✓' : 'NPV < 0'], ['DCFROR', ind.irr === null ? '—' : fmt(ind.irr * 100, 2) + ' %', ind.irr > p.i ? 'DCFROR > i ✓' : 'DCFROR < i'], ['Rate of return on investment', fmt(D.roroi * 100, 2) + ' %', D.roroi > p.i ? 'ROROI > i ✓' : 'ROROI < i'],
+   ['Payback period', fmt(D.pbp, 2) + ' years', 'Non-discounted'], ['Discounted payback', ind.dpb === null ? 'beyond the life' : fmt(ind.dpb, 2) + ' years', 'From the start of operation']];
+  $('ecSum').innerHTML = '<thead><tr><th>Item</th><th>Result</th><th>Method / criterion</th></tr></thead><tbody>' + S.map(r => `<tr><td>${r[0]}</td><td><b>${r[1]}</b></td><td>${r[2]}</td></tr>`).join('') + '</tbody>';
+}
+function drawMC() {
+  const mk = JSON.stringify(MKX()); if (MC && MCKEY !== mk) MC = null; 
+  if (!MC && PAGE === 'economics') { setTimeout(() => { if (!MC) { MC = monteCarlo(4000, MKX(), 2026); MCKEY = JSON.stringify(MKX()); $('mcRun').textContent = 'New random sample'; drawMC(); } }, 120); }
+  if (!MC) { $('mcH').innerHTML = `<text x="260" y="150" text-anchor="middle" style="font-size:16px;fill:var(--muted)">Running 4,000 trials…</text>`; $('mcK').innerHTML = ''; return; }
+  const v = MC.v, lo = Math.floor(v[0] / 50) * 50, hi = Math.ceil(v[v.length - 1] / 50) * 50, nb = Math.round((hi - lo) / 25); const h = new Array(nb).fill(0); v.forEach(x => h[Math.min(nb - 1, Math.floor((x - lo) / 25))]++);
+  plot('mcH', {x: [lo, hi], y: [0, Math.ceil(Math.max(...h) / 50) * 50], xt: 100, xl: 'NPV (million US$)', yl: 'Trials', bars: h.map((n, k) => ({x: lo + 25 * k + 12.5, y: n, w: 400 / nb, c: lo + 25 * k + 12.5 < 0 ? '#C0504D' : '#548235'})),
+    vl: [{x: MC.mean, c: cssv('--navy'), w: 2.5}, {x: 0, c: cssv('--muted'), w: 1.2}], tip: x => { const k = Math.max(0, Math.min(nb - 1, Math.floor((x - lo) / 25))); return `<b>${fmt(lo + 25 * k)} to ${fmt(lo + 25 * k + 25)} M$</b><br>${h[k]} trials`; }});
+  $('mcK').innerHTML = [['Mean NPV', fmt(MC.mean, 1) + ' M$', 'var(--navy)'], ['P(NPV > 0)', fmt(MC.p0 * 100, 1) + ' %', 'var(--green)'], ['P10 / P50 / P90', fmt(MC.p10, 0) + ' / ' + fmt(MC.p50m, 0) + ' / ' + fmt(MC.p90, 0) + ' M$', 'var(--orange)']].map(([l, v, c]) => `<div class="kpi" style="--c:${c}"><div class="l">${l}</div><div class="v" style="font-size:20px">${v}</div></div>`).join('');
+}
+$('mcRun').addEventListener('click', () => { const b = $('mcRun'); b.disabled = true; b.innerHTML = '<span class="spin"></span> Running…'; setTimeout(() => { MC = monteCarlo(4000, MKX(), 20261 + Math.floor(Math.random() * 1e6)); MCKEY = JSON.stringify(MKX()); b.disabled = false; b.textContent = 'New random sample'; drawMC(); toast('Monte Carlo finished: 4,000 new random trials.'); }, 40); });
+// ===================================================================== MARKET
+const H2SC = 2473 * 1.03;
+const SCEN = [
+ {id: 'base', c: 'base', name: 'Base case', src: 'Chapter 8', d: 'Prices of 2026: methanol $393/t, hydrogen $2,473/t, MPW $80/t.', mk: {}, rep: 105.04},
+ {id: 'p5', c: 'market', name: 'Product prices +5 %', src: 'Section 8.3.1', d: 'Methanol $412.65/t and hydrogen $2,596.65/t.', mk: {p_meoh: 412.65, p_h2: 2596.65}, rep: 190.50},
+ {id: 'm5', c: 'market', name: 'Product prices −5 %', src: 'Section 8.3.2', d: 'Methanol $373.35/t and hydrogen $2,349.35/t.', mk: {p_meoh: 373.35, p_h2: 2349.35}, rep: 19.50},
+ {id: 'w60', c: 'market', name: 'MPW price −25 %', src: 'Section 8.3.3', d: 'Plastic waste bought at $60/t.', mk: {p_mpw: 60}, rep: 153.98},
+ {id: 'w100', c: 'market', name: 'MPW price +25 %', src: 'Section 8.3.4', d: 'Plastic waste bought at $100/t.', mk: {p_mpw: 100}, rep: 56.08},
+ {id: 'mild', c: 'crisis', name: 'Mild disruption', src: 'Table 8.27', d: 'Freight, fuel and insurance rise: methanol +5 %, logistics $25/t, FCI +3 %.', mk: {p_meoh: 393 * 1.05, logi: 25, fci_mult: 1.03}},
+ {id: 'mod', c: 'crisis', name: 'Moderate disruption', src: 'Table 8.27', d: 'Hormuz restricted, Red Sea threatened: methanol +14 %, hydrogen +3 %, logistics $50/t, availability 95 %, FCI +5 %.', mk: {p_meoh: 393 * 1.14, p_h2: H2SC, logi: 50, op_factor: 0.95, fci_mult: 1.05}},
+ {id: 'crisis', c: 'crisis', name: 'Gulf and Red Sea crisis 2026 (selected case)', sh: 'Gulf and Red Sea crisis 2026', src: 'Section 8.3.6', d: 'Methanol $480/t, hydrogen +3 %, methanol trucked to the Red Sea ports ($60/t), availability 95 %, FCI +5 %.', mk: {p_meoh: 480, p_h2: H2SC, logi: 60, op_factor: 0.95, fci_mult: 1.05}, rep: 74.11},
+ {id: 'sev', c: 'crisis', name: 'Severe disruption (Hormuz closed, Houthi blockade of Saudi ports)', sh: 'Severe disruption', src: 'Table 8.27', d: 'Yemen and Red Sea: methanol +22 %, hydrogen +3 %, logistics $90/t, availability 90 %, FCI +10 %, for the whole project.', mk: {p_meoh: 393 * 1.22, p_h2: H2SC, logi: 90, op_factor: 0.90, fci_mult: 1.10}, rep: -84},
+ {id: 'ext', c: 'crisis', name: 'Extreme disruption', src: 'Table 8.27', d: 'Prolonged closure of both corridors, attacks on Jubail: methanol +37 %, hydrogen +5 %, logistics $150/t, availability 80 %, FCI +15 %.', mk: {p_meoh: 393 * 1.37, p_h2: 2473 * 1.05, logi: 150, op_factor: 0.80, fci_mult: 1.15}},
+ {id: 'rus', c: 'crisis', name: 'Energy shock of the Russia–Ukraine war type (2022)', sh: 'Russia–Ukraine energy shock', src: 'Methanex 2022; FCI assumed', d: 'Methanol at the 2022 average realised price of $397/t (Methanex), equipment cost +10 % (assumed); Saudi gas and power tariffs unchanged.', mk: {p_meoh: 397, fci_mult: 1.10}},
+ {id: 'pre', c: 'market', name: 'Pre-war prices', src: 'Section 8.3.7', d: 'Methanol $360/t and hydrogen $2,250/t.', mk: {p_meoh: 360, p_h2: 2250}, rep: -45.0},
+ {id: 'gate', c: 'policy', name: 'Landfill gate fee $70/t', src: 'Section 8.3.7', d: 'The plant is paid $70/t to take the plastic instead of paying $80/t.', mk: {p_mpw: -70}, rep: 472},
+ {id: 'tax', c: 'policy', name: 'Income tax 20 % (foreign partner)', sh: 'Income tax 20 %', src: 'Section 8.3.7', d: '20 % income tax instead of the 2.5 % zakat.', mk: {tax: 0.20}, rep: 55.4}];
+const SCC = {base: 'var(--navy)', market: 'var(--blue)', crisis: 'var(--red)', policy: 'var(--green)'};
+const MS = [['pm', 'p_meoh', 393, v => v, v => v, 'Methanol price ($/t)', 300, 560, 0.01, v => fmt(v, 2)], ['ph', 'p_h2', 2473, v => v, v => v, 'Hydrogen price ($/t)', 2000, 2900, 0.01, v => fmt(v, 2)],
+ ['pw', 'p_mpw', 80, v => v, v => v, 'MPW price ($/t; negative = gate fee)', -80, 130, 1, v => fmt(v)], ['lg', 'logi', 0, v => v, v => v, 'Export logistics ($/t of methanol)', 0, 160, 1, v => fmt(v)],
+ ['av', 'op_factor', 1, v => v / 100, v => v * 100, 'Availability (% of 7,920 h)', 70, 101, 1, v => fmt(v) + ' %'], ['fc', 'fci_mult', 1, v => 1 + v / 100, v => (v - 1) * 100, 'Change of the FCI (%)', -15, 30, 1, v => (v > 0 ? '+' : '') + fmt(v) + ' %'],
+ ['pe', 'p_elec', 0.23 / 3.75, v => v / 3.75, v => v * 3.75, 'Electricity (SAR/kWh)', 0.15, 0.35, 0.01, v => fmt(v, 2)], ['ng', 'p_ng', 2.5, v => v, v => v, 'Natural gas ($/MMBtu)', 1.5, 5, 0.05, v => fmt(v, 2)],
+ ['ir', 'i', 0.10, v => v / 100, v => v * 100, 'Interest rate (%)', 6, 15, 0.5, v => fmt(v, 1) + ' %'], ['tx', 'tax', 0.025, v => v / 100, v => v * 100, 'Tax (%; zakat = 2.5)', 0, 25, 0.5, v => fmt(v, 1) + ' %']];
+function buildMarket() {
+  $('mkSliders').innerHTML = MS.map(([id, , dflt, , inv, l, mn, mx, st]) => `<div class="ctl"><label for="${id}">${l} <output id="o-${id}"></output></label><input id="${id}" type="range" min="${mn}" max="${mx}" step="${st}" value="${inv(dflt)}"></div>`).join('');
+  MS.forEach(([id, k, , fwd]) => $(id).addEventListener('input', () => { ST.MK[k] = fwd(+$(id).value); ST.SCID = 'custom'; HICACHE = {}; render(); }));
+  $$('#scFilt button').forEach(b => b.addEventListener('click', () => { ST.scf = b.dataset.k; $$('#scFilt button').forEach(x => x.classList.toggle('on', x === b)); rMarket(); }));
+  $('riskT').innerHTML = '<thead><tr><th>Risk level</th><th>Description</th><th>Methanol price</th><th>H₂ price</th><th>Logistics ($/t)</th><th>Availability</th><th>FCI</th></tr></thead><tbody>' + RISK.map(r => `<tr><td><b>${r[0]}</b></td>${r.slice(1).map(c => `<td>${c}</td>`).join('')}</tr>`).join('') + '</tbody>';
+}
+function rMarket() {
+  MS.forEach(([id, , , , , , , , , f]) => { $('o-' + id).value = f(+$(id).value); });
+  const pm = ST.MK.p_meoh || 393, ph = ST.MK.p_h2 || 2473; const xs = PRICES.map((p, k) => k);
+  plot('prChart', {x: [-0.3, PRICES.length - 0.7], y: [300, 600], xt: xs, xf: v => PRICES[v] ? PRICES[v][0] : '', yt: 50, m: {l: 52, r: 56, t: 12, b: 40},
+    series: [{d: PRICES.filter(p => p[1]).map((p) => [PRICES.indexOf(p), p[1]]), c: '#1F4E79', w: 2.8}, {d: PRICES.filter(p => p[2]).map(p => [PRICES.indexOf(p), 300 + (p[2] - 2000) / 1000 * 300]), c: '#548235', w: 2.8}],
+    hl: [{y: pm, c: '#C55A11', dash: '6 5', w: 1.8}], pts: PRICES.filter(p => p[1]).map(p => ({x: PRICES.indexOf(p), y: p[1], c: '#1F4E79', r: 5})).concat(PRICES.filter(p => p[2]).map(p => ({x: PRICES.indexOf(p), y: 300 + (p[2] - 2000) / 1000 * 300, c: '#548235', r: 5}))),
+    texts: [2000, 2250, 2500, 2750, 3000].map(v => ({px: 520 - 50, py: 12 + (600 - (300 + (v - 2000) * 0.3)) / 300 * (300 - 52) + 4, t: fmt(v), a: 'start', fs: 12.5, c: 'var(--muted)'})),
+    tip: x => { const k = Math.max(0, Math.min(PRICES.length - 1, Math.round(x))), p = PRICES[k]; return `<b>${p[0]}</b><br>Methanol ${p[1] ? '$' + fmt(p[1], 2) + '/t' : '—'}<br>Hydrogen ${p[2] ? '$' + fmt(p[2]) + '/t' : '—'}`; }});
+  const p = E0.p; const mt = p.meoh_kgh * 7.92 * (ST.MK.op_factor || 1), ht = p.h2_kgh * 7.92 * (ST.MK.op_factor || 1); const rm = mt * (pm - (ST.MK.logi || 0)), rh = ht * ph;
+  donut('revD', [['Methanol (net of logistics)', rm, '#1F4E79'], ['Hydrogen', rh, '#548235']], [money((rm + rh) / 1e6, 1) + ' M', 'revenue per year']); $('revTot').textContent = scenName();
+  $('revLg').innerHTML = `<span><i class="sw" style="background:#1F4E79"></i>Methanol: ${fmt(mt, 0)} t/y × $${fmt(pm - (ST.MK.logi || 0), 2)}/t = ${fmt(rm / 1e6, 2)} M$</span><span><i class="sw" style="background:#548235"></i>Hydrogen: ${fmt(ht, 0)} t/y × $${fmt(ph, 2)}/t = ${fmt(rh / 1e6, 2)} M$</span>`;
+  $('cards').innerHTML = SCEN.filter(s => ST.scf === 'all' || s.c === ST.scf).map(s => { const n = evaluate([0.40, 0.10, 0.90, 1], Object.assign({}, s.mk, {hi: ST.HI})).npv; const a = AIRES[s.id];
+    return `<button class="sc${s.id === ST.SCID ? ' on' : ''}" style="--c:${SCC[s.c]}" data-id="${s.id}"><b>${s.name}</b><span class="src">${s.src}</span><div>${s.d}</div><div class="n">NPV, design point: <b style="display:inline">${money(n)} M</b>${a ? `<br>NPV, AI set point: <b style="display:inline">${money(a.e.npv)} M</b>` : ''}</div></button>`; }).join('');
+  $$('#cards .sc').forEach(c => c.addEventListener('click', () => { const s = SCEN.find(z => z.id === c.dataset.id); ST.SCID = s.id; ST.MK = clone(s.mk); HICACHE = {}; syncInputs(); render(); }));
+  const s = SCEN.find(z => z.id === ST.SCID), e = E0, a = AIRES[ST.SCID];
+  let h = `<p style="margin:0 0 8px"><b>${s ? s.name : 'Custom scenario'}</b>${s ? ' – ' + s.src : ''}</p><div class="tbl"><table><thead><tr><th>Indicator</th><th>Design point</th><th>AI set point</th></tr></thead><tbody>
+   <tr><td>NPV at ${fmt((ST.MK.i || 0.10) * 100, 1)} % (million US$)</td><td>${fmt(e.npv, 2)}</td><td>${a ? fmt(a.e.npv, 2) : '—'}</td></tr><tr><td>DCFROR (%)</td><td>${e.irr === null ? '—' : fmt(e.irr * 100, 2)}</td><td>${a && a.e.irr !== null ? fmt(a.e.irr * 100, 2) : '—'}</td></tr>
+   <tr><td>Discounted payback (years)</td><td>${e.dpb === null ? 'beyond life' : fmt(e.dpb, 2)}</td><td>${a ? (a.e.dpb === null ? 'beyond life' : fmt(a.e.dpb, 2)) : '—'}</td></tr><tr><td>Methanol (t/y)</td><td>${fmt(e.p.meoh_kgh * 7.92 * (ST.MK.op_factor || 1), 0)}</td><td>${a ? fmt(a.e.p.meoh_kgh * 7.92 * (ST.MK.op_factor || 1), 0) : '—'}</td></tr>`;
+  if (s && s.rep !== undefined && ST.HI) h += `<tr><td>NPV in the report (million US$)</td><td colspan="2" class="okc">${fmt(s.rep, Math.abs(s.rep) >= 100 && Number.isInteger(s.rep) ? 0 : 2)}</td></tr>`;
+  $('scenres').innerHTML = h + '</tbody></table></div>'; $('scnote').textContent = a ? 'AI set point: β = ' + a.x[0].toFixed(4) + ', φ = ' + a.x[1].toFixed(4) + ', ρ = ' + a.x[2].toFixed(4) + '.' : '';
+  const svg = $('scchart'), W = 520, ml = 190, mr = 14, mT = 8, rh2 = 31; const vals = SCEN.map(z => [evaluate([0.40, 0.10, 0.90, 1], Object.assign({}, z.mk, {hi: ST.HI})).npv, AIRES[z.id] ? AIRES[z.id].e.npv : null]);
+  const all = vals.flat().filter(v => v !== null); const lo = Math.min(-250, ...all), hi = Math.max(500, ...all); const X = v => ml + (v - lo) / (hi - lo) * (W - ml - mr);
+  let g = ''; for (let v = Math.ceil(lo / 100) * 100; v <= hi; v += 100) g += `<line x1="${X(v)}" x2="${X(v)}" y1="${mT}" y2="${mT + rh2 * SCEN.length}" stroke="${v === 0 ? 'var(--muted)' : 'var(--grid)'}"/><text class="ax" x="${X(v)}" y="${mT + rh2 * SCEN.length + 16}" text-anchor="middle">${v}</text>`;
+  SCEN.forEach((z, k) => { const y = mT + k * rh2; const [n, aa] = vals[k]; g += `<text x="${ml - 7}" y="${y + 19}" text-anchor="end" style="font-size:14.5px;fill:var(--ink);font-weight:${z.id === ST.SCID ? 700 : 400}">${z.sh || z.name}</text>`;
+    g += `<rect class="tb" data-t="<b>${z.sh || z.name}</b><br>Design point: ${fmt(n, 1)} M$${aa !== null ? '<br>AI set point: ' + fmt(aa, 1) + ' M$' : ''}" x="${Math.min(X(0), X(n))}" y="${y + 5}" width="${Math.abs(X(n) - X(0))}" height="${aa === null ? 21 : 10}" fill="#8FAADC" rx="2"/>`;
+    if (aa !== null) g += `<rect x="${Math.min(X(0), X(aa))}" y="${y + 16}" width="${Math.abs(X(aa) - X(0))}" height="10" fill="#1F4E79" rx="2"/>`; });
+  svg.innerHTML = g; bindTips(svg, '.tb');
+}
+$('scai').addEventListener('click', () => { const b = $('scai'); b.disabled = true; b.innerHTML = '<span class="spin"></span> Searching…'; setTimeout(() => { const o = optimise(MKX(), {feed: 1}); AIRES[ST.SCID] = o; ST.X = o.x.slice(); ST.MODE = 'npv'; syncInputs(); b.disabled = false; b.textContent = 'AI set point for this scenario'; render(); toast('AI set point applied to the plant.'); }, 40); });
+$('allai').addEventListener('click', () => { const b = $('allai'); b.disabled = true; let k = 0; const step = () => { if (k >= SCEN.length) { b.disabled = false; b.textContent = 'AI set point for every scenario'; rMarket(); toast('AI set points found for all 14 scenarios.'); return; }
+  const z = SCEN[k]; AIRES[z.id] = optimise(Object.assign({}, z.mk, {hi: ST.HI}), {feed: 1}); k++; b.innerHTML = `<span class="spin"></span> ${k} / ${SCEN.length}`; setTimeout(step, 10); }; setTimeout(step, 10); });
+// ===================================================================== MONITORING
+const SIG = ['T19', 'TT-310', 'Steam flow', 'TC-310 output', 'Methanol', 'Recycle', 'Purge', 'F-101 level'];
+const ACT = {1: 'Follow the opening of TV-310 on the trend display; plan the cleaning of E-104 at the next planned stop.', 2: 'Check the valve on site and call the instrument technician; keep the outlet temperature within its limits by adjusting the steam supply by hand.',
+ 3: 'Compare TT-310 with a portable reference thermometer; recalibrate or replace the transmitter.', 4: 'Check the clean syngas for catalyst poisons; follow the activity trend and plan the change of the R-103 catalyst.',
+ 5: 'Check the purge valve and its bypass for passing; isolate and repair, then repeat the AI search of Section 10.2.'};
+let playT = null; function stopPlay() { if (playT) { clearInterval(playT); playT = null; } const b = $('play'); if (b) b.textContent = '▶ Play the fault from the start'; }
+function buildFault() {
+  $('t2l').textContent = '99 % limit = ' + fmt(FDD.T2lim, 2); $('ql').textContent = '99 % limit = ' + fmt(FDD.Qlim, 2);
+  $('fbtns').innerHTML = Object.entries(FDD.faults).map(([k, v]) => `<button data-k="${k}">F${k} – ${v.name}</button>`).join('');
+  $$('#fbtns button').forEach(b => b.addEventListener('click', () => { ST.FK = b.dataset.k; rFault(); }));
+  $('ft').addEventListener('input', () => { ST.ft = +$('ft').value; rFault(); });
+  $('play').addEventListener('click', () => { if (playT) { stopPlay(); return; } let t = 0; $('play').textContent = '■ Stop'; playT = setInterval(() => { ST.ft = t; $('ft').value = t; fillRange($('ft')); rFault(); t += 4; if (t > 598) stopPlay(); }, 40); });
+}
+function rFault() {
+  $$('#fbtns button').forEach(b => b.classList.toggle('on', b.dataset.k === ST.FK));
+  const f = FDD.faults[ST.FK], t = ST.ft; $('o-ft').value = fmt(t);
+  const pts = arr => arr.slice(0, Math.floor(t / 2) + 1).map((v, i) => [i * 2, v]);
+  plot('cT', {x: [0, 600], y: [0.1, 1000], logy: true, xt: 100, xl: 'Time (min)', yf: v => v >= 1 ? fmt(v) : v, hl: [{y: FDD.T2lim, c: '#C00000', dash: '7 4'}], vl: [{x: 100, c: '#999', w: 1.5}], series: [{d: pts(f.T2), c: cssv('--navy'), w: 1.8}], tip: x => `<b>${fmt(x)} min</b><br>T² = ${fmt(f.T2[Math.min(f.T2.length - 1, Math.round(x / 2))], 2)}`});
+  plot('cQ', {x: [0, 600], y: [0.01, 10000], logy: true, xt: 100, xl: 'Time (min)', yf: v => v >= 1 ? fmt(v) : v, hl: [{y: FDD.Qlim, c: '#C00000', dash: '7 4'}], vl: [{x: 100, c: '#999', w: 1.5}], series: [{d: pts(f.Q), c: cssv('--navy'), w: 1.8}], tip: x => `<b>${fmt(x)} min</b><br>Q = ${fmt(f.Q[Math.min(f.Q.length - 1, Math.round(x / 2))], 3)}`});
+  const first = 100 + Math.min(f.dT === null ? 1e9 : f.dT, f.dQ === null ? 1e9 : f.dQ); const al = $('falarm');
+  if (t >= first) { al.className = 'alarm bad'; al.textContent = 'ALARM at ' + fmt(first) + ' min (' + fmt(first - 100) + ' min after the start of the fault)'; } else { al.className = 'alarm ok'; al.textContent = t < 100 ? 'Normal operation' : 'Fault developing – no alarm yet'; }
+  $('fdChip').className = 'chip' + (t >= first ? ' bad' : t >= 100 ? ' warn' : ''); $('fdChip').innerHTML = `<i></i>${t >= first ? 'Alarm: F' + ST.FK + ' ' + f.name : t >= 100 ? 'Fault developing' : 'Normal operation'}`;
+  $('finfo').innerHTML = `<div class="tbl"><table><thead><tr><th>Statistic</th><th>Detection delay</th></tr></thead><tbody><tr><td>T²</td><td>${f.dT === null ? '—' : f.dT + ' min'}</td></tr><tr><td>Q</td><td>${f.dQ === null ? '—' : f.dQ + ' min'}</td></tr></tbody></table></div>`;
+  const show = t >= first; const W = 520, H = 290, ml = 40, mb = 50, mt = 10, mr = 8, bw = (W - ml - mr) / 8; const Y = v => mt + (80 - v) / 80 * (H - mt - mb);
+  let g = ''; for (let v = 0; v <= 80; v += 20) g += `<line class="gl" x1="${ml}" x2="${W - mr}" y1="${Y(v)}" y2="${Y(v)}"/><text class="ax" x="${ml - 5}" y="${Y(v) + 4}" text-anchor="end">${v}</text>`;
+  f.c.forEach((c, j) => { const x = ml + j * bw; const cc = show ? c : 0; g += `<rect x="${x + 7}" y="${Y(cc)}" width="${bw - 14}" height="${Y(0) - Y(cc)}" fill="${c === Math.max(...f.c) ? '#C55A11' : '#2E75B6'}" rx="3" style="transition:all .4s"/>`;
+    g += SIG[j].split(' ').map((w, q) => `<text class="ax" x="${x + bw / 2}" y="${H - mb + 17 + q * 14}" text-anchor="middle">${w}</text>`).join(''); });
+  $('cC').innerHTML = g + (show ? '' : `<text x="${(W + ml) / 2}" y="${H / 2 - 10}" text-anchor="middle" style="font-size:15px;fill:var(--muted)">Shown after the alarm</text>`);
+  const top = f.c.indexOf(Math.max(...f.c));
+  $('fact').innerHTML = show ? `<p><b>Diagnosis (k-NN):</b> F${ST.FK} – ${f.name}. Correct for ${fmt(f.acc, 1)} % of the test samples of this fault (overall ${fmt(FDD.acc, 1)} %).</p><p><b>Largest contribution:</b> ${SIG[top]} (${fmt(f.c[top], 0)} %).</p><div class="box or"><b>Operator action:</b> ${ACT[ST.FK]}</div>` : '<p>No alarm yet: the monitor checks the eight signals every minute.</p>';
+}
+// ===================================================================== E-METHANOL
+function buildEM() {
+  $$('#etech button').forEach(b => b.addEventListener('click', () => { ST.em.tech = b.dataset.k; $$('#etech button').forEach(x => x.classList.toggle('on', x === b)); rEM(); }));
+  $('ef').addEventListener('input', () => { ST.em.f = +$('ef').value; rEM(); }); $('ec').addEventListener('input', () => { ST.em.c = +$('ec').value; rEM(); });
+}
+function rEM() {
+  const f = ST.em.f / 100, c = ST.em.c / 100; $('o-ef').value = fmt(f * 100) + ' %'; $('o-ec').value = fmt(c * 100, 2);
+  const [cap, es] = ST.em.tech === 'today' ? [1000, 55] : [200, 45]; const o = emethanol(f, c, cap, es); const pm = ST.MK.p_meoh || 393;
+  const K = [['e-methanol', fmt(o.meoh_t) + ' t/y', 'var(--green)'], ['Electrolyser', fmt(o.P_el_spec, 1) + ' MW', 'var(--blue)'], ['Net CO₂ avoided', fmt(o.co2_net) + ' t/y', 'var(--green)'], ['Carbon to product', fmt(o.eta_C, 2) + ' %', 'var(--navy)'],
+   ['Water (net) / O₂', fmt((o.water_t - o.water_made_t) / 7920, 1) + ' m³/h · ' + fmt(o.o2_t / 1000, 0) + ' kt/y', 'var(--grey)'], ['Cost of e-methanol', f > 0 ? '$' + fmt(o.total, 0) + '/t' : '—', 'var(--orange)']];
+  $('ekpis').innerHTML = K.map(([l, v, col]) => `<div class="kpi" style="--c:${col}"><div class="l">${l}</div><div class="v" style="font-size:21px">${v}</div></div>`).join('');
+  const parts = [['Synthesis section', o.syn, '#1F4E79'], ['Electrolyser', o.elz, '#2E75B6'], ['Electricity', o.elec, '#8FAADC'], ['Natural gas', o.ng, '#7F7F7F']]; const ymax = Math.max(900, Math.ceil((Math.max(o.total || 0, pm) + 50) / 100) * 100);
+  let y0 = 0; const bars = []; const svg = $('eC'), W = 520, H = 300, ml = 56, mb = 30, mt = 12, mr = 14, Y = v => mt + (ymax - v) / ymax * (H - mt - mb); let g = '';
+  ticks(0, ymax, 100).forEach(v => g += `<line class="gl" x1="${ml}" x2="${W - mr}" y1="${Y(v)}" y2="${Y(v)}"/><text class="ax" x="${ml - 7}" y="${Y(v) + 4}" text-anchor="end">${v}</text>`);
+  const bw = 140, bx = ml + (W - ml - mr - bw) / 2; if (f > 0) parts.forEach(([n, v, col]) => { g += `<rect class="tb" data-t="<b>${n}</b>: ${fmt(v, 0)} $/t" x="${bx}" y="${Y(y0 + v)}" width="${bw}" height="${Y(y0) - Y(y0 + v)}" fill="${col}"/>`; y0 += v; });
+  g += `<line x1="${ml}" x2="${W - mr}" y1="${Y(pm)}" y2="${Y(pm)}" stroke="#C00000" stroke-width="2" stroke-dasharray="7 4"/><text class="ax" x="${bx + bw / 2}" y="${H - 9}" text-anchor="middle">Selected case</text>`; svg.innerHTML = g; bindTips(svg, '.tb');
+  $('eleg').innerHTML = parts.map(([n, v, col]) => `<span><i class="sw" style="background:${col}"></i>${n}: ${fmt(f > 0 ? v : 0, 0)} $/t</span>`).join('') + `<span><i class="sw dash" style="border-color:#C00000"></i>Methanol price: $${fmt(pm, 0)}/t</span>`;
+  const ev = $('everd'); if (f <= 0) { ev.className = 'verdict'; ev.textContent = 'Move the first slider to size the extension.'; } else if (o.total <= pm) { ev.className = 'verdict ok'; ev.textContent = 'The e-methanol costs $' + fmt(o.total, 0) + '/t, $' + fmt(pm - o.total, 0) + '/t below the market price.'; }
+  else { ev.className = 'verdict bad'; ev.textContent = 'The e-methanol costs $' + fmt(o.total, 0) + '/t, $' + fmt(o.total - pm, 0) + '/t above the market price at this electricity price.'; }
+  const xs = []; for (let x = 0.5; x <= 7.001; x += 0.25) xs.push(x); const ff = Math.max(f, 0.05); const c1 = xs.map(x => [x, Math.min(900, emethanol(ff, x / 100, 1000, 55).total)]), c2 = xs.map(x => [x, Math.min(900, emethanol(ff, x / 100, 200, 45).total)]);
+  plot('eL', {x: [0, 7], y: [0, 900], xt: 1, yt: 100, xl: 'Electricity price (US¢/kWh)', hl: [{y: pm, c: '#C00000', dash: '7 4'}], series: [{d: c1, c: '#1F4E79', w: 2.8}, {d: c2, c: '#548235', w: 2.8}], pts: f > 0 ? [{x: c * 100, y: Math.min(900, o.total), c: '#C55A11', r: 7}] : [],
+    tip: x => `<b>${fmt(x, 2)} US¢/kWh</b><br>Today: $${fmt(emethanol(ff, x / 100, 1000, 55).total, 0)}/t<br>2050: $${fmt(emethanol(ff, x / 100, 200, 45).total, 0)}/t`});
+  $('eleg2').innerHTML = `<span><i class="sw ln" style="background:#1F4E79"></i>Today’s electrolyser</span><span><i class="sw ln" style="background:#548235"></i>2050 electrolyser</span><span><i class="sw dash" style="border-color:#C00000"></i>Methanol market price</span><span><i class="sw dot" style="background:#C55A11"></i>Current case</span>`;
+  const be = (cp, e) => { if (emethanol(ff, 0, cp, e).total > pm) return null; let lo = 0, hi = 0.3; for (let k = 0; k < 50; k++) { const m = (lo + hi) / 2; if (emethanol(ff, m, cp, e).total > pm) hi = m; else lo = m; } return lo * 100; };
+  const b1 = be(1000, 55), b2 = be(200, 45); $('ebe').textContent = 'Break-even electricity price at $' + fmt(pm, 0) + '/t of methanol: ' + (b1 === null ? 'none' : fmt(b1, 2) + ' US¢/kWh') + ' today and ' + (b2 === null ? 'none' : fmt(b2, 2) + ' US¢/kWh') + ' with the 2050 electrolyser.';
+}
+// ===================================================================== VALIDATION
+let AIVAL = null;
+function rVal() {
+  const H = [['Plant model', 'D-102 split, water-gas shift, plug-flow Sieverts membrane and synthesis loop with recycle (Chapters 2 and 3, Appendix H.1).'], ['Economics', 'Turton cost of manufacturing, MACRS-5 depreciation, zakat and 20-year discounted cash flow (Chapter 8, Appendix G).'],
+   ['AI search', 'Seeded differential evolution: 24 candidates × 111 generations = 2,664 evaluations with the equipment limits of Section 10.2.'], ['Heat integration', 'Problem-table algorithm, composite and grand composite curves and Bath area target (Chapter 4, Section 4.4).'],
+   ['Control', 'TC-310 loop of Table 6.13 integrated with a 0.5 ms step; ideal PID with a derivative filter (N = 10).'], ['Monitoring', 'PCA model of eight signals with T², Q and k-NN diagnosis trained on 600 minutes per fault (Section 10.4).']];
+  $('howCards').innerHTML = H.map(([h, t]) => `<div class="card lift"><h3 style="margin-bottom:6px"><span class="h">${h}</span></h3><p style="margin:0;color:var(--muted)">${t}</p></div>`).join('');
+  const d = evaluate([0.4, 0.1, 0.9, 1], {}), nh = evaluate([0.4, 0.1, 0.9, 1], {hi: false}), Dd = econDetail(d.p);
+  const rows = [['Methanol product, Stream 29 (kmol/h)', '1,049.12', fmt(d.r.MeOH, 2)], ['Hydrogen product, Stream 16 (kmol/h)', '3,872.96', fmt(d.r.H2p, 2)], ['Reactor feed, Stream 20 (kmol/h)', '17,994.19', fmt(d.r.S20, 2)], ['Purge gas, Stream 25 (kmol/h)', '1,436.31', fmt(d.r.purge, 2)],
+   ['Membrane area of ME-101 (m²)', '6,040', fmt(d.r.A, 1)], ['Methanol product (t/y)', '266,915', fmt(d.p.meoh_kgh * 7.92, 0)], ['Hydrogen product (t/y)', '61,831', fmt(d.p.h2_kgh * 7.92, 0)], ['Annual revenue ($/yr)', '257,806,461.97', fmt(Dd.full.R, 2)],
+   ['COMd ($/yr)', '172,135,713.00', fmt(Dd.full.C, 2)], ['NPV, base case (million US$)', '105.04', fmt(d.npv, 2)], ['DCFROR, base case (%)', '12.80', fmt(d.irr * 100, 2)], ['Discounted payback (years)', '13.06', fmt(d.dpb, 2)], ['ROROI (%)', '10.87', fmt(Dd.roroi * 100, 2)],
+   ['NPV without heat integration (million US$)', '22.226', fmt(nh.npv, 3)], ['DCFROR without heat integration (%)', '10.61', fmt(nh.irr * 100, 2)]];
+  SCEN.filter(s => s.rep !== undefined && s.id !== 'base').forEach(s => rows.push(['NPV, ' + (s.sh || s.name) + ' (million US$)', fmt(s.rep, Number.isInteger(s.rep) && Math.abs(s.rep) >= 80 ? 0 : 2), fmt(evaluate([0.4, 0.1, 0.9, 1], s.mk).npv, 2)]));
+  rows.push(['AI set point at $393/t, NPV (million US$)', '106.49 (Section 10.2)', AIVAL ? fmt(AIVAL, 2) : '…']);
+  $('valtab').innerHTML = '<thead><tr><th>Quantity</th><th>Report</th><th>Twin</th></tr></thead><tbody>' + rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td class="okc">${r[2]}</td></tr>`).join('') + '</tbody>';
+  if (AIVAL === null) setTimeout(() => { AIVAL = optimise({}, {feed: 1}).e.npv; if (PAGE === 'validation') rVal(); }, 200);
+  const cc = simLoop({}), sp = simLoop({sp: 10, dist: 0}); const os = (Math.max(...sp.pts.map(p => p[1])) - 10) / 10 * 100; const t = (x, y) => [x, y];
+  const rows2 = [['QH,min at ΔTmin = 10 °C (kW)', '25,927.58', fmt(P10.QH, 2)], ['QC,min at ΔTmin = 10 °C (kW)', '55,916.95', fmt(P10.QC, 2)], ['Pinch, hot / cold (°C)', '109.22 / 99.22', fmt(P10.Thot, 2) + ' / ' + fmt(P10.Tcold, 2)],
+   ['Chilled water, Aspen convention (kW)', '3,480.56', fmt(P10.CHW, 2)], ['Area target, counter-current (m²)', '33,692 (Aspen)', fmt(A10, 0)], ['QH,min at ΔTmin = 20 °C (kW)', '30,317.36', fmt(pinchAnalysis(20).QH, 2)], ['QH,min at ΔTmin = 40 °C (kW)', '37,711.32', fmt(pinchAnalysis(40).QH, 2)],
+   ['Gain margin of the Cohen–Coon PID (Kcu / Kc)', '6.0', fmt(routh().Kcu / 1.07, 2) + ' (Kcu = ' + fmt(routh().Kcu, 3) + ')'], ['Cohen–Coon PID: max. deviation (°C)', '3.93', fmt(cc.maxdev, 2)], ['Cohen–Coon PID: IAE (°C·min)', '3.28', fmt(cc.iae, 2)], ['Cohen–Coon PID: settling (min)', '2.19', fmt(cc.settle, 2)],
+   ['Cohen–Coon PID: SP overshoot (%)', '13', fmt(os, 1)], ['Product prices ±20 %: NPV (million US$)', '−238 / 447', fmt(evaluate([0.4, 0.1, 0.9, 1], {p_meoh: 314.4, p_h2: 1978.4}).npv, 0) + ' / ' + fmt(evaluate([0.4, 0.1, 0.9, 1], {p_meoh: 471.6, p_h2: 2967.6}).npv, 0)],
+   ['Monte Carlo (seed 2026): mean NPV / P(NPV > 0)', '15.2 M$ / 54.5 %', (() => { const m = monteCarlo(4000, {}, 2026); return fmt(m.mean, 1) + ' M$ / ' + fmt(m.p0 * 100, 1) + ' %'; })()],
+   ['Monte Carlo: P10 / P50 / P90 (million US$)', '−163 / 13 / 190', (() => { const m = monteCarlo(4000, {}, 2026); return fmt(m.p10, 0) + ' / ' + fmt(m.p50m, 0) + ' / ' + fmt(m.p90, 0); })()],
+   ['COM +20 % / FCI +20 %: NPV (million US$)', '−128 / −84', fmt(evaluate([0.4, 0.1, 0.9, 1], {com_mult: 1.2}).npv, 0) + ' / ' + fmt(evaluate([0.4, 0.1, 0.9, 1], {fci_mult: 1.2}).npv, 0)]];
+  $('valtab2').innerHTML = '<thead><tr><th>Quantity</th><th>Report</th><th>Twin</th></tr></thead><tbody>' + rows2.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td class="okc">${r[2]}</td></tr>`).join('') + '</tbody>';
+}
+// ===================================================================== command palette
+const CMDS = () => PAGES.map(p => ({t: TITLES[p], k: 'page', f: () => go(p)})).concat([{t: 'Reset every page to the design point', k: 'action', f: () => resetPage('all')}, {t: 'Toggle heat integration', k: 'action', f: () => { ST.HI = !ST.HI; syncInputs(); HICACHE = {}; render(); toast('Heat integration ' + (ST.HI ? 'ON' : 'OFF')); }},
+  {t: 'AI: maximum profit', k: 'action', f: () => { go('operations'); setTimeout(() => runMode('npv'), 300); }}, {t: 'AI: safe operation', k: 'action', f: () => { go('operations'); setTimeout(() => runMode('safe'), 300); }},
+  {t: 'Crisis scenario 2026', k: 'scenario', f: () => { const s = SCEN.find(z => z.id === 'crisis'); ST.SCID = s.id; ST.MK = clone(s.mk); syncInputs(); go('market'); render(); }}, {t: 'Run the Monte Carlo simulation', k: 'action', f: () => { go('economics'); setTimeout(() => $('mcRun').click(), 300); }},
+  {t: 'Light / dark theme', k: 'action', f: () => $('theme').click()}]).concat(Object.keys(UNITS).filter(k => !UNITS[k].alias).map(k => ({t: k + ' – ' + UNITS[k].n, k: 'unit', f: () => { go('process'); setTimeout(() => openUnit(k), 350); }})));
+let palSel = 0;
+function openPal() { $('palette').classList.add('open'); $('pq').value = ''; palSel = 0; renderPal(); setTimeout(() => $('pq').focus(), 10); }
+function closePal() { $('palette').classList.remove('open'); }
+function renderPal() { const q = $('pq').value.toLowerCase(); const L = CMDS().filter(c => c.t.toLowerCase().includes(q)).slice(0, 12); palSel = Math.min(palSel, L.length - 1);
+  $('pres').innerHTML = L.map((c, i) => `<button class="${i === palSel ? 'on' : ''}" data-i="${i}">${c.t}<small>${c.k}</small></button>`).join(''); $$('#pres button').forEach(b => b.addEventListener('click', () => { closePal(); L[+b.dataset.i].f(); })); $('pres')._L = L; }
+$('pal').addEventListener('click', openPal); $('pq').addEventListener('input', () => { palSel = 0; renderPal(); });
+$('palette').addEventListener('click', e => { if (e.target.id === 'palette') closePal(); });
+document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openPal(); }
+  if (!$('palette').classList.contains('open')) { if (e.key === 'Escape') closeDrawer(); return; }
+  if (e.key === 'Escape') closePal(); if (e.key === 'ArrowDown') { palSel++; renderPal(); e.preventDefault(); } if (e.key === 'ArrowUp') { palSel = Math.max(0, palSel - 1); renderPal(); e.preventDefault(); }
+  if (e.key === 'Enter') { const L = $('pres')._L; if (L && L[palSel]) { closePal(); L[palSel].f(); } } });
+// ===================================================================== start
+buildOverview(); buildPFD(); buildMarket(); buildFault(); buildEM(); blockDiagram(); syncInputs();
+show(location.hash.replace('#/', '') || 'overview');
