@@ -319,7 +319,7 @@ async function init() {
   status('Building the plant…'); await new Promise(r => setTimeout(r, 30));
   L = makeLocalScene(renderer, {shadow: LOW ? 2048 : 4096}); P = L.P; app.scene = L.scene;
   controls = new OrbitControls(L.cam, canvas); controls.enabled = false; controls.enableDamping = true; controls.dampingFactor = 0.08; controls.maxPolarAngle = 1.48; controls.minDistance = 6; controls.maxDistance = 9000;
-  CUT = buildCutaways(app, P); addDetails(); makeTags();
+  app.cutLight = new THREE.PointLight(0xfff1dc, 0, 40, 1.6); L.scene.add(app.cutLight); CUT = buildCutaways(app, P); addDetails(); makeTags();
   // the ground below the plot: bundled fallback first, real imagery when it arrives
   const fk = Math.cos(PLOT.lat * D2R), fb = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({map: fallbackTex, toneMapped: false, depthTest: false, depthWrite: false}));
   { const W0 = 49.4083, E0 = 49.7117, S0 = 26.8849, N0 = 27.1551; fb.scale.set((E0 - W0) * 111320 * fk, 1, (N0 - S0) * 110574); fb.position.set(((W0 + E0) / 2 - PLOT.lon) * 111320 * fk, -1.6, -((S0 + N0) / 2 - PLOT.lat) * 110574); fb.renderOrder = -9.5; L.under.add(fb); }
@@ -335,7 +335,7 @@ async function init() {
   for (const id of ['R-101', 'T-101', 'R-103']) tint(id, 0xffa040, true), tint(id, 0xffa040, false);
   try { await renderer.compileAsync(globe.scene, globe.cam); } catch (e) { renderer.compile(globe.scene, globe.cam); }
   renderer.shadowMap.needsUpdate = true; renderScene('local'); renderScene('globe');
-  if (!LOW && !Q.has('noao') && innerWidth > 820) { bench(4); const base = Math.min(bench(6), bench(6)); if (base < 12 || Q.has('ao')) { status('Tuning the image quality…'); makeComposer(); AO = true; renderScene('local'); bench(3); const withAO = Math.min(bench(6), bench(6)); if (withAO > 22 && !Q.has('ao')) AO = false; console.log('frame ms', base.toFixed(2), 'with AO', withAO.toFixed(2)); } else console.log('frame ms', base.toFixed(2)); }
+  if (!LOW && !Q.has('noao') && innerWidth > 820) { bench(4); const base = Math.min(bench(6), bench(6)); if (base < 12 || Q.has('ao')) { status('Tuning the image quality…'); makeComposer(); AO = true; renderScene('local'); bench(3); const withAO = Math.min(bench(6), bench(6)); if (withAO > 22 && !Q.has('ao')) AO = false; window.__q = {base, withAO, AO}; } else window.__q = {base}; }
   { const w = Math.floor(innerWidth * DPR * 0.75), h = Math.floor(innerHeight * DPR * 0.75); fadeRT.setSize(w, h); renderScene('globe', fadeRT); renderScene('local'); fadeQ.material.uniforms.a.value = 0.5; renderer.autoClear = false; renderer.render(fadeS, fadeC); renderer.autoClear = true; }
   $('lbar').firstElementChild.style.width = '100%'; status('Ready'); $('start').classList.add('on');
   requestAnimationFrame(frame);

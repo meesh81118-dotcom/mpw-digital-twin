@@ -18,7 +18,7 @@ function cloud(n, size, color, o = {}) { const g = new THREE.BufferGeometry(); c
 
 export class Cutaway {
   constructor(app, id, o) { this.app = app; this.id = id; this.o = o; this.k = 0; this.on = false; this.group = new THREE.Group(); this.group.visible = false; app.scene.add(this.group);
-    this.planes = Array.from({length: 6}, () => new THREE.Plane()); this.mats = new Map(); this.updates = []; this.callouts = []; this.light = new THREE.PointLight(o.light || 0xfff1dc, 0, 40, 1.6); this.group.add(this.light); }
+    this.planes = Array.from({length: 6}, () => new THREE.Plane()); this.mats = new Map(); this.updates = []; this.callouts = []; this.light = new THREE.Object3D(); this.group.add(this.light); }   // position marker; the scene has one shared cut light so the light count never changes
   // c: axis base (plant frame), r: radius, y0/y1: vertical extent of the cut box, w: half width
   setBox(camAz) { const o = this.o, c = toW(o.x, 0, o.z), n = dirW(camAz), t = V().crossVectors(UP, n).normalize(); this.c = c; this.n = n; this.t = t;
     const P = this.planes, ct = c.dot(t), cn = c.dot(n);
@@ -32,7 +32,8 @@ export class Cutaway {
   close() { if (!this.on) return; return this.app.tween(this, {k: 0}, 1.0).then(() => { this.on = false; this.group.visible = false; (this.meshes || []).forEach(m => { if (m.userData.orig) m.material = m.userData.orig; }); }); }
   backHalf() { const a = this.camAz || 0, cx = Math.sin(a), cz = Math.cos(a); this.group.traverse(o => { if (!o.isPoints && !o.isInstancedMesh) return; if (o.userData.noMirror) return; const p = o.isPoints ? o.geometry.attributes.position : null;
     if (p) { const A = p.array; for (let i = 0; i < p.count; i++) { const x = A[i * 3], z = A[i * 3 + 2], d = x * cx + z * cz; if (d > 0) { A[i * 3] = x - 2 * d * cx; A[i * 3 + 2] = z - 2 * d * cz; } } } }); }
-  tick(t, dt) { if (!this.on && this.k <= 0) return; this.apply(); this.light.intensity = this.k * (this.o.li ?? 14); this.updates.forEach(f => f(t, dt, this.k)); this.backHalf(); }
+  tick(t, dt) { if (!this.on && this.k <= 0) return; this.apply(); { const Lc = this.app.cutLight; if (this.k > 0.001) { this.light.updateMatrixWorld(); Lc.position.setFromMatrixPosition(this.light.matrixWorld); Lc.color.set(this.o.light || 0xfff1dc); Lc.intensity = this.k * (this.o.li ?? 14); } else if (Lc.userData.owner === this.id) Lc.intensity = 0; Lc.userData.owner = this.id; } this.updates.forEach(f => f(t, dt, this.k)); this.backHalf(); }
+  lightAt(w) { this.group.updateMatrixWorld(true); this.light.position.copy(this.group.worldToLocal(w.clone())); }
   callout(p, html, side = 1) { this.callouts.push({p: toW(...p), html, side}); }
   mat(o) { return new THREE.MeshStandardMaterial(o); }
   add(obj, p) { if (p) obj.position.copy(toW(...p)); obj.rotation.y += PLOT.rot; this.group.add(obj); return obj; }
@@ -73,7 +74,7 @@ export function buildCutaways(app, P) {
       const P1 = spl.geometry.attributes.position.array; for (let i = 0; i < 500; i++) { const s = sa[i], k = (t * (0.7 + s * 0.5) + s * 7) % 1, a = s * 77, r = (s * 13 % 1) * 3.0, v = 2.4 + (s * 31 % 1) * 2.0; P1[i * 3] = Math.cos(a) * r; P1[i * 3 + 1] = 5.25 + v * k - 4.0 * k * k; P1[i * 3 + 2] = Math.sin(a) * r; } spl.geometry.attributes.position.needsUpdate = true;
       const P2 = gas.geometry.attributes.position.array; for (let i = 0; i < 700; i++) { const s = ga[i], k = (t * 0.18 + s) % 1, a = s * 91 + k * 2, r = (s * 17 % 1) * 3.0 * (1 - k * k * 0.8); P2[i * 3] = Math.cos(a) * r; P2[i * 3 + 1] = 5.4 + k * 6.6; P2[i * 3 + 2] = Math.sin(a) * r; } gas.geometry.attributes.position.needsUpdate = true;
       const P3 = feed.geometry.attributes.position.array; for (let i = 0; i < 120; i++) { const s = fa[i], k = (t * 0.35 + s) % 1; const sx = 6.8 - k * 7.2, sy = 5.2 - Math.max(0, k - 0.6) * 1.2 + Math.sin(s * 40) * 0.12, sz = -2.0 + Math.cos(s * 33) * 0.25; P3[i * 3] = sx; P3[i * 3 + 1] = sy; P3[i * 3 + 2] = sz; } feed.geometry.attributes.position.needsUpdate = true; });
-    cw.light.position.copy(toW(x, 7, z));
+    cw.lightAt(toW(x, 7, z));
     cw.callout([x, 11.2, z], '<b>Raw syngas → cyclones</b>Stream 8 · 1,200 °C · 7,925 kmol/h');
     cw.callout([x - 1, 7.8, z], '<b>Freeboard 4.0 m</b>gas residence time 3.37 s');
     cw.callout([x + 1.5, 5.0, z], '<b>Bubbling olivine bed</b>550 µm · 31,074 kg · 1,200 °C · U = 0.87 → 1.57 m/s');
@@ -88,7 +89,7 @@ export function buildCutaways(app, P) {
     const ss = sol.userData.seed, gq = gs.userData.seed;
     cw.updates.push(t => { const A = sol.geometry.attributes.position.array; for (let i = 0; i < 900; i++) { const s = ss[i], k = (t * 0.22 + s) % 1, y = 20.6 - k * 13.4; const rr = y > 14 ? 1.6 : 0.35 + (y - 7) / 7 * 1.25; const a = s * 50 + k * 34; A[i * 3] = Math.cos(a) * rr; A[i * 3 + 1] = y; A[i * 3 + 2] = Math.sin(a) * rr; } sol.geometry.attributes.position.needsUpdate = true;
       const B = gs.geometry.attributes.position.array; for (let i = 0; i < 500; i++) { const s = gq[i], k = (t * 0.3 + s) % 1, y = 12 + k * 12.6, rr = 0.5 * (1 - k * 0.3); const a = -s * 60 - k * 30; B[i * 3] = Math.cos(a) * rr; B[i * 3 + 1] = y; B[i * 3 + 2] = Math.sin(a) * rr; } gs.geometry.attributes.position.needsUpdate = true; });
-    cw.light.position.copy(toW(x, 15, z));
+    cw.lightAt(toW(x, 15, z));
     cw.callout([x, 23.6, z], '<b>Clean syngas</b>Stream 10 · d₅₀ = 22.9 µm');
     cw.callout([x + 1.6, 18, z], '<b>Tangential inlet</b>1.75 × 0.70 m · 14.5 m/s');
     cw.callout([x, 8.5, z], '<b>Char + olivine</b>Stream 9 → combustor');
@@ -110,7 +111,7 @@ export function buildCutaways(app, P) {
       for (let i = 0; i < N; i++) { const [a, b, c] = sd[i], k = (t * 0.28 + a) % 1; let px, py, pz; if (k < 0.45) { px = -1.8 + b * 3.6; py = 7.5 - k / 0.45 * 4.6; pz = (c - 0.5) * 1.6; } else { px = 99; py = -99; pz = 0; }
         dd.position.set(px, py, pz); dd.rotation.set(a * 9 + t * 2, b * 9, c * 9 + t); dd.scale.setScalar(0.8 + c); dd.updateMatrix(); pcs.setMatrixAt(i, dd.matrix); } pcs.instanceMatrix.needsUpdate = true;
       const A = fl.geometry.attributes.position.array; for (let i = 0; i < 700; i++) { const s = fs[i], k = (t * 0.5 + s) % 1; A[i * 3] = -2 + (s * 37 % 1) * 4 + k * 0.5; A[i * 3 + 1] = 1.7 - k * 1.2; A[i * 3 + 2] = (s * 53 % 1 - 0.5) * 0.9; } fl.geometry.attributes.position.needsUpdate = true; });
-    cw.light.position.copy(toW(x, 4, z + 2));
+    cw.lightAt(toW(x, 4, z + 2));
     cw.callout([x, 7.2, z], '<b>Mixed plastic waste in</b>Stream 1 · 37,879 kg/h');
     cw.callout([x + 1.2, 2.4, z], '<b>Twin-shaft rotors</b>counter-rotating cutting discs · 2,083 kW');
     cw.callout([x - 1.5, 0.8, z], '<b>Shredded flakes out</b>Stream 2 → conveyor → screw feeders');
@@ -125,7 +126,7 @@ export function buildCutaways(app, P) {
       if (b < 5) { const c = new THREE.Mesh(new THREE.TorusGeometry(1.8, 0.07, 6, 40), coil); c.rotation.x = Math.PI / 2; c.position.y = y + 1.28; G.add(c); const c2 = c.clone(); c2.scale.setScalar(0.65); c2.position.y = y + 1.28; G.add(c2); } }
     const gp = cloud(900, 0.18, i => i % 5 === 0 ? 0xff6655 : i % 5 === 1 ? 0x66aaff : 0xfff2cc, {add: true, opacity: 0.6}); G.add(gp); const gs = gp.userData.seed;
     cw.updates.push(t => { const A = gp.geometry.attributes.position.array; for (let i = 0; i < 900; i++) { const s = gs[i], k = (t * 0.12 + s) % 1, y = 13.0 - k * 10, a = s * 71 + k * 3, r = (s * 29 % 1) * 2.4; A[i * 3] = Math.cos(a) * r; A[i * 3 + 1] = y; A[i * 3 + 2] = Math.sin(a) * r; } gp.geometry.attributes.position.needsUpdate = true; });
-    cw.light.position.copy(toW(x, 8, z));
+    cw.lightAt(toW(x, 8, z));
     cw.callout([x, 13.4, z], '<b>Shift feed</b>Stream 14 · 270 °C · 7,386 kmol/h');
     cw.callout([x + 1.4, 9.8, z], '<b>6 catalyst beds</b>Cu/ZnO/Al₂O₃ · 71,198 kg · 49.35 m³');
     cw.callout([x - 1.2, 7.0, z], '<b>Interbed cooling</b>14.23 MW → 28.3 t/h steam');
@@ -142,7 +143,7 @@ export function buildCutaways(app, P) {
     cw.updates.push(t => { const A = h2.geometry.attributes.position.array; for (let i = 0; i < 600; i++) { const s = hs[i], k = (t * 0.25 + s) % 1, [px, pz] = tub[i % 19], cross = Math.max(0, (k - (s * 13 % 1) * 0.6) * 3), a = s * 40;
         A[i * 3] = px + Math.cos(a) * Math.min(cross, 1) * 0.12; A[i * 3 + 1] = 6.0 - k * 4.2; A[i * 3 + 2] = pz + Math.sin(a) * Math.min(cross, 1) * 0.12; } h2.geometry.attributes.position.needsUpdate = true;
       const B = oth.geometry.attributes.position.array; for (let i = 0; i < 300; i++) { const s = os[i], k = (t * 0.25 + s) % 1, [px, pz] = tub[i % 19]; B[i * 3] = px; B[i * 3 + 1] = 6.0 - k * 4.3; B[i * 3 + 2] = pz; } oth.geometry.attributes.position.needsUpdate = true; });
-    cw.light.position.copy(toW(x, 4, z + 1));
+    cw.lightAt(toW(x, 4, z + 1));
     cw.callout([x, 6.4, z], '<b>Shifted gas in</b>Stream 15 · 7,386 kmol/h');
     cw.callout([x + 0.3, 4.2, z], '<b>Pd–Ag film 5 µm</b>only H₂ (white) crosses the wall');
     cw.callout([x, 2.0, z], '<b>Permeate 99.99 % H₂</b>Stream 16 · 0.04 bar → C-102');
@@ -157,7 +158,7 @@ export function buildCutaways(app, P) {
       for (let j = 0; j < 14; j++) { const b = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.6 - k * 0.03, 0.04), im); const a = j / 14 * Math.PI * 2; b.position.set(0.1, Math.cos(a) * 0.62, Math.sin(a) * 0.62); b.rotation.x = -a + 0.5; g.add(b); } G.add(g); imps.push(g); }
     const gp = cloud(800, 0.12, 0xa8d8ff, {add: true, opacity: 0.6}); G.add(gp); const gs = gp.userData.seed;
     cw.updates.push(t => { imps.forEach(g => g.rotation.x = t * 9); const A = gp.geometry.attributes.position.array; for (let i = 0; i < 800; i++) { const s = gs[i], k = (t * 0.2 + s) % 1, a = s * 60 + k * 50, r = 0.5 + Math.abs(Math.sin(k * Math.PI * 6)) * 0.6; A[i * 3] = -8 + k * 16; A[i * 3 + 1] = 2.72 + Math.cos(a) * r; A[i * 3 + 2] = Math.sin(a) * r; } gp.geometry.attributes.position.needsUpdate = true; });
-    cw.light.position.copy(toW(x, 4, z + 2));
+    cw.lightAt(toW(x, 4, z + 2));
     cw.callout([x - 6, 4.6, z], '<b>Suction</b>1.00 bar · 36.65 m³/s');
     cw.callout([x, 4.4, z], '<b>5 centrifugal stages</b>pressure ratio 2.187 each · 22.5 MW');
     cw.callout([x + 6, 4.6, z], '<b>Discharge</b>Stream 18 · 50 bar · 147 °C');
@@ -173,7 +174,7 @@ export function buildCutaways(app, P) {
     const bb = cloud(700, 0.12, 0xe9f6ff, {opacity: 0.85}), gg = cloud(500, 0.13, i => i % 3 ? 0xffd88a : 0xffffff, {add: true, opacity: 0.7}); G.add(bb, gg); const bs = bb.userData.seed, gs = gg.userData.seed;
     cw.updates.push(t => { const A = bb.geometry.attributes.position.array; for (let i = 0; i < 700; i++) { const s = bs[i], k = (t * 0.32 + s) % 1, a = s * 81, r = (s * 23 % 1) * 1.6; A[i * 3] = Math.cos(a) * r; A[i * 3 + 1] = 7.6 + k * 4.9; A[i * 3 + 2] = Math.sin(a) * r; } bb.geometry.attributes.position.needsUpdate = true;
       const B = gg.geometry.attributes.position.array; for (let i = 0; i < 500; i++) { const s = gs[i], k = (t * 0.4 + s) % 1, a = s * 97, r = (s * 31 % 1) * 1.55; B[i * 3] = Math.cos(a) * r; B[i * 3 + 1] = 13.4 - k * 6.6; B[i * 3 + 2] = Math.sin(a) * r; } gg.geometry.attributes.position.needsUpdate = true; });
-    cw.light.position.copy(toW(x, 10, z));
+    cw.lightAt(toW(x, 10, z));
     cw.callout([x, 14.2, z], '<b>Synthesis gas in</b>Stream 20 · 200 °C · 49.5 bar');
     cw.callout([x + 1.2, 11, z], '<b>3,447 tubes</b>44.45 mm × 4.88 m · Cu/ZnO/Al₂O₃ 17,752 kg');
     cw.callout([x - 1.2, 9, z], '<b>Boiling water (shell)</b>24.62 MW → 44.6 t/h steam at 11.75 bar');
@@ -188,7 +189,7 @@ export function buildCutaways(app, P) {
     const dr = cloud(500, 0.11, 0x9fd0ef), vp = cloud(400, 0.18, 0xffffff, {add: true, opacity: 0.4}); G.add(dr, vp); const ds = dr.userData.seed, vs = vp.userData.seed;
     cw.updates.push(t => { liq.position.y = 1.7 + Math.sin(t * 1.3) * 0.04; const A = dr.geometry.attributes.position.array; for (let i = 0; i < 500; i++) { const s = ds[i], k = (t * 0.5 + s) % 1; A[i * 3] = -1.6 + k * 1.2 + (s * 7 % 1) * 0.6; A[i * 3 + 1] = 7.4 - k * k * 4.6; A[i * 3 + 2] = (s * 13 % 1 - 0.5) * 1.0; } dr.geometry.attributes.position.needsUpdate = true;
       const B = vp.geometry.attributes.position.array; for (let i = 0; i < 400; i++) { const s = vs[i], k = (t * 0.22 + s) % 1, a = s * 50, r = (s * 17 % 1) * 1.5; B[i * 3] = Math.cos(a) * r; B[i * 3 + 1] = 3 + k * 8.5; B[i * 3 + 2] = Math.sin(a) * r; } vp.geometry.attributes.position.needsUpdate = true; });
-    cw.light.position.copy(toW(x, 7, z));
+    cw.lightAt(toW(x, 7, z));
     cw.callout([x, 11.6, z], '<b>Vapour</b>Stream 23 · 14,363 kmol/h → recycle');
     cw.callout([x - 1, 7.4, z], '<b>Feed</b>Stream 22 · 40 °C · 47 bar');
     cw.callout([x, 2.6, z], '<b>Crude methanol</b>Stream 26 · level 0.90 m (LC-318)');
