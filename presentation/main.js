@@ -1,5 +1,9 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
+import {Pass} from 'three/addons/postprocessing/Pass.js';
+import {GTAOPass} from 'three/addons/postprocessing/GTAOPass.js';
+import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
 import {Kit, truck as truckK} from './kit.js';
 import {UNITS, SLIDES, SNAME, SDATA, SVC} from './data.js';
 import {makeLocalScene, PLOT} from './scene.js';
@@ -60,7 +64,7 @@ function flyGlobe(to, d, e = ease.io) { const G = globe.GC, A = {...G}; let dl =
   return tween(st, {u: 1}, d, ease.lin, () => { if (id !== FLY) return; const v = e(st.u); G.lat = lerp(A.lat, to.lat, v); G.lon = A.lon + dl * v; G.alt = Math.exp(lerp(Math.log(A.alt), Math.log(to.alt), v)); G.tilt = lerp(A.tilt, to.tilt, v); G.head = lerp(A.head, to.head, v); G.shift = lerp(A.shift, to.shift ?? 0, v); }); }
 
 // ================================================================== shots (plant frame: x east, z south; az 0 = camera south of the target)
-const SHOTS = {hero: {x: 4, y: 0, z: 14, dist: 255, az: -16, el: 31, shift: 0.11}, streams: {x: 10, y: 0, z: 22, dist: 280, az: -4, el: 54, shift: -0.06}, heat: {x: 0, y: 0, z: 18, dist: 260, az: -12, el: 46, shift: 0.1},
+const SHOTS = {hero: {x: 4, y: 0, z: 6, dist: 250, az: -16, el: 32, shift: 0.11}, streams: {x: 10, y: 0, z: 22, dist: 280, az: -4, el: 54, shift: -0.06}, heat: {x: 0, y: 0, z: 18, dist: 260, az: -12, el: 46, shift: 0.1},
   control: {x: 18, y: 0, z: 40, dist: 180, az: 18, el: 38, shift: 0.1}, safety: {x: 34, y: 0, z: 50, dist: 150, az: 8, el: 58, shift: 0.1}, econ: {x: 0, y: 0, z: 0, dist: 470, az: 36, el: 38, shift: 0.12}, twin: {x: 0, y: 0, z: 0, dist: 340, az: -52, el: 26, shift: -0.05}};
 const FOCUS = {'CR-101': {y: 2.8, dist: 15, az: 62, el: 16}, 'R-101': {y: 6.6, dist: 25, az: -32, el: 12}, 'CY-101': {y: 15.0, dist: 21, az: -90, el: 7}, 'R-102': {y: 8.5, dist: 23, az: 22, el: 10},
   'ME-101': {y: 4.0, dist: 7.2, az: 4, el: 6}, 'C-101': {y: 2.9, dist: 21, az: 180, el: 14}, 'R-103': {y: 10.6, dist: 19, az: -28, el: 6}, 'F-101': {y: 6.6, dist: 17, az: 40, el: 8}, 'T-101': {y: 21, dist: 54, az: -42, el: 4}};
@@ -150,8 +154,8 @@ function spark() { const s = $('spark'); if (!s) return; const X = i => 34 + i /
     <circle cx="${X(22)}" cy="${Y(105.04)}" r="4.5" fill="#ffd29b"/><text x="${X(22) - 8}" y="${Y(105.04) - 9}" text-anchor="end" fill="#ffd29b" style="font:600 12px Inter">NPV 105.04 M$</text>
     <text x="34" y="126" fill="#9fb0c2" style="font:500 11px Inter">Cumulative discounted cash flow, years 0–22 (M$)</text>`; requestAnimationFrame(() => s.querySelector('path').style.strokeDashoffset = 0); }
 function navUI(i) { $$('#dots button').forEach((b, k) => { b.classList.toggle('on', k === i); b.classList.toggle('done', k < i); }); $('num').textContent = `${i + 1} / ${SLIDES.length}`; $('chap').textContent = SLIDES[i].chap; }
-async function closeCut() { if (!OPEN_CUT) return; const c = OPEN_CUT; OPEN_CUT = null; (c.meshes || []).forEach(m => m.userData.cut = false); await c.close(); }
-async function openCut(id) { const c = CUT[id]; if (!c) return; OPEN_CUT = c; (c.meshes || []).forEach(m => { if (m.userData.orig === undefined) m.userData.orig = null; }); const f = FOCUS[id]; c.open(f.az * D2R); (c.meshes || []).forEach(m => m.userData.cut = true); }
+async function closeCut() { if (!OPEN_CUT) return; const c = OPEN_CUT; OPEN_CUT = null; if (gtao) tween(gtao, {blendIntensity: 0.95}, 1.2); (c.meshes || []).forEach(m => m.userData.cut = false); await c.close(); }
+async function openCut(id) { const c = CUT[id]; if (!c) return; OPEN_CUT = c; if (gtao) tween(gtao, {blendIntensity: 0}, 0.8); (c.meshes || []).forEach(m => { if (m.userData.orig === undefined) m.userData.orig = null; }); const f = FOCUS[id]; c.open(f.az * D2R); (c.meshes || []).forEach(m => m.userData.cut = true); }
 const GLOBE_INTRO = {lat: 18, lon: 34, alt: 21000, tilt: 0, head: 0, shift: 0.16}, GLOBE_END = {lat: 20, lon: 42, alt: 19000, tilt: 0, head: 0, shift: 0.16};
 const BEATS = [{lat: 23.8, lon: 44.2, alt: 3700, tilt: 0, head: 0, shift: 0.13}, {lat: 25.8, lon: 49.0, alt: 1050, tilt: 26, head: -18, shift: 0.1}, {lat: PLOT.lat, lon: PLOT.lon, alt: 42, tilt: 34, head: -40, shift: 0.08}];
 const BEAT_GEO = [['ksa', 'gulf', 'red', 'riyadh', 'yanbu', 'jubail'], ['east', 'gulf', 'jubail', 'dammam'], ['site', 'gulf']];
@@ -277,7 +281,19 @@ let last = performance.now(), TT = 0, frames = 0, acc = 0, slowRuns = 0;
 const fadeRT = new THREE.WebGLRenderTarget(4, 4, {type: THREE.HalfFloatType}); const fadeQ = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({uniforms: {t: {value: fadeRT.texture}, a: {value: 0}}, transparent: true, depthTest: false, depthWrite: false,
   vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0., 1.); }', fragmentShader: 'uniform sampler2D t; uniform float a; varying vec2 vUv; void main(){ gl_FragColor = vec4(texture2D(t, vUv).rgb, a);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}'}));
 const fadeS = new THREE.Scene(); fadeS.add(fadeQ); const fadeC = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-function renderScene(mode, target) { renderer.setRenderTarget(target || null);
+// ---- ambient occlusion (GTAO) for fast GPUs: sky + satellite ground first, then the plant, then AO, then tone mapping
+let composer = null, gtao = null, AO = false;
+class LocalPass extends Pass { constructor() { super(); this.needsSwap = false; } render(r, w, read) { r.setRenderTarget(read); r.autoClear = false; r.clear(); r.render(L.under, L.cam); r.clearDepth(); r.render(L.scene, L.cam); r.autoClear = true; } }
+function makeComposer() { const rt = new THREE.WebGLRenderTarget(innerWidth * DPR, innerHeight * DPR, {type: THREE.HalfFloatType, samples: 4});
+  composer = new EffectComposer(renderer, rt); composer.setPixelRatio(DPR); composer.setSize(innerWidth, innerHeight); composer.addPass(new LocalPass());
+  gtao = new GTAOPass(L.scene, L.cam, innerWidth * DPR, innerHeight * DPR); gtao.output = GTAOPass.OUTPUT.Default; gtao.blendIntensity = 0.95;
+  gtao.updateGtaoMaterial({radius: 2.6, distanceExponent: 1.4, thickness: 2.5, scale: 1.25, samples: 16, distanceFallOff: 1, screenSpaceRadius: false});
+  gtao.updatePdMaterial({lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 5, rings: 2, samples: 16});
+  gtao.overrideVisibility = function () { const cache = this._visibilityCache; this.scene.traverse(o => { cache.set(o, o.visible); if (o.isPoints || o.isLine || o.isSprite || (o.material && o.material.transparent)) o.visible = false; }); };
+  composer.addPass(gtao); composer.addPass(new OutputPass()); }
+function bench(n = 8) { const gl = renderer.getContext(), px = new Uint8Array(4); renderScene('local'); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); const t = performance.now(); for (let i = 0; i < n; i++) { renderScene('local'); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); } return (performance.now() - t) / n; }
+function renderScene(mode, target) { if (mode === 'local' && !target && AO && composer) { renderer.toneMappingExposure = 0.86; gtao.enabled = gtao.blendIntensity > 0.02; composer.render(); return; }
+  renderer.setRenderTarget(target || null);
   if (mode === 'globe') { renderer.toneMappingExposure = 1.0; renderer.autoClear = true; renderer.render(globe.scene, globe.cam); }
   else { renderer.toneMappingExposure = 0.86; renderer.autoClear = false; renderer.clear(); renderer.render(L.under, L.cam); renderer.clearDepth(); renderer.render(L.scene, L.cam); renderer.autoClear = true; }
   renderer.setRenderTarget(null); }
@@ -290,9 +306,9 @@ function frame(now) { requestAnimationFrame(frame); const dt = Math.min(0.1, (no
   else renderScene(MODE);
   updateLabels();
   // adaptive resolution: keep the frame time under ~20 ms
-  if (!BUSY && !FADE.on) { acc += dt; frames++; if (frames >= 90) { const ms = acc / frames * 1000; frames = 0; acc = 0; if (ms > 21 && DPR > 0.8) { if (++slowRuns >= 2) { DPR = Math.max(0.75, DPR - 0.25); renderer.setPixelRatio(DPR); renderer.setSize(innerWidth, innerHeight); slowRuns = 0; } } else slowRuns = 0; } } else { frames = 0; acc = 0; }
+  if (!BUSY && !FADE.on) { acc += dt; frames++; if (frames >= 90) { const ms = acc / frames * 1000; frames = 0; acc = 0; if (ms > 21 && (AO || DPR > 0.8)) { if (++slowRuns >= 2) { if (AO) AO = false; else { DPR = Math.max(0.75, DPR - 0.25); renderer.setPixelRatio(DPR); renderer.setSize(innerWidth, innerHeight); } slowRuns = 0; } } else slowRuns = 0; } } else { frames = 0; acc = 0; }
 }
-addEventListener('resize', () => { renderer.setSize(innerWidth, innerHeight); globe.apply(); if (L) applyLocal(); });
+addEventListener('resize', () => { renderer.setSize(innerWidth, innerHeight); if (composer) { composer.setPixelRatio(DPR); composer.setSize(innerWidth, innerHeight); } globe.apply(); if (L) applyLocal(); });
 
 // ================================================================== start-up
 const status = t => { $('lst').textContent = t; };
@@ -318,10 +334,11 @@ async function init() {
   for (const id of ['R-101', 'T-101', 'R-103']) tint(id, 0xffa040, true), tint(id, 0xffa040, false);
   try { await renderer.compileAsync(globe.scene, globe.cam); } catch (e) { renderer.compile(globe.scene, globe.cam); }
   renderer.shadowMap.needsUpdate = true; renderScene('local'); renderScene('globe');
+  if (!LOW && !Q.has('noao') && innerWidth > 820) { const base = bench(6); if (base < 7.5 || Q.has('ao')) { status('Tuning the image quality…'); makeComposer(); AO = true; renderScene('local'); const withAO = bench(6); if (withAO > 15 && !Q.has('ao')) AO = false; console.log('frame ms', base.toFixed(2), 'with AO', withAO.toFixed(2)); } else console.log('frame ms', base.toFixed(2)); }
   $('lbar').firstElementChild.style.width = '100%'; status('Ready'); $('start').classList.add('on');
   requestAnimationFrame(frame);
   const s0 = Q.get('s'); if (s0 !== null) { $('loader').classList.add('off'); go(+s0); }
 }
 $('start').onclick = () => { $('loader').classList.add('off'); go(0); };
 init();
-window.__app = {CALLS, TAGS, go, get IDX() { return IDX; }, get MODE() { return MODE; }, LC, globe, renderer, get L() { return L; }, get CUT() { return CUT; }, selectUnit, get BUSY() { return BUSY; }};
+window.__app = {CALLS, TAGS, bench, get AO() { return AO; }, go, get IDX() { return IDX; }, get MODE() { return MODE; }, LC, globe, renderer, get L() { return L; }, get CUT() { return CUT; }, selectUnit, get BUSY() { return BUSY; }};

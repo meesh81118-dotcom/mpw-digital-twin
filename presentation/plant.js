@@ -229,7 +229,14 @@ export function buildPlant(M, T, opts = {}) {
 
   // ================================================================ pipe rack (z = 22) and utility headers
   const rack = new Kit(); pipeRack(rack, -100, 126, RZ, RW, TIER, {step: 6});
-  for (const [k, t, mk, r] of [[0, 0, 'bluePipe', 0.45], [1, 0, 'bluePipe', 0.45], [5, 1, 'greenPipe', 0.3], [4, 0, 'clad', 0.25]]) pipeRun(rack, [V(-100, TIER[t] + 0.45 + r, lane(k)), V(126, TIER[t] + 0.45 + r, lane(k))], r, mk, {flanges: false, supports: false});
+  // utility headers on both tiers: cooling water supply/return, fire water, steam, condensate, instrument air, nitrogen, plus cable trays
+  const UT = [[0, 0, 'bluePipe', 0.45], [1, 0, 'bluePipe', 0.45], [5, 1, 'greenPipe', 0.3], [4, 0, 'clad', 0.25], [0, 1, 'red', 0.22], [1, 1, 'clad', 0.38], [4, 1, 'cladS', 0.16], [5, 0, 'galv', 0.12], [2, 1, 'yellow', 0.1], [3, 0, 'cladS', 0.14]];
+  for (const [k, t, mk, r] of UT) pipeRun(rack, [V(-100, TIER[t] + 0.45 + r, lane(k) + (k === 5 && t === 0 ? 0.5 : 0)), V(126, TIER[t] + 0.45 + r, lane(k) + (k === 5 && t === 0 ? 0.5 : 0))], r, mk, {flanges: false, supports: false});
+  for (const s of [-1, 1]) rack.box(226, 0.12, 0.7, 'galv', 13, TIER[1] + 1.9, RZ + s * (RW / 2 - 0.5));
+  for (let x = -96; x < 126; x += 6) for (const s of [-1, 1]) rack.box(0.12, 1.4, 0.12, 'galv', x, TIER[1] + 0.5, RZ + s * (RW / 2 - 0.5));
+  // MCC / switch rooms and analyser shelters next to the machines (yellow, as in the reference view)
+  for (const [x, z, w, d] of [[-40, 70, 9, 5], [100, -34, 7, 4], [6, 66, 6, 4], [118, 78, 5, 3.5], [-70, 74, 6, 4]]) building(rack, x, z, w, d, 3.4, {wall: 'yellow', roof: 'roofG'});
+  for (let x = -90; x < 126; x += 24) for (const z of [34, 88]) { rack.cyl(0.12, 10, 'galv', x, 0, z, 6); rack.box(1.4, 0.3, 0.5, 'dark', x + 0.5, 10, z); }
   // cooling-water branches to the exchangers
   for (const [x, z] of [[-64, 48], [-64, 34], [42, 44], [44, 64], [-24, 63], [-15, 63], [115, 52]]) pipeRun(rack, [V(x + 3, TIER[0] + 0.9, lane(0)), V(x + 3, TIER[0] + 0.9, z + (z > RZ ? -2.2 : 2.2)), V(x + 3, 1.2, z + (z > RZ ? -2.2 : 2.2))], 0.22, 'bluePipe', {flanges: false});
   units.RACK = {id: 'RACK', K: rack, extra: [], hidden: true};

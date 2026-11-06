@@ -131,7 +131,7 @@ export const SLIDES = [
      {kicker: 'Kingdom of Saudi Arabia', text: 'Three industrial cities were compared with a weighted multi-criteria evaluation (Table 9.3).', bars: [['Jubail Industrial City', 860], ['Yanbu Industrial City', 735], ['Riyadh Second Industrial City', 725]]},
      {kicker: 'Eastern Province', text: 'King Fahd Industrial Port, seawater cooling, central utilities, rail to Dammam and Riyadh, and many hydrogen and methanol users.', stats: [['9 / 10', '', 'utilities'], ['9 / 10', '', 'transport and export'], ['10 / 10', '', 'industrial integration']]},
      {kicker: 'Jubail Industrial City', text: 'The plastic arrives by truck from Dammam–Khobar (≈ 95 km) and Jubail. The methanol leaves by pipeline to the port and the hydrogen by pipeline to the neighbours.', stats: [['909', 't/d', 'MPW in'], ['809', 't/d', 'methanol out'], ['187', 't/d', 'hydrogen out']]}]},
-  {id: 'plant', chap: 'The plant', cam: 'local', shot: 'hero', kicker: 'Jubail Industrial City · 27.013° N · 49.554° E', title: 'MPW Gasification Complex',
+  {id: 'plant', chap: 'The plant', cam: 'local', shot: 'hero', kicker: '27.013° N · 49.554° E · Jubail', title: 'MPW Gasification Complex',
    text: 'A 420 m × 300 m plot inside the industrial city. Plastic in from the west, hydrogen and methanol out to the east. <b>Click any unit to look inside.</b>',
    stats: [['300,000', 't/y', 'mixed plastic waste'], ['266,915', 't/y', 'methanol, 99.5 mol %'], ['61,831', 't/y', 'hydrogen, 99.99 %']]},
   {id: 'feed', chap: 'Feed', cam: 'local', focus: 'CR-101', kicker: 'Section 1 · Feed preparation', title: 'Shredding the plastic',
