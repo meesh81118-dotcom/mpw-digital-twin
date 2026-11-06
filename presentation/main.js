@@ -324,6 +324,8 @@ async function init() {
   Object.assign(LC, shotW(SHOTS.hero)); applyLocal(); globe.apply();
   for (const id in CUT) { const c = CUT[id]; c.setBox(0); (c.meshes || []).forEach(m => { m.userData.orig = m.userData.orig || m.material; m.material = c.clipMaterial(m.userData.orig); }); c.group.visible = true; c.group.traverse(x => { if (x.isMesh && x.material && x.userData.clip !== false && !x.material.isPointsMaterial) { x.material.clippingPlanes = c.planes; x.material.clipIntersection = true; } }); }
   try { await renderer.compileAsync(L.scene, L.cam); } catch (e) { renderer.compile(L.scene, L.cam); }
+  // upload every buffer and texture now (one render with culling off), so nothing is uploaded mid-flight later
+  { const fc = []; L.scene.traverse(o => { if (o.frustumCulled) { fc.push(o); o.frustumCulled = false; } }); renderScene('local'); fc.forEach(o => o.frustumCulled = true); }
   renderScene('local');
   for (const id in CUT) { const c = CUT[id]; (c.meshes || []).forEach(m => m.material = m.userData.orig); c.group.visible = false; }
   for (const id of ['R-101', 'T-101', 'R-103']) tint(id, 0xffa040, true), tint(id, 0xffa040, false);
