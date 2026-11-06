@@ -159,35 +159,39 @@
 <!-- =========================================================== CONTROL -->
 <section class="page" data-page="control">
   <div class="phead"><div class="wrap"><div class="eyebrow">Chapter 6 · Process control and instrumentation</div><h1>Control system and loop simulator</h1>
-    <p class="lead">Tune the TC-310 temperature loop of E-104 with the methods of the course and watch the closed-loop response; browse the 34 loops of the plant and the two P&IDs.</p>
+    <p class="lead">Switch between four control loops of the plant — temperature, level, pressure and ratio — tune each one and watch its closed-loop response; browse the 34 loops of the plant and the two P&amp;IDs.</p>
     <div class="pagebar"><span class="chip" id="pidChip"><i></i>Loop stable</span><button class="btn sm ghost" style="color:#fff;border-color:rgba(255,255,255,.3);background:transparent" data-reset="control">Reset this page</button></div></div></div>
   <div class="section"><div class="wrap">
-    <div class="card"><h3><span class="h">Block diagram of the TC-310 loop (Table 6.13)</span></h3><div style="overflow-x:auto"><svg id="blk" class="chart" viewBox="0 0 1100 200" style="min-width:760px"></svg></div></div>
+    <div class="kicker">Loop simulator</div><h2 class="t" style="margin-bottom:12px">Select a control loop</h2>
+    <div class="lpick" id="lpick"></div>
+    <div class="card" style="margin-top:18px"><h3><span class="h" id="blkT">Block diagram</span><span class="mini" id="blkR"></span></h3><p class="note" id="lDesc" style="margin:-4px 0 8px"></p><div style="overflow-x:auto"><svg id="blk" class="chart" viewBox="0 0 1100 200" style="min-width:760px"></svg></div></div>
     <div class="grid side" style="margin-top:18px">
       <aside class="card sticky">
-        <h3><span class="h">Controller</span></h3>
-        <div class="seg full" id="pidMode" style="grid-template-columns:repeat(3,1fr)"><button data-k="P">P</button><button data-k="PI">PI</button><button data-k="PID" class="on">PID</button></div>
-        <h4>Tuning method (Table 6.15)</h4>
+        <h3><span class="h">Controller <span id="cTag" style="color:var(--orange)"></span></span></h3>
+        <div class="seg full" id="pidMode" style="grid-template-columns:repeat(3,1fr)"></div>
+        <h4 id="methT">Tuning method</h4>
         <div class="modes" id="pidMeth" style="grid-template-columns:1fr 1fr"></div>
         <div class="ctl" style="margin-top:12px"><label for="kc">Gain Kc (mA/mA) <output id="o-kc"></output></label><input id="kc" type="range" min="0.1" max="7" step="0.01" value="1.07"></div>
-        <div class="ctl"><label for="ti">Integral time τI (min) <output id="o-ti"></output></label><input id="ti" type="range" min="0.1" max="2" step="0.005" value="0.675"></div>
-        <div class="ctl"><label for="td">Derivative time τD (min) <output id="o-td"></output></label><input id="td" type="range" min="0" max="0.4" step="0.002" value="0.112"></div>
+        <div class="ctl" id="tiBox"><label for="ti">Integral time τI (min) <output id="o-ti"></output></label><input id="ti" type="range" min="0.1" max="2" step="0.005" value="0.675"></div>
+        <div class="ctl" id="tdBox"><label for="td">Derivative time τD (min) <output id="o-td"></output></label><input id="td" type="range" min="0" max="0.4" step="0.002" value="0.112"></div>
         <h4>Test</h4>
-        <div class="seg full" id="pidTest"><button data-k="load" class="on">Disturbance in T19</button><button data-k="sp">Set-point change</button></div>
-        <div class="ctl" style="margin-top:10px"><label for="stp">Step size (°C) <output id="o-stp"></output></label><input id="stp" type="range" min="-20" max="20" step="1" value="10"></div>
+        <div class="seg full" id="pidTest"></div>
+        <div class="ctl" style="margin-top:10px"><label for="stp" id="stpL">Step size <output id="o-stp"></output></label><input id="stp" type="range" min="-20" max="20" step="1" value="10"></div>
         <button class="btn pri" id="pidPlay" style="width:100%">▶ Play the response</button>
+        <button class="btn ghost" id="loopReset" style="width:100%;margin-top:8px">Reset this loop</button>
       </aside>
       <div style="min-width:0">
         <div class="kpis" id="pidK"></div>
         <div class="grid g2" style="margin-top:18px">
-          <div class="card"><h3><span class="h">Reactor inlet temperature T20</span><span class="mini">deviation from 200 °C</span></h3><svg id="pidT" class="chart" viewBox="0 0 520 300"></svg>
-            <div class="lg"><span><i class="sw ln" style="background:var(--navy)"></i>Selected tuning</span><span><i class="sw dash" style="border-color:#8FAADC"></i>Cohen–Coon PID (selected in the report)</span><span><i class="sw" style="background:rgba(84,130,53,.25)"></i>±0.1 °C band</span></div></div>
+          <div class="card"><h3><span class="h" id="yT">Controlled variable</span><span class="mini" id="yU"></span></h3><svg id="pidT" class="chart" viewBox="0 0 520 300"></svg>
+            <div class="lg" id="yLg"></div></div>
           <div class="card"><h3><span class="h">Controller output</span><span class="mini">mA, deviation</span></h3><svg id="pidU" class="chart" viewBox="0 0 520 300"></svg>
-            <div class="lg"><span><i class="sw ln" style="background:#C55A11"></i>Signal to TV-310</span></div></div>
+            <div class="lg"><span><i class="sw ln" style="background:#C55A11"></i><span id="uN">Signal to the valve</span></span></div></div>
         </div>
-        <div class="card" style="margin-top:18px"><h3><span class="h">Stability (Routh, Table 6.14) and performance of the methods (Table 6.16)</span></h3><div class="tbl"><table id="pidTab"></table></div><p class="note" id="routhNote"></p></div>
+        <div class="card" style="margin-top:18px"><h3><span class="h" id="tabT">Stability and performance</span></h3><div class="tbl"><table id="pidTab"></table></div><p class="note" id="routhNote"></p></div>
       </div>
     </div>
+    <div class="card" style="margin-top:18px"><h3><span class="h">All loops at a glance</span><span class="mini">recommended tuning, standard test of each loop</span></h3><div class="tbl"><table id="loopSum"></table></div></div>
     <div class="card" style="margin-top:18px"><h3><span class="h">Instrument loop index (Table 6.26)</span><span style="display:flex;gap:8px;flex-wrap:wrap"><input class="search" id="iq" placeholder="Search loops, units or streams…" style="width:260px;padding:7px 10px;font-size:15px"></span></h3>
       <div class="seg" id="iSeg" style="margin-bottom:10px"><button data-k="all" class="on">All</button><button data-k="T">Temperature</button><button data-k="P">Pressure</button><button data-k="L">Level</button><button data-k="F">Flow</button><button data-k="A">Analysis</button><button data-k="W">Weight</button><button data-k="HI">Heat-integrated only</button></div>
       <div class="tbl" style="max-height:440px;overflow:auto"><table id="iTab"></table></div></div>

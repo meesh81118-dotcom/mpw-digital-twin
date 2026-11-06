@@ -276,6 +276,19 @@ footer.ft b{color:#fff} footer.ft a{color:#f3b27f;text-decoration:none;cursor:po
 @media (max-width:760px){.brand b{font-size:14px;letter-spacing:.03em}.brand svg{width:32px;height:32px}.tools{gap:4px}.ibtn{height:36px;padding:0 9px}}
 @media (max-width:520px){.brand span{max-width:120px}.brand b{font-size:13px;line-height:1.1;white-space:normal}#theme{display:none}}
 .brand span{text-align:left}
+
+.lpick{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:1000px){.lpick{grid-template-columns:repeat(2,minmax(0,1fr))}} @media (max-width:520px){.lpick{grid-template-columns:minmax(0,1fr)}}
+.lp{position:relative;text-align:left;font:15px/1.4 var(--f);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px 13px;cursor:pointer;box-shadow:var(--shadow);transition:transform .2s,box-shadow .2s,border-color .2s;overflow:hidden}
+.lp::before{content:"";position:absolute;inset:0 0 auto 0;height:4px;background:var(--lc)}
+.lp:hover{transform:translateY(-3px);box-shadow:var(--shadow2)}
+.lp.on{border-color:var(--lc);box-shadow:0 0 0 2px var(--lc) inset,var(--shadow2)}
+.lp .tg{font-size:21px;font-weight:700;color:var(--lc)} .lp .tt{font-weight:700;margin:2px 0} .lp .ty{font-size:13.5px;color:var(--muted)}
+.lp .bd{position:absolute;top:14px;right:12px;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px}
+.lp .bd.r{background:var(--lgreen);color:var(--green)} .lp .bd.e{background:var(--lgold);color:var(--gold)}
+.lp .st{margin-top:8px;font-size:13.5px;display:flex;align-items:center;gap:6px} .lp .st i{width:8px;height:8px;border-radius:50%;background:var(--green)} .lp .st.bad i{background:var(--red)}
+
+.seg button:disabled{opacity:.35;cursor:not-allowed}
 </style>
 </head>
 <body>
@@ -428,35 +441,39 @@ footer.ft b{color:#fff} footer.ft a{color:#f3b27f;text-decoration:none;cursor:po
 <!-- =========================================================== CONTROL -->
 <section class="page" data-page="control">
   <div class="phead"><div class="wrap"><div class="eyebrow">Chapter 6 · Process control and instrumentation</div><h1>Control system and loop simulator</h1>
-    <p class="lead">Tune the TC-310 temperature loop of E-104 with the methods of the course and watch the closed-loop response; browse the 34 loops of the plant and the two P&IDs.</p>
+    <p class="lead">Switch between four control loops of the plant — temperature, level, pressure and ratio — tune each one and watch its closed-loop response; browse the 34 loops of the plant and the two P&amp;IDs.</p>
     <div class="pagebar"><span class="chip" id="pidChip"><i></i>Loop stable</span><button class="btn sm ghost" style="color:#fff;border-color:rgba(255,255,255,.3);background:transparent" data-reset="control">Reset this page</button></div></div></div>
   <div class="section"><div class="wrap">
-    <div class="card"><h3><span class="h">Block diagram of the TC-310 loop (Table 6.13)</span></h3><div style="overflow-x:auto"><svg id="blk" class="chart" viewBox="0 0 1100 200" style="min-width:760px"></svg></div></div>
+    <div class="kicker">Loop simulator</div><h2 class="t" style="margin-bottom:12px">Select a control loop</h2>
+    <div class="lpick" id="lpick"></div>
+    <div class="card" style="margin-top:18px"><h3><span class="h" id="blkT">Block diagram</span><span class="mini" id="blkR"></span></h3><p class="note" id="lDesc" style="margin:-4px 0 8px"></p><div style="overflow-x:auto"><svg id="blk" class="chart" viewBox="0 0 1100 200" style="min-width:760px"></svg></div></div>
     <div class="grid side" style="margin-top:18px">
       <aside class="card sticky">
-        <h3><span class="h">Controller</span></h3>
-        <div class="seg full" id="pidMode" style="grid-template-columns:repeat(3,1fr)"><button data-k="P">P</button><button data-k="PI">PI</button><button data-k="PID" class="on">PID</button></div>
-        <h4>Tuning method (Table 6.15)</h4>
+        <h3><span class="h">Controller <span id="cTag" style="color:var(--orange)"></span></span></h3>
+        <div class="seg full" id="pidMode" style="grid-template-columns:repeat(3,1fr)"></div>
+        <h4 id="methT">Tuning method</h4>
         <div class="modes" id="pidMeth" style="grid-template-columns:1fr 1fr"></div>
         <div class="ctl" style="margin-top:12px"><label for="kc">Gain Kc (mA/mA) <output id="o-kc"></output></label><input id="kc" type="range" min="0.1" max="7" step="0.01" value="1.07"></div>
-        <div class="ctl"><label for="ti">Integral time τI (min) <output id="o-ti"></output></label><input id="ti" type="range" min="0.1" max="2" step="0.005" value="0.675"></div>
-        <div class="ctl"><label for="td">Derivative time τD (min) <output id="o-td"></output></label><input id="td" type="range" min="0" max="0.4" step="0.002" value="0.112"></div>
+        <div class="ctl" id="tiBox"><label for="ti">Integral time τI (min) <output id="o-ti"></output></label><input id="ti" type="range" min="0.1" max="2" step="0.005" value="0.675"></div>
+        <div class="ctl" id="tdBox"><label for="td">Derivative time τD (min) <output id="o-td"></output></label><input id="td" type="range" min="0" max="0.4" step="0.002" value="0.112"></div>
         <h4>Test</h4>
-        <div class="seg full" id="pidTest"><button data-k="load" class="on">Disturbance in T19</button><button data-k="sp">Set-point change</button></div>
-        <div class="ctl" style="margin-top:10px"><label for="stp">Step size (°C) <output id="o-stp"></output></label><input id="stp" type="range" min="-20" max="20" step="1" value="10"></div>
+        <div class="seg full" id="pidTest"></div>
+        <div class="ctl" style="margin-top:10px"><label for="stp" id="stpL">Step size <output id="o-stp"></output></label><input id="stp" type="range" min="-20" max="20" step="1" value="10"></div>
         <button class="btn pri" id="pidPlay" style="width:100%">▶ Play the response</button>
+        <button class="btn ghost" id="loopReset" style="width:100%;margin-top:8px">Reset this loop</button>
       </aside>
       <div style="min-width:0">
         <div class="kpis" id="pidK"></div>
         <div class="grid g2" style="margin-top:18px">
-          <div class="card"><h3><span class="h">Reactor inlet temperature T20</span><span class="mini">deviation from 200 °C</span></h3><svg id="pidT" class="chart" viewBox="0 0 520 300"></svg>
-            <div class="lg"><span><i class="sw ln" style="background:var(--navy)"></i>Selected tuning</span><span><i class="sw dash" style="border-color:#8FAADC"></i>Cohen–Coon PID (selected in the report)</span><span><i class="sw" style="background:rgba(84,130,53,.25)"></i>±0.1 °C band</span></div></div>
+          <div class="card"><h3><span class="h" id="yT">Controlled variable</span><span class="mini" id="yU"></span></h3><svg id="pidT" class="chart" viewBox="0 0 520 300"></svg>
+            <div class="lg" id="yLg"></div></div>
           <div class="card"><h3><span class="h">Controller output</span><span class="mini">mA, deviation</span></h3><svg id="pidU" class="chart" viewBox="0 0 520 300"></svg>
-            <div class="lg"><span><i class="sw ln" style="background:#C55A11"></i>Signal to TV-310</span></div></div>
+            <div class="lg"><span><i class="sw ln" style="background:#C55A11"></i><span id="uN">Signal to the valve</span></span></div></div>
         </div>
-        <div class="card" style="margin-top:18px"><h3><span class="h">Stability (Routh, Table 6.14) and performance of the methods (Table 6.16)</span></h3><div class="tbl"><table id="pidTab"></table></div><p class="note" id="routhNote"></p></div>
+        <div class="card" style="margin-top:18px"><h3><span class="h" id="tabT">Stability and performance</span></h3><div class="tbl"><table id="pidTab"></table></div><p class="note" id="routhNote"></p></div>
       </div>
     </div>
+    <div class="card" style="margin-top:18px"><h3><span class="h">All loops at a glance</span><span class="mini">recommended tuning, standard test of each loop</span></h3><div class="tbl"><table id="loopSum"></table></div></div>
     <div class="card" style="margin-top:18px"><h3><span class="h">Instrument loop index (Table 6.26)</span><span style="display:flex;gap:8px;flex-wrap:wrap"><input class="search" id="iq" placeholder="Search loops, units or streams…" style="width:260px;padding:7px 10px;font-size:15px"></span></h3>
       <div class="seg" id="iSeg" style="margin-bottom:10px"><button data-k="all" class="on">All</button><button data-k="T">Temperature</button><button data-k="P">Pressure</button><button data-k="L">Level</button><button data-k="F">Flow</button><button data-k="A">Analysis</button><button data-k="W">Weight</button><button data-k="HI">Heat-integrated only</button></div>
       <div class="tbl" style="max-height:440px;overflow:auto"><table id="iTab"></table></div></div>
@@ -827,6 +844,79 @@ function simLoop(o) {
 function routh(K) { const a3 = 0.011875, a2 = 0.19125, a1 = 0.825, a0 = 1 + 1.931 * K; return {Kcu: (a2 * a1 / a3 - 1) / 1.931, wu: Math.sqrt(a1 / a3), stable: a2 * a1 > a3 * a0}; }
 if (typeof module !== 'undefined') module.exports = {simLoop, routh, LOOP};
 
+// ===== Control loops of the plant: models and a general simulator (Section 6.3) =====
+// Chain: controller -> valve kv/(τv s + 1) -> process -> transmitter km/(τm s + 1).
+// Process 'fo': y' = (kp·xv + kd·d − y)/τp ;  process 'int': y' = kp·xv + kd·d (integrating).
+const F101_A = Math.PI / 4 * 3.5 * 3.5;                       // m², F-101 (D = 3.50 m, Table C.21)
+const LOOP_V = [['F-101 vapour space (67.3 m³ − 8.7 m³ liquid)', 58.6], ['R-103 heads (2:1 ellipsoidal, D = 3.51 m)', 11.3], ['R-103 tubes: gas in the catalyst bed and the empty length', 9.1],
+  ['E-105 shell side (4 shells)', 8.9], ['E-104 tube side (1,025 tubes)', 1.8], ['Piping of the loop (assumed)', 15.0]];
+const LOOP_VOL = LOOP_V.reduce((a, r) => a + r[1], 0);       // ≈ 104.7 m³
+const G_P = 0.08314 * 313.15 / LOOP_VOL;                      // bar per kmol (ideal gas at 40 °C)
+const LOOPS = {
+ 'TC-310': {tag: 'TC-310', title: 'R-103 inlet temperature', unit: 'E-104', src: 'report', ref: 'Section 6.3.7, Tables 6.13–6.16', type: 'Feedback · PID',
+  desc: 'TT-310 measures the synthesis feed leaving E-104 (Stream 20) and TC-310 sets the 40-bar steam through TV-310 (base case).',
+  kind: 'fo', kp: 9.195, tp: 0.475, kv: 1.3125, tv: 0.10, km: 0.16, tm: 0.25, kd: 1.0, y0: 200, yU: '°C', yN: 'Reactor inlet temperature T20', uN: 'Signal to TV-310',
+  blocks: ['Controller TC-310', 'Valve TV-310', '1.3125 / (0.10s + 1)', 'E-104 (steam heater)', '9.195 / (0.475s + 1)', 'Transmitter TT-310', '0.16 / (0.25s + 1)', 'Disturbance T19: 1.000 / (0.475s + 1)', 'T20', 'SP 200 °C'],
+  tests: {load: {n: 'Disturbance in T19', u: '°C', def: 10, min: -20, max: 20, st: 1, f: v => v}, sp: {n: 'Set-point change', u: '°C', def: 10, min: -20, max: 20, st: 1, f: v => v}},
+  band: 0.1, tEnd: 8, dt: 0.0005, modes: ['P', 'PI', 'PID'], def: {mode: 'PID', meth: 'CC'}, kc: [0.1, 7, 0.01], ti: [0.1, 2, 0.005], td: [0, 0.4, 0.002],
+  meth: {'ZN-U': {n: 'Z–N (ultimate gain)', PI: [2.89, 0.628], PID: [3.74, 0.377, 0.094]}, 'ZN-RC': {n: 'Z–N (reaction curve)', PI: [0.63, 1.165], PID: [0.84, 0.700, 0.175]},
+   'CC': {n: 'Cohen–Coon', PI: [0.68, 0.475], PID: [1.07, 0.675, 0.112], sel: 1}, 'ITAE': {n: 'ITAE (load)', PI: [0.60, 0.573], PID: [0.94, 0.450, 0.134]}, 'DS': {n: 'Direct synthesis (τc = θ)', PI: [0.35, 0.475], PID: [0.35, 0.475, 0.175]}},
+  refName: 'Cohen–Coon PID (selected in the report)', refSet: {mode: 'PID', Kc: 1.07, ti: 0.675, td: 0.112}},
+ 'LC-318': {tag: 'LC-318', title: 'F-101 liquid level', unit: 'F-101', src: 'report', ref: 'Section 6.3.8, Eqs. (6.20)–(6.21), Table 6.17', type: 'Feedback · P-only (averaging)',
+  desc: 'LT-318 measures the level of the 3.50 m flash drum and LC-318 moves the let-down valve V-101 on the crude methanol to T-101 (Stream 26). The drum is an integrating process.',
+  kind: 'int', kp: -1 / F101_A, kd: 1 / F101_A, kv: 1.8125e-3 * 60, tv: 0.10, km: 16 / 1.80, tm: 0, y0: 0.90, yU: 'm', yN: 'F-101 liquid level', uN: 'Signal to V-101 (LV-318)',
+  blocks: ['Controller LC-318', 'Valve V-101', '0.10875 (m³/min)/mA', 'F-101 (liquid hold-up)', '−1 / (9.621 s)', 'Transmitter LT-318', '8.889 mA/m', 'Liquid inflow (Stream 26 from E-105)', 'Level', 'SP 0.90 m'],
+  tests: {load: {n: '+ Liquid inflow', u: '%', def: 10, min: -30, max: 30, st: 1, f: v => v / 100 * 0.0145 * 60}, sp: {n: 'Set-point change', u: 'm', def: 0.10, min: -0.4, max: 0.4, st: 0.01, f: v => v}},
+  band: 0.005, tEnd: 50, dt: 0.005, modes: ['P', 'PI'], def: {mode: 'P', meth: 'P2'}, kc: [0.2, 8, 0.05], ti: [2, 60, 0.5], td: [0, 0, 1],
+  meth: {'P1': {n: 'P, Kc = 1', P: [1]}, 'P2': {n: 'P, Kc = 2', P: [2], sel: 1}, 'P4': {n: 'P, Kc = 4', P: [4]}, 'SIMC': {n: 'PI, averaging (SIMC, τc = 5 min)', PI: [1.95, 20.4]}},
+  refName: 'P-only, Kc = 2 (selected in the report)', refSet: {mode: 'P', Kc: 2, ti: 20, td: 0}},
+ 'PC-319': {tag: 'PC-319', title: 'Synthesis-loop pressure', unit: 'D-103', src: 'est', ref: 'Table 6.24; model estimated for the twin', type: 'Feedback · PI (integrating gas hold-up)',
+  desc: 'PT-319 measures the loop pressure at the F-101 vapour outlet (Stream 23) and PC-319 moves the purge valve on Stream 25. The gas hold-up of the loop makes the pressure an integrating process.',
+  kind: 'int', kp: -G_P, kd: G_P, kv: 2 * 1436.31 / 60 / 16, tv: 0.10, km: 16 / 60, tm: 0.05, y0: 47, yU: 'bar', yN: 'Synthesis-loop pressure', uN: 'Signal to the purge valve',
+  blocks: ['Controller PC-319', 'Purge valve (Stream 25)', '2.992 (kmol/min)/mA', 'Loop gas hold-up', `−${G_P.toFixed(4)} / s bar/kmol`, 'Transmitter PT-319', '0.267 / (0.05s + 1)', 'Fresh gas (Stream 18) from C-101', 'P', 'SP 47 bar'],
+  tests: {load: {n: '+ Fresh gas (Stream 18)', u: '%', def: 5, min: -15, max: 15, st: 1, f: v => v / 100 * 5067.44 / 60}, sp: {n: 'Set-point change', u: 'bar', def: 1, min: -3, max: 3, st: 0.1, f: v => v}},
+  band: 0.02, tEnd: 12, dt: 0.0005, modes: ['P', 'PI'], def: {mode: 'PI', meth: 'SIMC1'}, kc: [0.5, 60, 0.1], ti: [0.2, 10, 0.05], td: [0, 0, 1],
+  meth: {'SIMC1': {n: 'SIMC (τc = θ)', PI: [16.8, 1.2], sel: 1}, 'SIMC3': {n: 'SIMC, smooth (τc = 3θ)', PI: [8.4, 2.4]}, 'P': {n: 'P only, Kc = 10', P: [10]}},
+  refName: 'SIMC PI (τc = θ)', refSet: {mode: 'PI', Kc: 16.8, ti: 1.2, td: 0}},
+ 'FC-106': {tag: 'FY/FC-106', title: 'Gasifying steam ratio', unit: 'R-101', src: 'est', ref: 'Section 6.3.4, Figure 6.9; model estimated for the twin', type: 'Ratio · PI (flow)',
+  desc: 'WT-101 measures the MPW feed, FY-106 multiplies it by 1.33 kg/kg and sends the set point of FC-106, which moves the steam valve on Stream 7. A step in the feed is a set-point change for FC-106.',
+  kind: 'fo', kp: 1, tp: 0.01, kv: 2 * 50400 / 16, tv: 0.10, km: 16 / 100800, tm: 0.02, kd: 1, y0: 50400, yU: 'kg/h', yN: 'Gasifying steam, Stream 7', uN: 'Signal to FV-106',
+  blocks: ['Controller FC-106', 'Valve FV-106', '6,300 (kg/h)/mA', 'Steam line', '1 / (0.01s + 1)', 'Transmitter FT-106', '1.587×10⁻⁴ / (0.02s + 1)', 'Steam-header upset', 'Stream 7', 'SP 1.33×MPW'],
+  tests: {sp: {n: 'MPW feed step (FY-106)', u: '%', def: 10, min: -20, max: 20, st: 1, f: v => 1.33 * 37879 * v / 100}, load: {n: 'Steam-header upset', u: '%', def: -10, min: -20, max: 20, st: 1, f: v => v / 100 * 50400}},
+  band: 0.002 * 50400, tEnd: 2, dt: 0.0002, modes: ['P', 'PI'], def: {mode: 'PI', meth: 'SIMC1', test: 'sp'}, kc: [0.05, 5, 0.01], ti: [0.02, 1, 0.005], td: [0, 0, 1],
+  meth: {'SIMC1': {n: 'SIMC (τc = θ)', PI: [1.67, 0.1], sel: 1}, 'SIMC5': {n: 'SIMC, smooth (τc = 0.1 min)', PI: [0.77, 0.1]}, 'TYP': {n: 'Typical flow PI (0.5, 0.1 min)', PI: [0.5, 0.1]}},
+  refName: 'SIMC PI (τc = θ)', refSet: {mode: 'PI', Kc: 1.67, ti: 0.1, td: 0}, ratio: 1}};
+function loopK(L) { return L.kv * Math.abs(L.kp) * L.km; }
+function simGen(L, o) {
+  o = Object.assign({Kc: 1, ti: 1, td: 0, mode: 'PI', sp: 0, dist: 0, N: 10}, o); const act = Math.sign(L.kp);
+  let xv = 0, y = 0, ym = 0, I = 0, Df = 0, ePrev = 0, iae = 0, maxdev = 0, last = 0; const out = [];
+  const useI = o.mode !== 'P', useD = o.mode === 'PID', dt = L.dt, n = Math.round(L.tEnd / dt), every = Math.max(1, Math.round(L.tEnd / 800 / dt)), tS = L.tEnd * 0.025;
+  for (let k = 0; k <= n; k++) {
+    const t = k * dt, on = t >= tS, sp = on ? o.sp : 0, d = on ? o.dist : 0;
+    const e = act * (L.km * sp - ym);
+    if (useI) I += e * dt / o.ti;
+    if (useD) { const a = o.td / o.N; Df = (a * Df + o.td * (e - ePrev)) / (a + dt); } ePrev = e;
+    const u = o.Kc * (e + (useI ? I : 0) + (useD ? Df : 0));
+    xv += dt * (L.kv * u - xv) / L.tv;
+    if (L.kind === 'fo') y += dt * (L.kp * xv + L.kd * d - y) / L.tp; else y += dt * (L.kp * xv + L.kd * d);
+    ym = L.tm > 0 ? ym + dt * (L.km * y - ym) / L.tm : L.km * y;
+    const dev = y - sp; iae += Math.abs(dev) * dt; maxdev = Math.max(maxdev, Math.abs(dev)); if (Math.abs(dev - (o.mode === 'P' ? 0 : 0)) > L.band) last = t;
+    if (k % every === 0) out.push([t, y, u, sp]);
+  }
+  // settling: last time outside the band around the final value
+  const fin = y; let ls = 0; out.forEach(p => { if (Math.abs(p[1] - fin) > L.band) ls = p[0]; });
+  return {pts: out, iae, maxdev, settle: ls - tS, final: y, tS};
+}
+// ultimate gain under P control from the characteristic polynomial (∞ when the loop is of second order)
+function loopKcu(L) {
+  const a = L.tv, b = L.kind === 'fo' ? L.tp : 0, c = L.tm, K = loopK(L) * (L.kind === 'fo' ? 1 : 1);
+  // D(s) = (a s + 1)(b s + 1 or s)(c s + 1)
+  let p; if (L.kind === 'fo') p = [a * b * c, a * b + a * c + b * c, a + b + c, 1]; else p = [a * c, a + c, 1, 0];
+  if (p[0] <= 0) return {Kcu: Infinity, wu: null};
+  const Kcu = (p[1] * p[2] / p[0] - p[3]) / K; return {Kcu, wu: Math.sqrt(p[2] / p[0])};
+}
+if (typeof module !== 'undefined') module.exports = {LOOPS, simGen, loopKcu, loopK, LOOP_VOL, LOOP_V, G_P};
+
 // ===== Monte Carlo of the NPV (Section 8.3.8, Table 8.30) =====
 const MC_DIST = [['p_meoh', 300, 393, 520], ['p_h2', 2000, 2473, 2800], ['fci_mult', 0.85, 1.0, 1.25], ['p_mpw', 50, 80, 120],
  ['elec_mult', 0.95, 1.0, 1.25], ['p_ng', 2.20, 2.50, 3.20], ['op_factor', 0.90, 1.0, 1.01]];
@@ -1132,8 +1222,9 @@ function fillRange(el) { const p = (el.value - el.min) / (el.max - el.min) * 100
 document.addEventListener('input', e => { if (e.target.type === 'range') fillRange(e.target); });
 // ===================================================================== state
 const DEF = {X: [0.40, 0.10, 0.90, 1.0], MODE: 'design', margin: 2, MK: {}, SCID: 'base', HI: true, dT: 10, cpm: 550,
-  pid: {mode: 'PID', meth: 'CC', Kc: 1.07, ti: 0.675, td: 0.112, test: 'load', step: 10}, FK: '1', ft: 598, em: {f: 100, c: 1.04, tech: 'today'},
+  loop: 'TC-310', FK: '1', ft: 598, em: {f: 100, c: 1.04, tech: 'today'},
   pfdHI: false, pfdFlow: true, sec: 'all', scf: 'all', iSeg: 'all', iq: '', stq: '', pidSel: 'base'};
+DEF.pids = initPids();
 let ST = clone(DEF), PAGE = 'overview', AIRES = {}, MC = null, MCKEY = '';
 const MKX = () => Object.assign({}, ST.MK, {hi: ST.HI});
 const lims = () => ST.MODE === 'safe' ? limitsFor('safe', ST.margin / 100) : limitsFor('max', 0);
@@ -1212,7 +1303,7 @@ function resetPage(p, quiet) {
   if (p === 'operations' || p === 'all') { ST.X = D.X; ST.MODE = 'design'; ST.margin = 2; }
   if (p === 'process' || p === 'all') { ST.pfdHI = false; ST.pfdFlow = true; ST.sec = 'all'; ST.stq = ''; closeDrawer(); }
   if (p === 'heat' || p === 'all') { ST.HI = true; ST.dT = 10; ST.cpm = 550; }
-  if (p === 'control' || p === 'all') { ST.pid = D.pid; ST.iSeg = 'all'; ST.iq = ''; ST.pidSel = 'base'; pidZoom = null; }
+  if (p === 'control' || p === 'all') { ST.loop = 'TC-310'; ST.pids = initPids(); ST.iSeg = 'all'; ST.iq = ''; ST.pidSel = 'base'; pidZoom = null; }
   if (p === 'economics' || p === 'all') { MC = null; }
   if (p === 'market' || p === 'all') { ST.MK = {}; ST.SCID = 'base'; ST.scf = 'all'; AIRES = {}; }
   if (p === 'safety' || p === 'all') { ST.FK = '1'; ST.ft = 598; stopPlay(); }
@@ -1226,8 +1317,7 @@ function syncInputs() {
   $$('#modes button').forEach(b => b.classList.toggle('on', b.dataset.m === ST.MODE));
   $('pfdHI').checked = ST.pfdHI; $('pfdFlow').checked = ST.pfdFlow; $$('#secSeg button').forEach(b => b.classList.toggle('on', b.dataset.s === ST.sec)); $('stq').value = ST.stq;
   $('hiOn').checked = ST.HI; set('dtmin', ST.dT); set('cpm', ST.cpm);
-  set('kc', ST.pid.Kc); set('ti', ST.pid.ti); set('td', ST.pid.td); set('stp', ST.pid.step);
-  $$('#pidMode button').forEach(b => b.classList.toggle('on', b.dataset.k === ST.pid.mode)); $$('#pidTest button').forEach(b => b.classList.toggle('on', b.dataset.k === ST.pid.test));
+  $$('#lpick .lp').forEach(b => b.classList.toggle('on', b.dataset.l === ST.loop)); syncLoopInputs();
   $$('#iSeg button').forEach(b => b.classList.toggle('on', b.dataset.k === ST.iSeg)); $('iq').value = ST.iq; $$('#pidSel button').forEach(b => b.classList.toggle('on', b.dataset.k === ST.pidSel));
   MS.forEach(([id, k, dflt, , inv]) => set(id, inv(k in ST.MK ? ST.MK[k] : dflt))); $$('#scFilt button').forEach(b => b.classList.toggle('on', b.dataset.k === ST.scf));
   set('ft', ST.ft); set('ef', ST.em.f); set('ec', ST.em.c); $$('#etech button').forEach(b => b.classList.toggle('on', b.dataset.k === ST.em.tech));
@@ -1465,60 +1555,130 @@ $('hiOn').addEventListener('change', e => { ST.HI = e.target.checked; HICACHE = 
 $('dtmin').addEventListener('input', e => { ST.dT = +e.target.value; render(); });
 $('cpm').addEventListener('input', e => { ST.cpm = +e.target.value; render(); });
 // ===================================================================== CONTROL
+const LCOL = {'TC-310': '#C55A11', 'LC-318': '#2E75B6', 'PC-319': '#548235', 'FC-106': '#6A4C93'};
+function loopDefaults(id) { const L = LOOPS[id], m = L.meth[L.def.meth], s = m[L.def.mode] || m.P || m.PI;
+  return {mode: L.def.mode, meth: L.def.meth, Kc: s[0], ti: s[1] ?? L.refSet.ti, td: s[2] ?? 0, test: L.def.test || 'load', step: L.tests[L.def.test || 'load'].def}; }
+function initPids() { const o = {}; Object.keys(LOOPS).forEach(k => o[k] = loopDefaults(k)); return o; }
+function curLoop() { return LOOPS[ST.loop]; } function curPid() { return ST.pids[ST.loop]; }
 function blockDiagram() {
-  const b = (x, w, t1, t2, c) => `<rect x="${x}" y="70" width="${w}" height="60" rx="10" fill="var(--fill)" stroke="${c}" stroke-width="2"/><text x="${x + w / 2}" y="96" text-anchor="middle" style="font-size:15px;font-weight:700;fill:var(--ink)">${t1}</text><text x="${x + w / 2}" y="116" text-anchor="middle" style="font-size:13.5px;fill:var(--muted)">${t2}</text>`;
+  const L = curLoop(), B = L.blocks, col = LCOL[ST.loop];
+  const b = (x, y, w, h, t1, t2, c) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="10" fill="var(--fill)" stroke="${c}" stroke-width="2"/><text x="${x + w / 2}" y="${y + h / 2 - 4}" text-anchor="middle" style="font-size:15px;font-weight:700;fill:var(--ink)">${t1}</text><text x="${x + w / 2}" y="${y + h / 2 + 15}" text-anchor="middle" style="font-size:13.5px;fill:var(--muted)">${t2}</text>`;
   const a = (x1, x2, y = 100) => `<path d="M${x1},${y} H${x2}" stroke="var(--ink2)" stroke-width="2" marker-end="url(#bA)" fill="none"/>`;
+  const sum = x => `<rect x="${x}" y="88" width="24" height="24" rx="12" fill="var(--panel)" stroke="var(--ink2)" stroke-width="2"/><text x="${x + 12}" y="105" text-anchor="middle" style="font-size:14px;fill:var(--ink)">Σ</text>`;
+  const ctl = L.ratio ? 'Kc(1 + 1/τIs)' : curPid().mode === 'P' ? 'Kc' : curPid().mode === 'PI' ? 'Kc(1 + 1/τIs)' : 'Kc(1 + 1/τIs + τDs)';
   $('blk').innerHTML = `<defs><marker id="bA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0L10,5L0,10z" fill="var(--ink2)"/></marker></defs>
-   <text x="30" y="94" style="font-size:14px;fill:var(--muted)">SP</text><text x="22" y="112" style="font-size:13px;fill:var(--muted)">200 °C</text>${a(60, 96)}<rect x="98" y="88" width="24" height="24" rx="12" fill="var(--panel)" stroke="var(--ink2)" stroke-width="2"/><text x="110" y="105" text-anchor="middle" style="font-size:14px;fill:var(--ink)">Σ</text>
-   ${a(122, 160)}${b(160, 170, 'Controller TC-310', 'Kc(1 + 1/τIs + τDs)', 'var(--orange)')}${a(330, 370)}${b(370, 170, 'Valve TV-310', '1.3125 / (0.10s + 1)', 'var(--blue)')}${a(540, 600)}
-   ${b(600, 190, 'E-104 (steam heater)', '9.195 / (0.475s + 1)', 'var(--navy)')}<rect x="822" y="88" width="24" height="24" rx="12" fill="var(--panel)" stroke="var(--ink2)" stroke-width="2"/><text x="834" y="105" text-anchor="middle" style="font-size:14px;fill:var(--ink)">Σ</text>${a(790, 822)}${a(846, 1070)}<text x="1000" y="92" style="font-size:14px;fill:var(--ink)">T20</text>
-   <path d="M834,40 V88" stroke="var(--ink2)" stroke-width="2" marker-end="url(#bA)"/><text x="834" y="22" text-anchor="middle" style="font-size:13.5px;fill:var(--muted)">Disturbance T19: 1.000 / (0.475s + 1)</text>
-   <path d="M950,100 V170 H700" stroke="var(--ink2)" stroke-width="2" fill="none"/>${b(470, 230, 'Transmitter TT-310', '0.16 / (0.25s + 1)', 'var(--green)').replace(/y="70"/, 'y="150"').replace(/y="96"/, 'y="174"').replace(/y="116"/, 'y="192"').replace('height="60"', 'height="48"')}
+   <text x="34" y="94" text-anchor="middle" style="font-size:13.5px;fill:var(--muted)">${B[9].split(' ').slice(0, 1)}</text><text x="34" y="112" text-anchor="middle" style="font-size:12.5px;fill:var(--muted)">${B[9].split(' ').slice(1).join(' ')}</text>${a(70, 96)}${sum(98)}
+   ${a(122, 160)}${b(160, 70, 170, 60, B[0], ctl, col)}${a(330, 370)}${b(370, 70, 180, 60, B[1], B[2], 'var(--blue)')}${a(550, 600)}
+   ${b(600, 70, 200, 60, B[3], B[4], 'var(--navy)')}${sum(832)}${a(800, 832)}${a(856, 1070)}<text x="1000" y="92" style="font-size:14px;fill:var(--ink)">${B[8]}</text>
+   <path d="M844,40 V88" stroke="var(--ink2)" stroke-width="2" marker-end="url(#bA)"/><text x="844" y="24" text-anchor="middle" style="font-size:13.5px;fill:var(--muted)">${B[7]}</text>
+   <path d="M950,100 V174 H730" stroke="var(--ink2)" stroke-width="2" fill="none"/>${b(470, 150, 260, 48, B[5], B[6], 'var(--green)')}
    <path d="M470,174 H110 V112" stroke="var(--ink2)" stroke-width="2" fill="none" marker-end="url(#bA)"/><text x="118" y="140" style="font-size:13px;fill:var(--muted)">−</text>`;
+  $('blkT').textContent = 'Block diagram of the ' + L.tag + ' loop'; $('blkR').textContent = L.ref; $('lDesc').textContent = L.desc;
 }
+function runLoop(L, s, test, stepV) { const T = L.tests[test], v = T.f(stepV); return simGen(L, {Kc: s.Kc, ti: s.ti, td: s.mode === 'PID' ? s.td : 0, mode: s.mode, sp: test === 'sp' ? v : 0, dist: test === 'load' ? v : 0}); }
+function isUnstable(L, s, R) {
+  const t = L.tEnd, amp = (a, b) => Math.max(0, ...R.pts.filter(p => p[0] >= a * t && p[0] < b * t).map(p => Math.abs(p[1] - R.final)));
+  const ku = loopKcu(L).Kcu; return !isFinite(R.final) || Math.abs(R.final) > 1e6 || (s.mode === 'P' && s.Kc >= ku) || (amp(0.75, 1) > L.band * 0.5 && amp(0.75, 1) > 1.02 * amp(0.5, 0.75));
+}
+const fmtY = (L, v) => fmt(v, L.yU === 'kg/h' ? 0 : L.yU === '°C' ? 2 : L.yU === 'bar' ? 3 : 3);
 let pidRun = null;
-function pidSettings() { const P = ST.pid; return {Kc: P.Kc, ti: P.ti, td: P.mode === 'PID' ? P.td : 0, mode: P.mode}; }
+function buildLoopPick() {
+  $('lpick').innerHTML = Object.entries(LOOPS).map(([k, L]) => `<button class="lp${k === ST.loop ? ' on' : ''}" style="--lc:${LCOL[k]}" data-l="${k}"><span class="bd ${L.src === 'report' ? 'r' : 'e'}">${L.src === 'report' ? 'Report model' : 'Estimated model'}</span><div class="tg">${L.tag}</div><div class="tt">${L.title}</div><div class="ty">${L.type} · ${L.unit}</div><div class="st" id="lst-${k}"><i></i>stable</div></button>`).join('');
+  $$('#lpick .lp').forEach(b => b.addEventListener('click', () => selectLoop(b.dataset.l)));
+}
+function selectLoop(k) { ST.loop = k; $$('#lpick .lp').forEach(b => b.classList.toggle('on', b.dataset.l === k)); syncLoopInputs(); rControl(true); }
+function syncLoopInputs() {
+  const L = curLoop(), P = curPid(); const set = (id, v, r) => { const el = $(id); if (r) { el.min = r[0]; el.max = r[1]; el.step = r[2]; } el.value = v; fillRange(el); };
+  set('kc', P.Kc, L.kc); set('ti', P.ti, L.ti); set('td', P.td, L.td[1] > 0 ? L.td : [0, 0.4, 0.002]);
+  const T = L.tests[P.test]; set('stp', P.step, [T.min, T.max, T.st]);
+  $('pidMode').innerHTML = ['P', 'PI', 'PID'].map(m => `<button data-k="${m}" class="${P.mode === m ? 'on' : ''}" ${L.modes.includes(m) ? '' : 'disabled title="Not used for this loop"'}>${m}</button>`).join('');
+  $$('#pidMode button').forEach(b => b.addEventListener('click', () => { const P = curPid(); P.mode = b.dataset.k; const m = L.meth[P.meth]; if (m && m[P.mode]) { const s = m[P.mode]; P.Kc = s[0]; if (s[1]) P.ti = s[1]; P.td = s[2] || 0; } else P.meth = 'custom'; syncLoopInputs(); rControl(true); }));
+  $('pidTest').innerHTML = Object.entries(L.tests).map(([k, t]) => `<button data-k="${k}" class="${P.test === k ? 'on' : ''}">${t.n}</button>`).join('');
+  $$('#pidTest button').forEach(b => b.addEventListener('click', () => { const P = curPid(); P.test = b.dataset.k; P.step = L.tests[P.test].def; syncLoopInputs(); rControl(true); }));
+  $('tiBox').style.display = L.modes.includes('PI') ? '' : 'none'; $('tdBox').style.display = L.modes.includes('PID') ? '' : 'none';
+  $('cTag').textContent = L.tag; $('methT').textContent = L.src === 'report' && ST.loop === 'TC-310' ? 'Tuning method (Table 6.15)' : ST.loop === 'LC-318' ? 'Tuning (Table 6.17)' : 'Tuning method';
+}
 function rControl(anim) {
-  const P = ST.pid; $('o-kc').value = fmt(P.Kc, 2); $('o-ti').value = fmt(P.ti, 3); $('o-td').value = fmt(P.td, 3); $('o-stp').value = (P.step > 0 ? '+' : '') + fmt(P.step) + ' °C';
+  const L = curLoop(), P = curPid(), T = L.tests[P.test];
+  blockDiagram();
+  $('o-kc').value = fmt(P.Kc, 2); $('o-ti').value = fmt(P.ti, 3); $('o-td').value = fmt(P.td, 3); $('stpL').firstChild.textContent = 'Step size (' + T.u + ') '; $('o-stp').value = (P.step > 0 ? '+' : '') + fmt(P.step, T.st < 1 ? (T.st < 0.1 ? 2 : 1) : 0) + ' ' + T.u;
   $('ti').disabled = P.mode === 'P'; $('td').disabled = P.mode !== 'PID';
-  $('pidMeth').innerHTML = Object.entries(PIDM).map(([k, m]) => `<button data-k="${k}" class="${P.meth === k ? 'on' : ''}">${m.n.replace(' (selected)', '').replace('Ziegler–Nichols', 'Z–N')}</button>`).join('') + `<button data-k="custom" class="${P.meth === 'custom' ? 'on' : ''}">Custom</button>`;
-  $$('#pidMeth button').forEach(b => b.addEventListener('click', () => { const k = b.dataset.k; ST.pid.meth = k; if (k !== 'custom') { const s = PIDM[k][P.mode === 'P' ? 'PID' : P.mode]; ST.pid.Kc = P.mode === 'P' ? s[0] : s[0]; ST.pid.ti = s[1]; ST.pid.td = s[2] || 0; } syncInputs(); rControl(true); }));
-  const S = pidSettings(), dist = P.test === 'load' ? P.step : 0, sp = P.test === 'sp' ? P.step : 0;
-  const R = simLoop({Kc: S.Kc, ti: S.ti, td: S.td, mode: S.mode, sp, dist, N: 10, tEnd: 8});
-  const Rr = simLoop({Kc: 1.07, ti: 0.675, td: 0.112, mode: 'PID', sp, dist, N: 10, tEnd: 8});
-  const amp = (t0, t1) => Math.max(0, ...R.pts.filter(p => p[0] >= t0 && p[0] < t1).map(p => Math.abs(p[1] - R.final)));
-  const unstable = !isFinite(R.final) || Math.abs(R.final) > 1e3 || (S.mode === 'P' && S.Kc >= routh().Kcu) || (amp(6, 8) > 0.05 && amp(6, 8) > 1.02 * amp(4, 6));
-  const rt = routh(); const gm = rt.Kcu / S.Kc; const ov = sp ? (Math.max(...R.pts.map(p => p[1] * Math.sign(sp))) - Math.abs(sp)) / Math.abs(sp) * 100 : null; const offset = S.mode === 'P' ? R.final - sp : 0;
-  const K = [['Maximum deviation', unstable ? '∞' : fmt(R.maxdev, 2) + ' °C', 'var(--orange)'], ['IAE', unstable ? '∞' : fmt(R.iae, 2) + ' °C·min', 'var(--blue)'], ['Settling (±0.1 °C)', unstable ? '—' : (R.settle > 7.5 ? '> 7.8 min' : fmt(Math.max(0, R.settle), 2) + ' min'), 'var(--navy)'],
-   [sp ? 'Overshoot' : 'Offset', sp ? (unstable ? '—' : fmt(Math.max(0, ov), 1) + ' %') : (S.mode === 'P' ? fmt(offset, 2) + ' °C' : '0 (integral action)'), 'var(--gold)'], ['Kc / Kcu', fmt(S.Kc / rt.Kcu, 3) + (S.mode === 'P' ? ' (GM ' + fmt(gm, 2) + ')' : ''), 'var(--green)'], ['Loop', unstable ? 'UNSTABLE' : 'Stable', unstable ? 'var(--red)' : 'var(--green)']];
+  $('pidMeth').innerHTML = Object.entries(L.meth).map(([k, m]) => `<button data-k="${k}" class="${P.meth === k ? 'on' : ''}">${m.n}${m.sel ? ' ★' : ''}</button>`).join('') + `<button data-k="custom" class="${P.meth === 'custom' ? 'on' : ''}">Custom</button>`;
+  $$('#pidMeth button').forEach(b => b.addEventListener('click', () => { const k = b.dataset.k, P = curPid(); P.meth = k; if (k !== 'custom') { const m = L.meth[k]; const md = m[P.mode] ? P.mode : m.PID ? 'PID' : m.PI ? 'PI' : 'P'; P.mode = md; const s = m[md]; P.Kc = s[0]; if (s[1]) P.ti = s[1]; P.td = s[2] || 0; } syncLoopInputs(); rControl(true); }));
+  const R = runLoop(L, P, P.test, P.step), Rr = runLoop(L, L.refSet, P.test, P.step), unstable = isUnstable(L, P, R);
+  const ku = loopKcu(L), sp = P.test === 'sp' ? T.f(P.step) : 0, offset = R.final - sp;
+  const yu = ' ' + L.yU, tau63 = (() => { const fin = R.final, s0 = R.pts.find(p => Math.abs(p[1]) >= 0.632 * Math.abs(fin) && p[0] > R.tS); return s0 && Math.abs(fin) > 1e-9 ? s0[0] - R.tS : null; })();
+  const ov = sp ? (Math.max(...R.pts.map(p => p[1] * Math.sign(sp))) - Math.abs(sp)) / Math.abs(sp) * 100 : null;
+  const rise = (() => { if (!sp) return null; const t1 = R.pts.find(p => p[0] > R.tS && p[1] / sp >= 0.1), t9 = R.pts.find(p => p[0] > R.tS && p[1] / sp >= 0.9); return t1 && t9 ? t9[0] - t1[0] : null; })();
+  const K = [sp ? ['Rise time (10–90 %)', unstable || rise === null ? '—' : fmt(rise, 3) + ' min', 'var(--orange)'] : ['Maximum deviation', unstable ? '∞' : fmtY(L, R.maxdev) + yu, 'var(--orange)'], ['IAE', unstable ? '∞' : fmt(R.iae, L.yU === 'kg/h' ? 0 : 3) + yu + '·min', 'var(--blue)'],
+   ['Settling (±' + fmtY(L, L.band) + yu + ')', unstable ? '—' : (R.settle > L.tEnd * 0.95 ? '> ' + fmt(L.tEnd * 0.97, 1) + ' min' : fmt(Math.max(0, R.settle), 2) + ' min'), 'var(--navy)'],
+   [sp ? 'Overshoot' : 'Offset', sp ? (unstable ? '—' : fmt(Math.max(0, ov), 1) + ' %') : (P.mode === 'P' ? fmtY(L, offset) + yu : '0 (integral action)'), 'var(--gold)'],
+   [L.kind === 'int' && P.mode === 'P' ? 'Closed-loop τ (63 %)' : 'Kc / Kcu', L.kind === 'int' && P.mode === 'P' ? (tau63 ? fmt(tau63, 2) + ' min' : '—') : (isFinite(ku.Kcu) ? fmt(P.Kc / ku.Kcu, 3) : '0 (Kcu = ∞)'), 'var(--green)'],
+   ['Loop', unstable ? 'UNSTABLE' : 'Stable', unstable ? 'var(--red)' : 'var(--green)']];
   $('pidK').innerHTML = K.map(([l, v, c]) => `<div class="kpi" style="--c:${c}"><div class="l">${l}</div><div class="v" style="font-size:22px">${v}</div></div>`).join('');
-  $('pidChip').className = 'chip' + (unstable ? ' bad' : ''); $('pidChip').innerHTML = `<i></i>${unstable ? 'Loop unstable' : 'Loop stable'} · ${S.mode} Kc = ${fmt(S.Kc, 2)}`;
-  const tT = R.pts.map(p => [p[0], Math.max(-60, Math.min(60, p[1]))]), tR = Rr.pts.map(p => [p[0], p[1]]), tU = R.pts.map(p => [p[0], Math.max(-40, Math.min(40, p[2]))]);
-  const yA = Math.max(4, ...tT.map(p => Math.abs(p[1])), ...tR.map(p => Math.abs(p[1]))) * 1.12;
-  const lim = [Math.min(-0.5, ...tT.map(p => p[1]), ...tR.map(p => p[1])) - 0.6, Math.max(0.5, ...tT.map(p => p[1]), ...tR.map(p => p[1])) + 0.6].map(v => Math.max(-yA, Math.min(yA, v)));
+  $('pidChip').className = 'chip' + (unstable ? ' bad' : ''); $('pidChip').innerHTML = `<i></i>${L.tag}: ${unstable ? 'loop unstable' : 'loop stable'} · ${P.mode} Kc = ${fmt(P.Kc, 2)}`;
+  const st = $('lst-' + ST.loop); if (st) { st.className = 'st' + (unstable ? ' bad' : ''); st.innerHTML = `<i></i>${unstable ? 'unstable' : 'stable'} · ${P.mode} Kc ${fmt(P.Kc, 2)}`; }
+  $('yT').textContent = L.yN; $('yU').textContent = L.yU + ' (set point ' + fmtY(L, L.y0) + ' ' + L.yU + ')'; $('uN').textContent = L.uN;
+  $('yLg').innerHTML = `<span><i class="sw ln" style="background:var(--navy)"></i>Selected tuning</span><span><i class="sw dash" style="border-color:#8FAADC"></i>${L.refName}</span><span><i class="sw dash" style="border-color:#C55A11"></i>Set point</span><span><i class="sw" style="background:rgba(84,130,53,.25)"></i>±${fmtY(L, L.band)} ${L.yU} band</span>`;
+  const cl = v => Math.max(-1e7, Math.min(1e7, v)); const y0 = L.y0, tT = R.pts.map(p => [p[0], y0 + cl(p[1])]), tR = Rr.pts.map(p => [p[0], y0 + p[1]]), tS = R.pts.map(p => [p[0], y0 + p[3]]), tU = R.pts.map(p => [p[0], cl(p[2])]);
+  const span = Math.max(...tR.map(p => Math.abs(p[1] - y0)), Math.abs(sp), L.band * 4) * 1.6;
+  const ys = tT.concat(tR).map(p => p[1]).filter(v => Math.abs(v - y0) <= span * 3);
+  const lim = [Math.min(...ys, y0 + sp) , Math.max(...ys, y0 + sp)]; const pad = (lim[1] - lim[0]) * 0.12 || 1; lim[0] -= pad; lim[1] += pad;
   const draw = n => { const k = Math.max(2, Math.round(tT.length * n));
-    plot('pidT', {x: [0, 8], y: lim, xt: 1, xl: 'Time (min)', bands: [{y0: sp - 0.1, y1: sp + 0.1, c: 'rgba(84,130,53,.25)'}], hl: [{y: sp, c: cssv('--muted'), dash: '3 3', w: 1.2}], series: [{d: tR.slice(0, k), c: '#8FAADC', dash: '6 4'}, {d: tT.slice(0, k), c: cssv('--navy'), w: 2.8}],
-      tip: x => `<b>t = ${fmt(x, 2)} min</b><br>Selected: ${fmt(interp(tT, x), 3)} °C<br>Cohen–Coon: ${fmt(interp(tR, x), 3)} °C`});
-    const um = Math.max(1, ...tU.map(p => Math.abs(p[1]))) * 1.15;
-    plot('pidU', {x: [0, 8], y: [-um, um], xt: 1, xl: 'Time (min)', series: [{d: tU.slice(0, k), c: '#C55A11', w: 2.6}], tip: x => `<b>t = ${fmt(x, 2)} min</b><br>u = ${fmt(interp(tU, x), 3)} mA`}); };
+    plot('pidT', {x: [0, L.tEnd], y: lim, xl: 'Time (min)', bands: [{y0: y0 + sp - L.band, y1: y0 + sp + L.band, x0: R.tS, c: 'rgba(84,130,53,.22)'}], series: [{d: tS, c: '#C55A11', dash: '4 4', w: 1.6}, {d: tR.slice(0, k), c: '#8FAADC', dash: '6 4'}, {d: tT.slice(0, k), c: cssv('--navy'), w: 2.8}],
+      tip: x => `<b>t = ${fmt(x, 2)} min</b><br>Selected: ${fmtY(L, interp(tT, x))} ${L.yU}<br>${L.refName.split(' (')[0]}: ${fmtY(L, interp(tR, x))} ${L.yU}`});
+    const um = Math.max(1e-3, ...tU.map(p => Math.abs(p[1]))) * 1.15;
+    plot('pidU', {x: [0, L.tEnd], y: [-um, um], xl: 'Time (min)', series: [{d: tU.slice(0, k), c: '#C55A11', w: 2.6}], tip: x => `<b>t = ${fmt(x, 2)} min</b><br>u = ${fmt(interp(tU, x), 3)} mA`}); };
   if (pidRun) cancelAnimationFrame(pidRun);
-  if (anim) { const t0 = performance.now(); const st = t => { const n = Math.min(1, (t - t0) / 1600); draw(n); if (n < 1) pidRun = requestAnimationFrame(st); }; pidRun = requestAnimationFrame(st); } else draw(1);
-  const rowsM = Object.entries(PIDM).map(([k, m]) => { const a = simLoop({Kc: m.PID[0], ti: m.PID[1], td: m.PID[2], mode: 'PID', dist: 10, N: 10, tEnd: 8}); const bsp = simLoop({Kc: m.PID[0], ti: m.PID[1], td: m.PID[2], mode: 'PID', sp: 10, dist: 0, N: 10, tEnd: 8});
-    const os = (Math.max(...bsp.pts.map(p => p[1])) - 10) / 10 * 100; return `<tr${k === P.meth ? ' style="font-weight:700"' : ''}><td>${m.n}</td><td>${m.PID.map(v => fmt(v, 3)).join(' / ')}</td><td>${fmt(m.rep[0], 2)} | <span class="okc">${fmt(a.maxdev, 2)}</span></td><td>${fmt(m.rep[1], 2)} | <span class="okc">${fmt(a.iae, 2)}</span></td><td>${fmt(m.rep[2], 2)} | <span class="okc">${fmt(a.settle, 2)}</span></td><td>${m.rep[3]} | <span class="okc">${fmt(os, 0)}</span></td></tr>`; }).join('');
-  $('pidTab').innerHTML = `<thead><tr><th>Method</th><th>Kc / τI / τD</th><th>Max. dev. (°C)</th><th>IAE (°C·min)</th><th>Settling (min)</th><th>SP overshoot (%)</th></tr></thead><tbody>${rowsM}</tbody>`;
-  $('routhNote').innerHTML = `Report | <span class="okc">twin</span>, for a 10 °C disturbance in T19. Routh: 0.011875s³ + 0.19125s² + 0.825s + (1 + 1.931Kc) = 0, so the loop is stable under P control for Kc < Kcu = <b>${fmt(rt.Kcu, 3)}</b>, with ωu = ${fmt(rt.wu, 3)} rad/min (Pu = ${fmt(2 * Math.PI / rt.wu, 3)} min).`;
-  const q = ST.iq.toLowerCase(); const hiTags = ['TC-114 *', 'TC-105', 'TC-202', 'TC-310', 'TC-406 / FC-408', 'FC-103'];
+  if (anim) { const t0 = performance.now(); const stp = t => { const n = Math.min(1, (t - t0) / 1600); draw(n); if (n < 1) pidRun = requestAnimationFrame(stp); }; pidRun = requestAnimationFrame(stp); } else draw(1);
+  loopTable(L, P); loopSummary();
+  const q = ST.iq.toLowerCase(); const hiTags = ['TC-114 *', 'TC-105', 'TC-202', 'TC-310', 'TC-406 / FC-408', 'FC-103']; const SIMT = {'TC-310': 'TC-310', 'LC-318': 'LC-318', 'PC-319': 'PC-319', 'FY/FC-106': 'FC-106'};
   const rows = INSTR.filter(r => (ST.iSeg === 'all' || (ST.iSeg === 'HI' ? hiTags.includes(r[0]) : r[0].replace('FY/', '').startsWith(ST.iSeg)) || (ST.iSeg === 'P' && r[0].startsWith('PC'))) && (!q || r.join(' ').toLowerCase().includes(q)));
-  $('iTab').innerHTML = '<thead><tr><th>Loop</th><th>Service</th><th>Mode</th><th>Final control element</th><th>Section</th></tr></thead><tbody>' + rows.map(r => `<tr><td><b>${r[0]}</b>${hiTags.includes(r[0]) ? ' <span class="tag hi">HI</span>' : ''}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`).join('') + '</tbody>';
+  $('iTab').innerHTML = '<thead><tr><th>Loop</th><th>Service</th><th>Mode</th><th>Final control element</th><th>Section</th><th></th></tr></thead><tbody>' + rows.map(r => `<tr><td><b>${r[0]}</b>${hiTags.includes(r[0]) ? ' <span class="tag hi">HI</span>' : ''}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${SIMT[r[0]] ? `<button class="btn sm" data-sim="${SIMT[r[0]]}">Simulate ↑</button>` : ''}</td></tr>`).join('') + '</tbody>';
+  $$('#iTab [data-sim]').forEach(b => b.addEventListener('click', () => { selectLoop(b.dataset.sim); $('lpick').scrollIntoView({behavior: 'smooth', block: 'start'}); }));
   $('hicT').innerHTML = '<thead><tr><th>Exchanger</th><th>Base flowsheet</th><th>Heat-integrated flowsheet</th><th>New control action</th></tr></thead><tbody>' + HICTRL.map(r => `<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('') + '</tbody>';
   const img = $('pidimg'), want = ST.pidSel === 'hi' ? 'pid_hi.webp' : 'pid_base.webp'; if (!img.src.endsWith(want)) { img.src = want; pidZoom = null; }
   if (!pidZoom && img.complete && img.naturalWidth) fitPid();
 }
-$$('#pidMode button').forEach(b => b.addEventListener('click', () => { ST.pid.mode = b.dataset.k; $$('#pidMode button').forEach(x => x.classList.toggle('on', x === b)); if (ST.pid.meth !== 'custom') { const s = PIDM[ST.pid.meth][b.dataset.k === 'P' ? 'PID' : b.dataset.k]; ST.pid.Kc = b.dataset.k === 'P' ? s[0] : s[0]; ST.pid.ti = s[1]; ST.pid.td = s[2] || 0; syncInputs(); } rControl(true); }));
-$$('#pidTest button').forEach(b => b.addEventListener('click', () => { ST.pid.test = b.dataset.k; $$('#pidTest button').forEach(x => x.classList.toggle('on', x === b)); rControl(true); }));
-[['kc', 'Kc'], ['ti', 'ti'], ['td', 'td']].forEach(([id, k]) => $(id).addEventListener('input', e => { ST.pid[k] = +e.target.value; ST.pid.meth = 'custom'; rControl(); }));
-$('stp').addEventListener('input', e => { ST.pid.step = +e.target.value || 1; rControl(); });
+function loopTable(L, P) {
+  const ku = loopKcu(L);
+  if (ST.loop === 'TC-310') {
+    const rowsM = Object.entries(PIDM).map(([k, m]) => { const a = simLoop({Kc: m.PID[0], ti: m.PID[1], td: m.PID[2], mode: 'PID', dist: 10, N: 10, tEnd: 8}); const bsp = simLoop({Kc: m.PID[0], ti: m.PID[1], td: m.PID[2], mode: 'PID', sp: 10, dist: 0, N: 10, tEnd: 8});
+      const os = (Math.max(...bsp.pts.map(p => p[1])) - 10) / 10 * 100; return `<tr${k === P.meth ? ' style="font-weight:700"' : ''}><td>${m.n}</td><td>${m.PID.map(v => fmt(v, 3)).join(' / ')}</td><td>${fmt(m.rep[0], 2)} | <span class="okc">${fmt(a.maxdev, 2)}</span></td><td>${fmt(m.rep[1], 2)} | <span class="okc">${fmt(a.iae, 2)}</span></td><td>${fmt(m.rep[2], 2)} | <span class="okc">${fmt(a.settle, 2)}</span></td><td>${m.rep[3]} | <span class="okc">${fmt(os, 0)}</span></td></tr>`; }).join('');
+    $('tabT').textContent = 'Stability (Routh, Table 6.14) and performance of the methods (Table 6.16)';
+    $('pidTab').innerHTML = `<thead><tr><th>Method</th><th>Kc / τI / τD</th><th>Max. dev. (°C)</th><th>IAE (°C·min)</th><th>Settling (min)</th><th>SP overshoot (%)</th></tr></thead><tbody>${rowsM}</tbody>`;
+    $('routhNote').innerHTML = `Report | <span class="okc">twin</span>, for a 10 °C disturbance in T19. Routh: 0.011875s³ + 0.19125s² + 0.825s + (1 + 1.931Kc) = 0, so the loop is stable under P control for Kc < Kcu = <b>${fmt(ku.Kcu, 3)}</b>, with ωu = ${fmt(ku.wu, 3)} rad/min (Pu = ${fmt(2 * Math.PI / ku.wu, 3)} min).`;
+  } else if (ST.loop === 'LC-318') {
+    const rep = [[1, 0.01611, 9.95, 0.090, 0.990], [2, 0.03222, 4.98, 0.045, 0.945], [4, 0.06444, 2.49, 0.023, 0.923]];
+    const rows = rep.map(([kc, g, tau, off, fin]) => { const R = simGen(Object.assign({}, L, {tEnd: 90, dt: 0.01}), {Kc: kc, mode: 'P', dist: L.tests.load.f(10)}); const t63 = R.pts.find(p => p[1] >= 0.632 * R.final && p[0] > R.tS)[0] - R.tS;
+      return `<tr${Math.abs(P.Kc - kc) < 1e-9 && P.mode === 'P' ? ' style="font-weight:700"' : ''}><td>${kc}</td><td>${fmt(g, 5)} | <span class="okc">${fmt(kc * loopK(L) * F101_A / 60, 5)}</span></td><td>${fmt(tau, 2)} | <span class="okc">${fmt(F101_A / (kc * loopK(L) * F101_A), 2)}</span> | <span class="okc">${fmt(t63, 2)}</span></td><td>${fmt(off, 3)} | <span class="okc">${fmt(R.final, 3)}</span></td><td>${fmt(fin, 3)} | <span class="okc">${fmt(0.9 + R.final, 3)}</span></td></tr>`; }).join('');
+    $('tabT').textContent = 'P-only level control of F-101 for a +10 % step in the liquid inflow (Table 6.17)';
+    $('pidTab').innerHTML = `<thead><tr><th>Kc (mA/mA)</th><th>Kc·kv·km (m²/s)</th><th>τcl (min): Eq. 6.21 | with valve lag</th><th>Level offset (m)</th><th>Final level (m)</th></tr></thead><tbody>${rows}</tbody>`;
+    $('routhNote').innerHTML = `Report | <span class="okc">twin</span>. A = π/4 × 3.50² = ${fmt(F101_A, 3)} m², kv = 1.8125 × 10⁻³ (m³/s)/mA (V-101 passes 0.029 m³/s), km = 16/1.80 = 8.889 mA/m. τcl = A/(Kc·kv·km) and offset = ΔFin/(Kc·kv·km) (Eq. 6.21). The twin also includes the 0.10 min lag of the valve, which makes the response slightly faster at the start; the offsets are identical. With an integrating process and one lag the loop has no ultimate gain (P control is always stable).`;
+  } else {
+    const rows = Object.entries(L.meth).map(([k, m]) => { const md = m.PI ? 'PI' : 'P', s = m[md]; const sset = {mode: md, Kc: s[0], ti: s[1] || 1, td: 0}; const a = runLoop(L, sset, 'load', L.tests.load.def), b = runLoop(L, sset, 'sp', L.tests.sp.def);
+      const spv = L.tests.sp.f(L.tests.sp.def), os = (Math.max(...b.pts.map(p => p[1] * Math.sign(spv))) - Math.abs(spv)) / Math.abs(spv) * 100;
+      return `<tr${k === P.meth ? ' style="font-weight:700"' : ''}><td>${m.n}</td><td>${md}: ${fmt(s[0], 2)}${s[1] ? ' / ' + fmt(s[1], 2) + ' min' : ''}</td><td class="okc">${fmtY(L, a.maxdev)}</td><td class="okc">${fmt(a.iae, L.yU === 'kg/h' ? 0 : 3)}</td><td class="okc">${md === 'P' ? fmtY(L, a.final) : '0'}</td><td class="okc">${fmt(Math.max(0, os), 1)}</td><td class="okc">${fmt(Math.max(0, b.settle), 2)}</td></tr>`; }).join('');
+    const lt = L.tests.load, sp = L.tests.sp;
+    $('tabT').textContent = 'Performance of the tuning methods (twin, model estimated from the design data)';
+    $('pidTab').innerHTML = `<thead><tr><th>Method</th><th>Settings</th><th>Max. dev., load (${L.yU})</th><th>IAE, load (${L.yU}·min)</th><th>Offset (${L.yU})</th><th>SP overshoot (%)</th><th>SP settling (min)</th></tr></thead><tbody>${rows}</tbody>`;
+    const th = L.tv + L.tm, Kp = loopK(L);
+    $('routhNote').innerHTML = (ST.loop === 'PC-319' ? `Model estimated for the twin (not part of the report): the gas hold-up of the loop is ${fmt(LOOP_VOL, 1)} m³ (${LOOP_V.map(r => r[0] + ' ' + fmt(r[1], 1)).join('; ')}), so dP/dt = RT/V × (Fin − Fpurge) with RT/V = ${fmt(G_P, 4)} bar/kmol at 40 °C. The purge valve passes twice the design purge (2 × 1,436.31 kmol/h), PT-319 has a span of 0–60 bar and a lag of 0.05 min. Integrating model K′e<sup>−θs</sup>/s with K′ = ${fmt(Kp, 4)} min⁻¹ and θ = ${fmt(th, 2)} min; SIMC: Kc = 1/[K′(τc + θ)], τI = 4(τc + θ). Under P control the ultimate gain is Kcu = ${fmt(loopKcu(L).Kcu, 1)}.`
+      : `Model estimated for the twin (not part of the report): FV-106 passes twice the design steam (2 × 50,400 kg/h) and FT-106 has a span of 0–100,800 kg/h, so K = kv·km = ${fmt(Kp, 3)}. The valve lag (0.10 min) dominates; the steam line (0.01 min) and the transmitter (0.02 min) form the dead time θ = ${fmt(L.tp + L.tm, 2)} min. SIMC: Kc = τ/[K(τc + θ)], τI = min(τ, 4(τc + θ)). The set point is 1.33 × the MPW feed measured by WT-101 (Table 6.18), so a feed step of +10 % asks for +${fmt(1.33 * 3787.9, 0)} kg/h of steam. Ultimate gain under P control: Kcu = ${fmt(loopKcu(L).Kcu, 1)}.`) + ` Standard tests: ${lt.n} ${lt.def > 0 ? '+' : ''}${lt.def} ${lt.u} and ${sp.n} ${sp.def > 0 ? '+' : ''}${sp.def} ${sp.u}.`;
+  }
+}
+function loopSummary() {
+  $('loopSum').innerHTML = '<thead><tr><th>Loop</th><th>Controlled variable</th><th>Model</th><th>Current tuning</th><th>Response (standard test)</th><th>Settling (min)</th><th>Kcu (P only)</th><th>Status</th><th></th></tr></thead><tbody>' +
+   Object.entries(LOOPS).map(([k, L]) => { const P = ST.pids[k], t = L.def.test || 'load', R = runLoop(L, P, t, L.tests[t].def), un = isUnstable(L, P, R), ku = loopKcu(L).Kcu;
+    return `<tr${k === ST.loop ? ' style="font-weight:700"' : ''}><td><b style="color:${LCOL[k]}">${L.tag}</b></td><td>${L.title}</td><td>${L.src === 'report' ? '<span class="tag">Report</span>' : '<span class="tag hi" style="background:var(--lgold);color:var(--gold)">Estimated</span>'}</td><td>${P.mode} · Kc ${fmt(P.Kc, 2)}${P.mode !== 'P' ? ' · τI ' + fmt(P.ti, 2) : ''}${P.mode === 'PID' ? ' · τD ' + fmt(P.td, 3) : ''}</td>
+     <td>${un ? '∞' : t === 'sp' ? 'overshoot ' + fmt(Math.max(0, (Math.max(...R.pts.map(p => p[1])) - L.tests.sp.f(L.tests.sp.def)) / L.tests.sp.f(L.tests.sp.def) * 100), 1) + ' %' : fmtY(L, R.maxdev) + ' ' + L.yU}</td><td>${un ? '—' : fmt(Math.max(0, R.settle), 2)}</td><td>${isFinite(ku) ? fmt(ku, 2) : '∞'}</td><td class="${un ? 'badc' : 'okc'}">${un ? 'Unstable' : 'Stable'}</td><td><button class="btn sm" data-sel="${k}">Open</button></td></tr>`; }).join('') + '</tbody>';
+  $$('#loopSum [data-sel]').forEach(b => b.addEventListener('click', () => { selectLoop(b.dataset.sel); $('lpick').scrollIntoView({behavior: 'smooth', block: 'start'}); }));
+  Object.entries(LOOPS).forEach(([k, L]) => { if (k === ST.loop) return; const P = ST.pids[k], t = L.def.test || 'load', un = isUnstable(L, P, runLoop(L, P, t, L.tests[t].def)); const st = $('lst-' + k); if (st) { st.className = 'st' + (un ? ' bad' : ''); st.innerHTML = `<i></i>${un ? 'unstable' : 'stable'} · ${P.mode} Kc ${fmt(P.Kc, 2)}`; } });
+}
+[['kc', 'Kc'], ['ti', 'ti'], ['td', 'td']].forEach(([id, k]) => $(id).addEventListener('input', e => { const P = curPid(); P[k] = +e.target.value; P.meth = 'custom'; rControl(); }));
+$('stp').addEventListener('input', e => { curPid().step = +e.target.value || curLoop().tests[curPid().test].st; rControl(); });
 $('pidPlay').addEventListener('click', () => rControl(true));
+$('loopReset').addEventListener('click', () => { ST.pids[ST.loop] = loopDefaults(ST.loop); syncLoopInputs(); rControl(true); toast(curLoop().tag + ' returned to its recommended tuning.'); });
 $$('#iSeg button').forEach(b => b.addEventListener('click', () => { ST.iSeg = b.dataset.k; $$('#iSeg button').forEach(x => x.classList.toggle('on', x === b)); rControl(); }));
 $('iq').addEventListener('input', e => { ST.iq = e.target.value; rControl(); });
 $$('#pidSel button').forEach(b => b.addEventListener('click', () => { ST.pidSel = b.dataset.k; $$('#pidSel button').forEach(x => x.classList.toggle('on', x === b)); rControl(); }));
@@ -1741,7 +1901,7 @@ document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.ke
   if (e.key === 'Escape') closePal(); if (e.key === 'ArrowDown') { palSel++; renderPal(); e.preventDefault(); } if (e.key === 'ArrowUp') { palSel = Math.max(0, palSel - 1); renderPal(); e.preventDefault(); }
   if (e.key === 'Enter') { const L = $('pres')._L; if (L && L[palSel]) { closePal(); L[palSel].f(); } } });
 // ===================================================================== start
-buildOverview(); buildPFD(); buildMarket(); buildFault(); buildEM(); blockDiagram(); syncInputs();
+buildOverview(); buildPFD(); buildMarket(); buildFault(); buildEM(); buildLoopPick(); syncInputs();
 show(location.hash.replace('#/', '') || 'overview');
 
 </script>
