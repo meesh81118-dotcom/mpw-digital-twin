@@ -298,14 +298,14 @@ function renderScene(mode, target) { if (mode === 'local' && !target && AO && co
   if (mode === 'globe') { renderer.toneMappingExposure = 1.0; renderer.autoClear = true; renderer.render(globe.scene, globe.cam); }
   else { renderer.toneMappingExposure = 0.86; renderer.autoClear = false; renderer.clear(); renderer.render(L.under, L.cam); renderer.clearDepth(); renderer.render(L.scene, L.cam); renderer.autoClear = true; }
   renderer.setRenderTarget(null); }
-function frame(now) { requestAnimationFrame(frame); const dt = Math.min(0.1, (now - last) / 1000); last = now; TT += dt; stepTweens(now);
+const LONG = []; function frame(now) { requestAnimationFrame(frame); const dt = Math.min(0.1, (now - last) / 1000); last = now; const tf0 = performance.now(); TT += dt; stepTweens(now);
   if (MODE === 'globe' || (FADE.on && FADE.other === 'globe')) { if (IDX === 0 && !BUSY) globe.GC.lon += dt * 0.5; globe.tick(TT); }
   if (L && (MODE === 'local' || (FADE.on && FADE.other === 'local'))) { if (EXPLORE) { controls.update(); syncFromCamera(); } else applyLocal(); flowU.uT.value = TT; ANIM.forEach(f => f(TT, dt)); for (const id in CUT) CUT[id].tick(TT, dt); hoverStep();
     if (app.shadowDirty > 0) { renderer.shadowMap.needsUpdate = true; app.shadowDirty--; } }
   if (FADE.on && FADE.a > 0.002) { const w = Math.floor(innerWidth * DPR * 0.75), h = Math.floor(innerHeight * DPR * 0.75); if (fadeRT.width !== w || fadeRT.height !== h) fadeRT.setSize(w, h);
     renderScene(FADE.other, fadeRT); renderScene(MODE); fadeQ.material.uniforms.a.value = FADE.a; renderer.toneMappingExposure = FADE.other === 'globe' ? 1.0 : 0.86; renderer.autoClear = false; renderer.render(fadeS, fadeC); renderer.autoClear = true; }
   else renderScene(MODE);
-  updateLabels();
+  updateLabels(); const tf = performance.now() - tf0; if (tf > 25) LONG.push([Math.round(now), Math.round(tf), MODE, FADE.on ? 'fade' : '', IDX]); if (LONG.length > 40) LONG.shift();
   // adaptive resolution: keep the frame time under ~20 ms
   if (!BUSY && !FADE.on) { acc += dt; frames++; if (frames >= 90) { const ms = acc / frames * 1000; frames = 0; acc = 0; if (ms > 21 && (AO || DPR > 0.8)) { if (++slowRuns >= 2) { if (AO) AO = false; else { DPR = Math.max(0.75, DPR - 0.25); renderer.setPixelRatio(DPR); renderer.setSize(innerWidth, innerHeight); } slowRuns = 0; } } else slowRuns = 0; } } else { frames = 0; acc = 0; }
 }
@@ -335,11 +335,12 @@ async function init() {
   for (const id of ['R-101', 'T-101', 'R-103']) tint(id, 0xffa040, true), tint(id, 0xffa040, false);
   try { await renderer.compileAsync(globe.scene, globe.cam); } catch (e) { renderer.compile(globe.scene, globe.cam); }
   renderer.shadowMap.needsUpdate = true; renderScene('local'); renderScene('globe');
-  if (!LOW && !Q.has('noao') && innerWidth > 820) { const base = bench(6); if (base < 7.5 || Q.has('ao')) { status('Tuning the image quality…'); makeComposer(); AO = true; renderScene('local'); const withAO = bench(6); if (withAO > 15 && !Q.has('ao')) AO = false; console.log('frame ms', base.toFixed(2), 'with AO', withAO.toFixed(2)); } else console.log('frame ms', base.toFixed(2)); }
+  if (!LOW && !Q.has('noao') && innerWidth > 820) { const base = bench(6); if (base < 12 || Q.has('ao')) { status('Tuning the image quality…'); makeComposer(); AO = true; renderScene('local'); const withAO = bench(6); if (withAO > 22 && !Q.has('ao')) AO = false; console.log('frame ms', base.toFixed(2), 'with AO', withAO.toFixed(2)); } else console.log('frame ms', base.toFixed(2)); }
+  { const w = Math.floor(innerWidth * DPR * 0.75), h = Math.floor(innerHeight * DPR * 0.75); fadeRT.setSize(w, h); renderScene('globe', fadeRT); renderScene('local'); fadeQ.material.uniforms.a.value = 0.5; renderer.autoClear = false; renderer.render(fadeS, fadeC); renderer.autoClear = true; }
   $('lbar').firstElementChild.style.width = '100%'; status('Ready'); $('start').classList.add('on');
   requestAnimationFrame(frame);
   const s0 = Q.get('s'); if (s0 !== null) { $('loader').classList.add('off'); go(+s0); }
 }
 $('start').onclick = () => { $('loader').classList.add('off'); go(0); };
 init();
-window.__app = {CALLS, TAGS, bench, frame: t => frame(t), render: renderScene, get AO() { return AO; }, go, get IDX() { return IDX; }, get MODE() { return MODE; }, LC, globe, renderer, get L() { return L; }, get CUT() { return CUT; }, selectUnit, get BUSY() { return BUSY; }};
+window.__app = {LONG, CALLS, TAGS, bench, frame: t => frame(t), render: renderScene, get AO() { return AO; }, go, get IDX() { return IDX; }, get MODE() { return MODE; }, LC, globe, renderer, get L() { return L; }, get CUT() { return CUT; }, selectUnit, get BUSY() { return BUSY; }};

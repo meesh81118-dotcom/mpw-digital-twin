@@ -37,6 +37,6 @@ export async function buildGround(scene, renderer, lat0, lon0, fallbackTex, prog
   let count = 0, total = 0; const tick = () => { count++; progress && progress(count, total); };
   const specs = [[12, 70000, -1.4, 1], [14, 14000, -1.0, 2], [16, 3200, -0.6, 3], [17, 1500, -0.3, 4]]; total = 0;
   const levels = await Promise.all(specs.map(([z, size]) => level(lat0, lon0, z, size, tick)));
-  let any = false, patch = null; levels.forEach((L, i) => { if (L.ok < L.total * 0.6) return; any = true; const t = mk(L.canvas); plane(L, t, specs[i][2], true, specs[i][3]); if (i === 0) patch = {tex: t, geo: L.geo}; });
+  let any = false, patch = null; levels.forEach((L, i) => { if (L.ok < L.total * 0.6) return; any = true; const t = mk(L.canvas); renderer.initTexture(t); plane(L, t, specs[i][2], true, specs[i][3]); if (i === 0) patch = {tex: t, geo: L.geo}; });
   return {group, ok: any, patch};
 }
