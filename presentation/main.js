@@ -290,6 +290,7 @@ function makeComposer() { const rt = new THREE.WebGLRenderTarget(innerWidth * DP
   gtao.updateGtaoMaterial({radius: 2.6, distanceExponent: 1.4, thickness: 2.5, scale: 1.25, samples: 16, distanceFallOff: 1, screenSpaceRadius: false});
   gtao.updatePdMaterial({lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 5, rings: 2, samples: 16});
   gtao.overrideVisibility = function () { const cache = this._visibilityCache; this.scene.traverse(o => { cache.set(o, o.visible); if (o.isPoints || o.isLine || o.isSprite || (o.material && o.material.transparent)) o.visible = false; }); };
+  const ss = gtao.setSize.bind(gtao); gtao.setSize = (w, h) => ss(Math.ceil(w * 0.6), Math.ceil(h * 0.6)); gtao.setSize(innerWidth * DPR, innerHeight * DPR);
   composer.addPass(gtao); composer.addPass(new OutputPass()); }
 function bench(n = 8) { const gl = renderer.getContext(), px = new Uint8Array(4); renderScene('local'); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); const t = performance.now(); for (let i = 0; i < n; i++) { renderScene('local'); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); } return (performance.now() - t) / n; }
 function renderScene(mode, target) { if (mode === 'local' && !target && AO && composer) { renderer.toneMappingExposure = 0.86; gtao.enabled = gtao.blendIntensity > 0.02; composer.render(); return; }
@@ -341,4 +342,4 @@ async function init() {
 }
 $('start').onclick = () => { $('loader').classList.add('off'); go(0); };
 init();
-window.__app = {CALLS, TAGS, bench, get AO() { return AO; }, go, get IDX() { return IDX; }, get MODE() { return MODE; }, LC, globe, renderer, get L() { return L; }, get CUT() { return CUT; }, selectUnit, get BUSY() { return BUSY; }};
+window.__app = {CALLS, TAGS, bench, frame: t => frame(t), render: renderScene, get AO() { return AO; }, go, get IDX() { return IDX; }, get MODE() { return MODE; }, LC, globe, renderer, get L() { return L; }, get CUT() { return CUT; }, selectUnit, get BUSY() { return BUSY; }};
