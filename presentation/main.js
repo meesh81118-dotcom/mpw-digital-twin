@@ -289,9 +289,11 @@ let DETAIL = [], detailOn = true; const DETAIL_MK = new Set(['yellow', 'galv', '
 function lod() { const want = LC.dist < (detailOn ? 200 : 175) || EXPLORE && LC.dist < 260; if (want !== detailOn) { detailOn = want; DETAIL.forEach(m => m.visible = want); } }
 // frame-rate governor: watches the real frame interval and trades resolution for smoothness
 const GOV = {acc: 0, n: 0, t: 0, good: 0, ceil: DPR_MAX, last: 0};
-function governor(dt, now) { GOV.acc += dt; GOV.n++; if (now - GOV.t < 1000) return; const avg = GOV.acc / GOV.n * 1000; GOV.acc = 0; GOV.n = 0; GOV.t = now; if (document.hidden) return;
-  if (avg > 19.5 && DPR > DPR_MIN) { if (GOV.raised) GOV.ceil = Math.max(DPR_MIN, DPR - 0.05); GOV.raised = false; setDPR(DPR - (avg > 28 ? 0.15 : 0.08)); GOV.good = 0; }
-  else if (avg < 17.6) { if (++GOV.good >= 4 && DPR < GOV.ceil - 0.01) { setDPR(Math.min(GOV.ceil, DPR + 0.05)); GOV.raised = true; GOV.good = 0; } } else GOV.good = 0; }
+const RATE = []; let REFRESH = 0;   // display refresh interval, measured on the first frames (a 30 Hz screen must not be mistaken for a slow GPU)
+function governor(dt, now) { if (!REFRESH) { RATE.push(dt * 1000); if (RATE.length >= 90) { RATE.sort((a, b) => a - b); REFRESH = RATE[45]; GOV.hi = Math.max(19.5, REFRESH * 1.2); GOV.lo = REFRESH * 1.06; } return; }
+  GOV.acc += dt; GOV.n++; if (now - GOV.t < 1000) return; const avg = GOV.acc / GOV.n * 1000; GOV.acc = 0; GOV.n = 0; GOV.t = now; if (document.hidden) return;
+  if (avg > GOV.hi && DPR > DPR_MIN) { if (GOV.raised) GOV.ceil = Math.max(DPR_MIN, DPR - 0.05); GOV.raised = false; setDPR(DPR - (avg > GOV.hi * 1.4 ? 0.15 : 0.08)); GOV.good = 0; }
+  else if (avg < GOV.lo) { if (++GOV.good >= 4 && DPR < GOV.ceil - 0.01) { setDPR(Math.min(GOV.ceil, DPR + 0.05)); GOV.raised = true; GOV.good = 0; } } else GOV.good = 0; }
 function setDPR(v) { DPR = clamp(+v.toFixed(2), DPR_MIN, DPR_MAX); renderer.setPixelRatio(DPR); renderer.setSize(innerWidth, innerHeight); }
 const LONG = []; function frame(now) { requestAnimationFrame(frame); const dt = Math.min(0.1, (now - last) / 1000); last = now; const tf0 = performance.now(); TT += dt; stepTweens(now);
   if (MODE === 'globe' || (FADE.on && FADE.other === 'globe')) { if (IDX === 0 && !BUSY) globe.GC.lon += dt * 0.5; globe.tick(TT); }
@@ -336,4 +338,4 @@ async function init() {
 }
 $('start').onclick = () => { $('loader').classList.add('off'); go(0); };
 init();
-window.__app = {LONG, CALLS, TAGS, bench, GOV, get DPR() { return DPR; }, frame: t => frame(t), render: renderScene, go, get IDX() { return IDX; }, get MODE() { return MODE; }, LC, globe, renderer, get L() { return L; }, get CUT() { return CUT; }, selectUnit, get BUSY() { return BUSY; }};
+window.__app = {get REFRESH() { return REFRESH; }, LONG, CALLS, TAGS, bench, GOV, get DPR() { return DPR; }, frame: t => frame(t), render: renderScene, go, get IDX() { return IDX; }, get MODE() { return MODE; }, LC, globe, renderer, get L() { return L; }, get CUT() { return CUT; }, selectUnit, get BUSY() { return BUSY; }};
