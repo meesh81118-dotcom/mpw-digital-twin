@@ -6,6 +6,8 @@
 <title>MPW Gasification Complex – Digital Twin</title>
 <meta name="description" content="Digital twin of a 300,000 t/y mixed-plastic-waste gasification complex producing methanol and hydrogen in Jubail: live flowsheet, heat integration, process control, economics, market scenarios and fault monitoring.">
 <meta name="theme-color" content="#081a2c">
+<meta name="author" content="Meshari A. Almuhaysin and Mohammed F. Alotaibi">
+<meta name="copyright" content="© 2026 Meshari A. Almuhaysin and Mohammed F. Alotaibi. All rights reserved.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23081a2c'/%3E%3Cpath d='M32 10 51 21v22L32 54 13 43V21z' fill='none' stroke='%23f3b27f' stroke-width='4'/%3E%3Ccircle cx='32' cy='32' r='7' fill='%23f3b27f'/%3E%3C/svg%3E">
 <style>:root{
   --f:"Times New Roman",Times,"Liberation Serif","Nimbus Roman",serif;
@@ -255,6 +257,9 @@ footer.ft{background:var(--navy3);color:#aebfd2;padding:40px 0 30px;margin-top:4
 footer.ft .cols{display:grid;grid-template-columns:2fr 1fr 1fr;gap:24px}
 @media (max-width:760px){footer.ft .cols{grid-template-columns:minmax(0,1fr)}}
 footer.ft b{color:#fff} footer.ft a{color:#f3b27f;text-decoration:none;cursor:pointer;display:block;margin:4px 0}
+footer.ft .by{margin-top:10px}footer.ft .by b{font-weight:600}
+footer.ft .cr{margin-top:26px;padding-top:16px;border-top:1px solid rgba(255,255,255,.12);font-size:13.5px;color:#8ea3b8;line-height:1.55}
+.hero .team{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 22px;margin:-6px 0 28px}.hero .team span{width:100%;font-size:13px;color:#9fb3c8}.hero .team b{font-size:clamp(18px,1.6vw,21px);font-weight:600;color:#fff}
 .palette{position:fixed;inset:0;background:rgba(6,18,31,.55);backdrop-filter:blur(4px);z-index:90;display:none;align-items:flex-start;justify-content:center;padding-top:12vh}
 .palette.open{display:flex}
 .palette .pbox{width:min(620px,92vw);background:var(--panel);border-radius:16px;box-shadow:var(--shadow2);overflow:hidden;border:1px solid var(--line)}
@@ -323,6 +328,7 @@ footer.ft b{color:#fff} footer.ft a{color:#f3b27f;text-decoration:none;cursor:po
       <div class="eyebrow">Jubail Industrial City · Kingdom of Saudi Arabia</div>
       <h1>Turning <em>300,000 tonnes</em> of plastic waste into methanol and hydrogen.</h1>
       <p class="lead">A complete gasification complex — from the shredders to the 99.5 mol% methanol column — with a live digital twin that runs the plant model, the heat-integration network, the control loops and the economics in your browser.</p>
+      <div class="team"><span>Prepared by</span><b>Meshari A. Almuhaysin</b><b>Mohammed F. Alotaibi</b></div>
       <div class="cta"><button class="btn or" data-go="process">Explore the plant →</button><button class="btn" data-go="operations">Run the digital twin</button><button class="btn" data-go="heat">Heat integration</button><button class="btn" data-go="economics">Economics</button></div>
       <div class="stats" id="heroStats"></div>
     </div>
@@ -606,10 +612,11 @@ footer.ft b{color:#fff} footer.ft a{color:#f3b27f;text-decoration:none;cursor:po
 </section>
 </main>
 <footer class="ft"><div class="wrap"><div class="cols">
-  <div><b style="font-size:19px">MPW Gasification Complex</b><p>Senior design project: gasification of mixed plastic waste for the production of methanol and hydrogen. College of Engineering, Department of Chemical Engineering, King Saud University.</p><p class="mini" style="color:#8ea3b8">Every number on this site comes from the design report or is calculated live from its models.</p></div>
+  <div><b style="font-size:19px">MPW Gasification Complex</b><p>Senior design project: gasification of mixed plastic waste for the production of methanol and hydrogen. College of Engineering, Department of Chemical Engineering, King Saud University.</p><p class="mini" style="color:#8ea3b8">Every number on this site comes from the design report or is calculated live from its models.</p><p class="by">Prepared by <b>Meshari A. Almuhaysin</b> and <b>Mohammed F. Alotaibi</b></p></div>
   <div><b>Explore</b><a data-go="process">Process flow diagram</a><a data-go="operations">Operations and AI</a><a data-go="heat">Heat integration</a><a data-go="control">Process control</a></div>
   <div><b>Business</b><a data-go="economics">Economics</a><a data-go="market">Market and scenarios</a><a data-go="safety">Monitoring</a><a data-go="emethanol">e-Methanol</a><a data-go="validation">Validation</a><a href="presentation/" class="tour" title="Open the live 3D presentation of the plant">3D tour ↗</a></div>
-</div></div></footer>
+</div>
+<div class="cr">© 2026 Meshari A. Almuhaysin and Mohammed F. Alotaibi. All rights reserved. The design, the models, the data and the code of this site may not be copied, republished or reused without the written permission of the authors.</div></div></footer>
 <aside class="drawer" id="drawer" aria-hidden="true"><button class="btn sm ghost x" id="dclose">✕</button><div id="dbody"></div></aside>
 <div class="palette" id="palette"><div class="pbox"><input id="pq" placeholder="Go to a page or run an action…" autocomplete="off"><div class="res" id="pres"></div></div></div>
 <div class="tip" id="tip"></div><div class="toast" id="toast"></div>

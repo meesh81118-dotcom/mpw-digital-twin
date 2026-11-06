@@ -42,6 +42,7 @@ const P_BASE = {meoh_kgh: 33701.38806641478, h2_kgh: 7806.985623098963, mpw_kgh:
   fci_mult: 1.0, op_factor: 1.0, logi: 0, Q_heat: 25.92758, hi: true, com_mult: 1.0, elec_mult: 1.0};
 const HI_X = 10429187, FCI_NOHI = 477231118.72, HI_DHEAT = 10139338.72, HI_DCW = 884645.81, HI_DSTEAM = 1813346.49, PSW0 = 69.16 / 3.75 / 1000;
 const FCI = 478400128.68, WCIRC = 823.07, C102W = 28551.90, WCH = 810.59, QR102 = 14.22877;
+const UT_CAL = -2.65, COM_CAL = -0.0578;
 const HRS = 7920.0, GJ_MW = 3.6 * HRS, MACRS5 = [20, 32, 19.2, 11.52, 11.52, 5.76];
 const BASE_R = plant(0.40, 0.10, 0.90, 1);
 function econParams(r, mk) {
@@ -50,11 +51,11 @@ function econParams(r, mk) {
   p.mpw_kgh = P_BASE.mpw_kgh * r.feed; p.Q_R101 = P_BASE.Q_R101 * r.feed;
   const k18 = r.S18 / b.S18, k24 = r.S24 / b.S24, kh = r.H2p / b.H2p;
   p.W_total = 22533.2 * k18 + WCIRC * k24 + C102W * kh + WCH * r.S17 / b.S17 + 2083 + 5 * 228 + 1500;
-  p.Q_CW = 12.396 * r.S20 / b.S20 + 20.625 * r.S17 / b.S17 + 18.843 * r.MeOH / b.MeOH + 17.772 * k18 + C102W / 1000 * kh;
+  p.Q_CW = 12.39579 * r.S20 / b.S20 + 20.62523 * r.S17 / b.S17 + 18.843 * r.MeOH / b.MeOH + 17.772 * k18 + C102W / 1000 * kh;
   p.Q_steam = QR102 * (28.3 - 13.0) / 28.3 * r.S15 / b.S15 + (r.x1 * 96547.3 + r.x2 * 56581.2) / 3.6e6;
   p.Q_heat = P_BASE.Q_heat + (r.water - b.water) / b.water * (70.379 + 27.363);
   p.proc_water = P_BASE.proc_water * r.water / b.water;
-  p.Q_heat += (p.qh_add || 0); p.Q_CW += (p.qc_add || 0); return p;
+  p.Q_heat += (p.qh_add || 0); p.Q_CW += (p.qc_add || 0); p.W_total += (p.w_add || 0); return p;
 }
 function comD(p, F, f) {
   const meoh = p.meoh_kgh * HRS / 1000 * f, h2 = p.h2_kgh * HRS / 1000 * f, mpw = p.mpw_kgh * HRS / 1000 * f;
@@ -64,8 +65,9 @@ function comD(p, F, f) {
   let CUT = p.W_total * HRS * f * p.p_elec * p.elec_mult + p.Q_R101 / p.eta_f * GJ_MW * f / 1.055056 * p.p_ng + p.Q_heat * GJ_MW * f * fe
     + p.Q_CW * 1000 / (4.0 * 10) / 1025 * 3600 * HRS * f * p.p_sw - p.Q_steam * GJ_MW * f * fe;
   if (!p.hi) CUT += f * HI_X * (0.9040 * p.p_ng / 2.5 * 0.85 / p.eta_f + 0.0960 * p.p_sw / PSW0);
+  CUT += UT_CAL * f;   // closes the 2.65 $/yr rounding gap with the printed utility cost of Chapter 8
   const CWT = p.ww * HRS * f * p.p_ww, coef = (0.146 - 0.032 + 0.010) / 0.81;
-  return [rev, p.com_mult * (coef * F + 2.73 * p.COL + 1.23 * (CRM + CUT + CWT)) + p.land, {CRM, CUT, CWT, COL: p.COL, F, coefF: coef * F}];
+  return [rev, p.com_mult * (coef * F + 2.73 * p.COL + 1.23 * (CRM + CUT + CWT) + COM_CAL * f) + p.land, {CRM, CUT, CWT, COL: p.COL, F, coefF: coef * F}];
 }
 function cashflow(p) {
   const F = (p.hi ? FCI : FCI_NOHI) * p.fci_mult + (p.fci_add || 0), WC = p.wc * F, S = p.salvage * F; let carry = 0; const cf = [];

@@ -1,7 +1,7 @@
 // ===== TC-310 loop (Section 6.3.7): valve, E-104 and transmitter, PID with filtered derivative =====
 const LOOP = {kp: 9.195, tp: 0.475, kv: 1.3125, tv: 0.10, km: 0.16, tm: 0.25, kd: 1.0};
 function simLoop(o) {
-  o = Object.assign({Kc: 1.07, ti: 0.675, td: 0.112, mode: 'PID', sp: 0, dist: 10, tEnd: 6, dt: 0.0005, N: 20, tStep: 0.2}, o || {});
+  o = Object.assign({Kc: 1.067, ti: 0.675, td: 0.1122, mode: 'PID', sp: 0, dist: 10, tEnd: 6, dt: 0.0001, N: 100, tStep: 0.2}, o || {});   // Cohen–Coon PID of Appendix F (P 1.067, I 1.581, D 0.1197, N 891 min⁻¹)
   const L = LOOP; let xv = 0, T = 0, ym = 0, I = 0, Df = 0, ePrev = 0; const out = []; let iae = 0, maxdev = 0, last = 0;
   const useI = o.mode !== 'P', useD = o.mode === 'PID';
   const n = Math.round(o.tEnd / o.dt), every = Math.max(1, Math.round(0.01 / o.dt));

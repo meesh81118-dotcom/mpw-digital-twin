@@ -1,5 +1,7 @@
 # MPW Gasification Complex – Digital Twin
 
+**Authors:** Meshari A. Almuhaysin and Mohammed F. Alotaibi — Department of Chemical Engineering, King Saud University.
+
 **3D presentation:** https://meesh81118-dotcom.github.io/mpw-digital-twin/presentation/ — a live, interactive tour from orbit down to the plant in Jubail Industrial City (arrow keys to move, click any unit for its data).
 
 Interactive digital twin of the mixed-plastic-waste (MPW) gasification plant that produces methanol and hydrogen in Jubail Industrial City. It was prepared for Chapter 10, *Smart and Sustainable Plant*, of the senior design project.
@@ -27,3 +29,7 @@ The site runs entirely in the browser. It needs no installation and no server. O
 * `pid_base.webp`, `pid_hi.webp` – the P&IDs of Figures 6.22 and 6.26.
 * `site/` – source files of the site; `python3 build.py` rebuilds `index.html`.
 * `code/` – the Python scripts of Appendices G and H (NumPy, SciPy and scikit-learn). Run `plant_model.py` first; each script prints its results and saves them to a small JSON file.
+
+## Copyright
+
+© 2026 Meshari A. Almuhaysin and Mohammed F. Alotaibi. All rights reserved. See `LICENSE`: the pages may be viewed in a browser, but no part of this work may be copied, republished or reused without the written permission of the authors.

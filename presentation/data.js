@@ -1,5 +1,6 @@
 // All numbers are taken from the design report (MPW Gasification for Production of Methanol and H2).
 export const SITE = {lat: 27.0130, lon: 49.5542};
+export const TEAM = ['Meshari A. Almuhaysin', 'Mohammed F. Alotaibi'];   // authors of the project and of this presentation
 
 export const UNITS = {
   'CR-101': {name: 'Plastic shredders CR-101 A/B', sec: 'Feed preparation', col: '#3b82c4',
@@ -123,7 +124,7 @@ export const SVC = {gas: ['#ff8a3d', 'Syngas'], steam: ['#f5f5f0', 'Steam'], wat
 
 // cam: 'globe' or 'local'. focus = unit opened in cutaway. streams = highlighted flows.
 export const SLIDES = [
-  {id: 'intro', chap: 'Problem', cam: 'globe', kicker: 'Senior design project · King Saud University', title: 'From plastic waste<br>to clean fuel',
+  {id: 'intro', chap: 'Problem', cam: 'globe', team: true, kicker: 'Senior design project · King Saud University', title: 'From plastic waste<br>to clean fuel',
    text: 'Every year, millions of tonnes of plastic end up in landfills and in the oceans. <b>This plant turns 300,000 t/y of it into hydrogen and methanol.</b>',
    stats: [['6.3', 'billion t', 'plastic generated, 1950–2018'], ['9', '%', 'of it recycled'], ['4.8–12.7', 'Mt/y', 'enters the oceans']]},
   {id: 'site', chap: 'Site', cam: 'globe', kicker: 'Site selection · Chapter 9', title: 'Saudi Arabia · Eastern Province · Jubail',
@@ -169,6 +170,6 @@ export const SLIDES = [
    stats: [['478.40', 'M$', 'fixed capital'], ['105.04', 'M$', 'NPV at 10 %'], ['12.80', '%', 'DCFROR'], ['13.06', 'y', 'discounted payback']]},
   {id: 'twin', chap: 'Digital twin', cam: 'local', shot: 'twin', kicker: 'Chapter 10 · Smart plant', title: 'The plant, live in your browser',
    text: 'The digital twin runs the plant model, the heat integration, the control loops and the economics. Scan the code to open it.'},
-  {id: 'end', chap: 'Thank you', cam: 'globe', kicker: 'College of Engineering · Department of Chemical Engineering', title: 'Thank you',
+  {id: 'end', chap: 'Thank you', cam: 'globe', team: true, kicker: 'College of Engineering · Department of Chemical Engineering', title: 'Thank you',
    text: 'Supervisors: Prof. Dr. Abdelhamid Ajbar and Dr. Lhassan Elbelidi'}
 ];

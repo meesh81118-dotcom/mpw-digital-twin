@@ -31,11 +31,11 @@ const HICTRL = [
  ['E-105', 'CW; TC-316 → FC-317', 'CW, smaller duty (41 + 42 → 22)', 'Unchanged'],
  ['Water / steam', 'FC-103 cascaded from LC-102', 'Once-through boiling train 4 → 32 → 33 → 34 → 5', 'FC-103 sets the steam production']];
 const PIDM = {
- 'ZN-U': {n: 'Ziegler–Nichols (ultimate gain)', PI: [2.89, 0.628], PID: [3.74, 0.377, 0.094], rep: [2.41, 1.25, 1.81, 113, 2.35]},
- 'ZN-RC': {n: 'Ziegler–Nichols (reaction curve)', PI: [0.63, 1.165], PID: [0.84, 0.700, 0.175], rep: [4.02, 4.30, 2.46, 1, 0.84]},
- 'CC': {n: 'Cohen–Coon (selected)', PI: [0.68, 0.475], PID: [1.07, 0.675, 0.112], rep: [3.93, 3.28, 2.19, 13, 1.18]},
- 'ITAE': {n: 'ITAE (load)', PI: [0.60, 0.573], PID: [0.94, 0.450, 0.134], rep: [3.96, 3.30, 2.35, 22, 2.39]},
- 'DS': {n: 'Direct synthesis (τc = θ)', PI: [0.35, 0.475], PID: [0.35, 0.475, 0.175], rep: [5.41, 7.64, 4.29, 4, 3.17]}};
+ 'ZN-U': {n: 'Ziegler–Nichols (ultimate gain)', PI: [2.89, 0.628], PID: [3.74, 0.377, 0.094], sim: [3.743, 0.377, 0.0942], rep: [2.41, 1.25, 1.81, 113, 2.35]},
+ 'ZN-RC': {n: 'Ziegler–Nichols (reaction curve)', PI: [0.63, 1.165], PID: [0.84, 0.700, 0.175], sim: [0.843, 0.700, 0.1750], rep: [4.02, 4.30, 2.46, 1, 0.84]},
+ 'CC': {n: 'Cohen–Coon (selected)', PI: [0.68, 0.475], PID: [1.07, 0.675, 0.112], sim: [1.067, 0.675, 0.1122], rep: [3.93, 3.28, 2.19, 13, 1.18]},
+ 'ITAE': {n: 'ITAE (load)', PI: [0.60, 0.573], PID: [0.94, 0.450, 0.134], sim: [0.938, 0.450, 0.1336], rep: [3.96, 3.30, 2.35, 22, 2.39]},
+ 'DS': {n: 'Direct synthesis (τc = θ)', PI: [0.35, 0.475], PID: [0.35, 0.475, 0.175], sim: [0.351, 0.475, 0.1750], rep: [5.41, 7.64, 4.29, 4, 3.17]}};
 const CBM = [['R-101 (×5)', 'Gasification island', 113422863, 'gas'], ['C-101', 'Syngas compressor, 5 stages', 63557666, 'syn'], ['C-102', 'Hydrogen compressor', 47098903, 'wgs'],
  ['ME-101', 'Pd–Ag membrane', 31827522, 'wgs'], ['F-101', 'Flash drum', 5474053, 'syn'], ['SC-1', 'Suction cooler', 5215466, 'syn'], ['E-105', 'Effluent cooler', 3474660, 'syn'],
  ['C-101R', 'Recycle wheel', 3339799, 'syn'], ['R-102 IC', 'Interbed coolers', 2628756, 'wgs'], ['E-103', 'Pre-shift cooler', 2281832, 'wgs'], ['T-101 reb.', 'Reboiler', 2234933, 'pur'],

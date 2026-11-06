@@ -12,10 +12,10 @@ const LOOPS = {
   kind: 'fo', kp: 9.195, tp: 0.475, kv: 1.3125, tv: 0.10, km: 0.16, tm: 0.25, kd: 1.0, y0: 200, yU: '°C', yN: 'Reactor inlet temperature T20', uN: 'Signal to TV-310',
   blocks: ['Controller TC-310', 'Valve TV-310', '1.3125 / (0.10s + 1)', 'E-104 (steam heater)', '9.195 / (0.475s + 1)', 'Transmitter TT-310', '0.16 / (0.25s + 1)', 'Disturbance T19: 1.000 / (0.475s + 1)', 'T20', 'SP 200 °C'],
   tests: {load: {n: 'Disturbance in T19', u: '°C', def: 10, min: -20, max: 20, st: 1, f: v => v}, sp: {n: 'Set-point change', u: '°C', def: 10, min: -20, max: 20, st: 1, f: v => v}},
-  band: 0.1, tEnd: 8, dt: 0.0005, modes: ['P', 'PI', 'PID'], def: {mode: 'PID', meth: 'CC'}, kc: [0.1, 7, 0.01], ti: [0.1, 2, 0.005], td: [0, 0.4, 0.002],
-  meth: {'ZN-U': {n: 'Z–N (ultimate gain)', PI: [2.89, 0.628], PID: [3.74, 0.377, 0.094]}, 'ZN-RC': {n: 'Z–N (reaction curve)', PI: [0.63, 1.165], PID: [0.84, 0.700, 0.175]},
-   'CC': {n: 'Cohen–Coon', PI: [0.68, 0.475], PID: [1.07, 0.675, 0.112], sel: 1}, 'ITAE': {n: 'ITAE (load)', PI: [0.60, 0.573], PID: [0.94, 0.450, 0.134]}, 'DS': {n: 'Direct synthesis (τc = θ)', PI: [0.35, 0.475], PID: [0.35, 0.475, 0.175]}},
-  refName: 'Cohen–Coon PID (selected in the report)', refSet: {mode: 'PID', Kc: 1.07, ti: 0.675, td: 0.112}},
+  band: 0.1, tEnd: 8, dt: 0.0001, modes: ['P', 'PI', 'PID'], def: {mode: 'PID', meth: 'CC'}, kc: [0.1, 7, 0.01], ti: [0.1, 2, 0.005], td: [0, 0.4, 0.002],
+  meth: {'ZN-U': {n: 'Z–N (ultimate gain)', PI: [2.89, 0.628], PID: [3.743, 0.377, 0.0942]}, 'ZN-RC': {n: 'Z–N (reaction curve)', PI: [0.63, 1.165], PID: [0.843, 0.700, 0.1750]},
+   'CC': {n: 'Cohen–Coon', PI: [0.676, 0.475], PID: [1.067, 0.675, 0.1122], sel: 1}, 'ITAE': {n: 'ITAE (load)', PI: [0.60, 0.573], PID: [0.938, 0.450, 0.1336]}, 'DS': {n: 'Direct synthesis (τc = θ)', PI: [0.35, 0.475], PID: [0.351, 0.475, 0.1750]}},
+  refName: 'Cohen–Coon PID (selected in the report)', refSet: {mode: 'PID', Kc: 1.067, ti: 0.675, td: 0.1122}},
  'LC-318': {tag: 'LC-318', title: 'F-101 liquid level', unit: 'F-101', src: 'report', ref: 'Section 6.3.8, Eqs. (6.20)–(6.21), Table 6.17', type: 'Feedback · P-only (averaging)',
   desc: 'LT-318 measures the level of the 3.50 m flash drum and LC-318 moves the let-down valve V-101 on the crude methanol to T-101 (Stream 26). The drum is an integrating process.',
   kind: 'int', kp: -1 / F101_A, kd: 1 / F101_A, kv: 1.8125e-3 * 60, tv: 0.10, km: 16 / 1.80, tm: 0, y0: 0.90, yU: 'm', yN: 'F-101 liquid level', uN: 'Signal to V-101 (LV-318)',
@@ -42,7 +42,7 @@ const LOOPS = {
   refName: 'SIMC PI (τc = θ)', refSet: {mode: 'PI', Kc: 1.67, ti: 0.1, td: 0}, ratio: 1}};
 function loopK(L) { return L.kv * Math.abs(L.kp) * L.km; }
 function simGen(L, o) {
-  o = Object.assign({Kc: 1, ti: 1, td: 0, mode: 'PI', sp: 0, dist: 0, N: 10}, o); const act = Math.sign(L.kp);
+  o = Object.assign({Kc: 1, ti: 1, td: 0, mode: 'PI', sp: 0, dist: 0, N: 100}, o); const act = Math.sign(L.kp);
   let xv = 0, y = 0, ym = 0, I = 0, Df = 0, ePrev = 0, iae = 0, maxdev = 0, last = 0; const out = [];
   const useI = o.mode !== 'P', useD = o.mode === 'PID', dt = L.dt, n = Math.round(L.tEnd / dt), every = Math.max(1, Math.round(L.tEnd / 800 / dt)), tS = L.tEnd * 0.025;
   for (let k = 0; k <= n; k++) {

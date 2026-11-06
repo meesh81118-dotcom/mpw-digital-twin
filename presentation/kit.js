@@ -99,6 +99,7 @@ export function makeMaterials(T, env) {
     clad: S({color: 0xc8cdd2, roughness: 0.3, metalness: 0.88}),
     cladS: S({color: 0xd0d4d8, roughness: 0.28, metalness: 0.9}),
     ss: S({color: 0xb7bdc3, roughness: 0.24, metalness: 0.95}),
+    ssF: S({color: 0xb7bdc3, roughness: 0.24, metalness: 0.95}),          // flanges (hidden in the far view)
     refr: S({color: 0xd9d6cf, roughness: 0.6, metalness: 0.05}),
     steelG: S({color: 0x2e5b45, roughness: 0.55, metalness: 0.35}),
     galv: S({color: 0x8a9399, roughness: 0.5, metalness: 0.65}),
@@ -148,13 +149,16 @@ function idx(g) { if (!g.index) { const n = g.attributes.position.count, a = new
   if (!g.attributes.uv) g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
   return g; }
 const _q = new THREE.Quaternion(), _up = V(0, 1, 0);
+export const REC = {on: typeof location !== 'undefined' && /[?&]rec\b/.test(location.search), list: []};   // debug: primitive boxes for clash checks
 export class Kit {
   constructor() { this.parts = {}; this.m = new M4(); this.st = []; this.tris = 0; }
   push() { this.st.push(this.m.clone()); return this; }
   pop() { this.m.copy(this.st.pop()); return this; }
   tr(x, y, z, ry = 0) { const t = new M4().makeRotationY(ry); t.setPosition(x, y, z); this.m.multiply(t); return this; }
   rot(rx, ry, rz) { this.m.multiply(new M4().makeRotationFromEuler(new THREE.Euler(rx, ry, rz))); return this; }
-  add(g, mk, local) { idx(g); if (local) g.applyMatrix4(local); g.applyMatrix4(this.m); (this.parts[mk] || (this.parts[mk] = [])).push(g); return g; }
+  add(g, mk, local) { idx(g); if (local) g.applyMatrix4(local); g.applyMatrix4(this.m); (this.parts[mk] || (this.parts[mk] = [])).push(g);
+    if (REC.on) { g.computeBoundingBox(); const b = g.boundingBox; REC.list.push([this.id || '', mk, g.type || '', ...b.min.toArray().map(v => +v.toFixed(3)), ...b.max.toArray().map(v => +v.toFixed(3))]); }
+    return g; }
   // world (kit-frame) point of a local point
   P(x, y, z) { return V(x, y, z).applyMatrix4(this.m); }
   D(x, y, z) { return V(x, y, z).transformDirection(this.m); }
@@ -196,7 +200,7 @@ export function pipeRun(K, pts, r, mk = 'clad', o = {}) {
         const g = new THREE.TorusGeometry(R, r, segs, Math.max(4, Math.round(phi / (Math.PI / 2) * 8)), phi); const l = new M4().makeBasis(u, v, z); l.setPosition(Cn); K.add(g, mk, l); }
       start = B.clone().addScaledVector(d2, t);
     } else K.seg(start, B, r, mk, segs, true, uvLen); }
-  if (o.flanges !== false) { for (const [p, q] of [[Q[0], Q[1]], [Q[Q.length - 1], Q[Q.length - 2]]]) { if (!q) continue; const d = q.clone().sub(p).normalize(); const f = p.clone().addScaledVector(d, 0.05); K.seg(f, f.clone().addScaledVector(d, 0.09), r * 1.55, 'ss', segs, false); } }
+  if (o.flanges !== false) { for (const [p, q] of [[Q[0], Q[1]], [Q[Q.length - 1], Q[Q.length - 2]]]) { if (!q) continue; const d = q.clone().sub(p).normalize(); const f = p.clone().addScaledVector(d, 0.05); K.seg(f, f.clone().addScaledVector(d, 0.09), r * 1.55, 'ssF', segs, false); } }
   if (o.supports) { // pipe shoes on long horizontal runs
     for (let i = 1; i < Q.length; i++) { const A = Q[i - 1], B = Q[i]; if (Math.abs(A.y - B.y) > 0.01) continue; const L = A.distanceTo(B); for (let s = 3; s < L - 2; s += 6) { const p = A.clone().lerp(B, s / L); K.box(r * 1.2, 0.18, 0.25, 'galv', p.x, p.y - r - 0.18, p.z); } } }
   return Q;
@@ -276,7 +280,7 @@ export function vVessel(K, x, z, o) {
   const self = {top, r, y0, H, x, z,
     // nozzle on the shell at height y and angle a (radians, 0 = +x, π/2 = -z), returns {p, d}
     noz(y, a, nr = 0.3, L = 0.6) { K.push().tr(x, 0, z, o.ry || 0); const p0 = [Math.cos(a) * r * 0.98, y, -Math.sin(a) * r * 0.98], p1 = [Math.cos(a) * (r + L), y, -Math.sin(a) * (r + L)];
-      K.seg(p0, p1, nr, mk === 'refr' ? 'paint2' : mk, 14, false); K.seg(p1, [Math.cos(a) * (r + L + 0.08), y, -Math.sin(a) * (r + L + 0.08)], nr * 1.55, 'ss', 14, false); const res = {p: K.P(...p1), d: K.D(Math.cos(a), 0, -Math.sin(a)), r: nr}; K.pop(); return res; },
+      K.seg(p0, p1, nr, mk === 'refr' ? 'paint2' : mk, 14, false); K.seg(p1, [Math.cos(a) * (r + L + 0.08), y, -Math.sin(a) * (r + L + 0.08)], nr * 1.55, 'ssF', 14, false); const res = {p: K.P(...p1), d: K.D(Math.cos(a), 0, -Math.sin(a)), r: nr}; K.pop(); return res; },
     nozTop(nr = 0.3) { K.push().tr(x, 0, z, o.ry || 0); const res = {p: K.P(0, top + 0.7, 0), d: K.D(0, 1, 0), r: nr}; K.pop(); return res; },
     nozBot(nr = 0.3) { K.push().tr(x, 0, z, o.ry || 0); const yb = o.bot === 'cone' ? y0 - (o.cone || r * 1.6) : y0 - r * k; const res = {p: K.P(0, yb - 0.4, 0), d: K.D(0, -1, 0), r: nr}; K.seg([0, yb, 0], [0, yb - 0.4, 0], nr, mk, 12, false); K.pop(); return res; }};
   K.pop(); return self;
@@ -293,10 +297,12 @@ export function hDrum(K, x, y, z, o) {
   if (o.manway) K.seg([L / 2 + r * 0.45, y, 0], [L / 2 + r * 0.45 + 0.35, y, 0], 0.32, 'ss', 14, false);
   const self = {x, y, z, r, L,
     noz(lx, a = Math.PI / 2, nr = 0.25, len = 0.5) { K.push().tr(x, 0, z, o.ry || 0); const dir = V(0, Math.sin(a), Math.cos(a)), p0 = V(lx, y, 0).addScaledVector(dir, r * 0.95), p1 = V(lx, y, 0).addScaledVector(dir, r + len);
-      K.seg(p0, p1, nr, mk, 14, false); K.seg(p1, p1.clone().addScaledVector(dir, 0.08), nr * 1.55, 'ss', 14, false); const res = {p: K.P(p1.x, p1.y, p1.z), d: K.D(dir.x, dir.y, dir.z), r: nr}; K.pop(); return res; },
+      K.seg(p0, p1, nr, mk, 14, false); K.seg(p1, p1.clone().addScaledVector(dir, 0.08), nr * 1.55, 'ssF', 14, false); const res = {p: K.P(p1.x, p1.y, p1.z), d: K.D(dir.x, dir.y, dir.z), r: nr}; K.pop(); return res; },
     nozEnd(s = 1, nr = 0.25) { K.push().tr(x, 0, z, o.ry || 0); const p = V(s * (L / 2 + r * 0.5 + 0.4), y, 0); K.seg([s * (L / 2 + r * 0.45), y, 0], p, nr, mk, 14, false); const res = {p: K.P(p.x, p.y, p.z), d: K.D(s, 0, 0), r: nr}; K.pop(); return res; }};
   K.pop(); return self;
 }
+// saddle position of an exchanger, kept clear of the bottom shell nozzle
+export const hxSaddle = (L, r, nr) => Math.min(0.32 * L, L / 2 - 1.7 * r - nr - 0.12);
 // Shell-and-tube exchanger along local x: shell, channel with bolted cover, bonnet, saddles, nozzles
 export function hx(K, x, y, z, o) {
   const r = o.D / 2, L = o.L, mk = o.mk || 'paint', ry = o.ry || 0;
@@ -310,8 +316,9 @@ export function hx(K, x, y, z, o) {
   // rear bonnet at +x
   const pts = []; for (let i = 0; i <= 8; i++) { const a = i / 8 * Math.PI / 2; pts.push(new THREE.Vector2(Math.cos(a) * r + 1e-3, Math.sin(a) * r * 0.6)); }
   K.add(new THREE.LatheGeometry(pts, 28).rotateZ(-Math.PI / 2).translate(L / 2, y, 0), mk); K.add(new THREE.CylinderGeometry(r * 1.18, r * 1.18, 0.14, 32).rotateZ(Math.PI / 2).translate(L / 2, y, 0), 'ss');
-  if (o.saddles !== false) for (const s of [-0.32, 0.32]) { const b0 = o.base || 0; K.box(r * 1.4, Math.max(0.2, y - r * 0.7 - b0), r * 1.5, o.saddleMk || 'concV', s * L, b0, 0); K.box(0.22, r * 0.6, r * 1.6, 'galv', s * L, y - r * 1.0, 0); }
-  const noz = (px, up, nr) => { const dir = up ? 1 : -1, p0 = V(px, y + dir * r * 0.95, 0), p1 = V(px, y + dir * (r + 0.45), 0); K.seg(p0, p1, nr, mk, 12, false); K.seg(p1, p1.clone().setY(p1.y + dir * 0.08), nr * 1.55, 'ss', 12, false); return {p: K.P(p1.x, p1.y, p1.z), d: K.D(0, dir, 0), r: nr}; };
+  const sp = hxSaddle(L, r, o.nr || Math.max(0.15, r * 0.28));
+  if (o.saddles !== false) for (const s of [-1, 1]) { const b0 = o.base || 0; K.box(r * 1.4, Math.max(0.2, y - r * 0.7 - b0), r * 1.5, o.saddleMk || 'concV', s * sp, b0, 0); K.box(0.22, r * 0.6, r * 1.6, 'galv', s * sp, y - r * 1.0, 0); }
+  const noz = (px, up, nr) => { const dir = up ? 1 : -1, p0 = V(px, y + dir * r * 0.95, 0), p1 = V(px, y + dir * (r + 0.45), 0); K.seg(p0, p1, nr, mk, 12, false); K.seg(p1, p1.clone().setY(p1.y + dir * 0.08), nr * 1.55, 'ssF', 12, false); return {p: K.P(p1.x, p1.y, p1.z), d: K.D(0, dir, 0), r: nr}; };
   const nr = o.nr || Math.max(0.15, r * 0.28), nt = o.nt || nr;
   const N = {sIn: noz(L / 2 - r * 0.9, true, nr), sOut: noz(-L / 2 + r * 0.9, false, nr), tIn: noz(-L / 2 - cL * 0.5, !o.tubeDown, nt), tOut: noz(-L / 2 - cL * 0.5, !!o.tubeDown, nt)};
   K.pop(); return N;

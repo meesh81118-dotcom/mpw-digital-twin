@@ -6,6 +6,8 @@
 <title>MPW Gasification Complex – Digital Twin</title>
 <meta name="description" content="Digital twin of a 300,000 t/y mixed-plastic-waste gasification complex producing methanol and hydrogen in Jubail: live flowsheet, heat integration, process control, economics, market scenarios and fault monitoring.">
 <meta name="theme-color" content="#081a2c">
+<meta name="author" content="Meshari A. Almuhaysin and Mohammed F. Alotaibi">
+<meta name="copyright" content="© 2026 Meshari A. Almuhaysin and Mohammed F. Alotaibi. All rights reserved.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23081a2c'/%3E%3Cpath d='M32 10 51 21v22L32 54 13 43V21z' fill='none' stroke='%23f3b27f' stroke-width='4'/%3E%3Ccircle cx='32' cy='32' r='7' fill='%23f3b27f'/%3E%3C/svg%3E">
 <style>/*CSS*/</style>
 </head>
@@ -18,9 +20,10 @@
   </button>
   <nav class="main" id="nav">
     <a data-go="overview">Overview</a><a data-go="process">Process</a><a data-go="operations">Operations</a><a data-go="heat">Heat integration</a>
-    <a data-go="control">Control</a><a data-go="economics">Economics</a><a data-go="market">Market</a><a data-go="safety">Monitoring</a><a data-go="emethanol">e-Methanol</a><a data-go="validation">Validation</a>
+    <a data-go="control">Control</a><a data-go="economics">Economics</a><a data-go="market">Market</a><a data-go="safety">Monitoring</a><a data-go="emethanol">e-Methanol</a><a data-go="validation">Validation</a><a href="presentation/" class="tour" title="Open the live 3D presentation of the plant">3D tour ↗</a>
   </nav>
   <div class="tools">
+    <a class="ibtn tourb" href="presentation/" title="Open the live 3D presentation of the plant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 21 7v10l-9 5-9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg><span>3D</span></a>
     <button class="ibtn" id="pal" title="Quick search (Ctrl + K)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="lbl">Search</span></button>
     <button class="ibtn" id="theme" title="Light / dark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
     <button class="ibtn reset" id="resetAll" title="Return every page to the design point"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg><span class="lbl">Reset all</span></button>
@@ -36,6 +39,7 @@
       <div class="eyebrow">Jubail Industrial City · Kingdom of Saudi Arabia</div>
       <h1>Turning <em>300,000 tonnes</em> of plastic waste into methanol and hydrogen.</h1>
       <p class="lead">A complete gasification complex — from the shredders to the 99.5 mol% methanol column — with a live digital twin that runs the plant model, the heat-integration network, the control loops and the economics in your browser.</p>
+      <div class="team"><span>Prepared by</span><b>Meshari A. Almuhaysin</b><b>Mohammed F. Alotaibi</b></div>
       <div class="cta"><button class="btn or" data-go="process">Explore the plant →</button><button class="btn" data-go="operations">Run the digital twin</button><button class="btn" data-go="heat">Heat integration</button><button class="btn" data-go="economics">Economics</button></div>
       <div class="stats" id="heroStats"></div>
     </div>
@@ -234,7 +238,7 @@
   <div class="section"><div class="wrap">
     <div class="grid g2">
       <div class="card"><h3><span class="h">Methanol and hydrogen prices (Table 8.16)</span><span class="mini">US$/t</span></h3><svg id="prChart" class="chart" viewBox="0 0 520 300"></svg>
-        <div class="lg"><span><i class="sw ln" style="background:#1F4E79"></i>Methanol (left axis)</span><span><i class="sw ln" style="background:#548235"></i>Hydrogen (right axis)</span><span><i class="sw dash" style="border-color:#C55A11"></i>Selected market</span></div></div>
+        <div class="lg"><span><i class="sw ln" style="background:var(--navy)"></i>Methanol (left axis)</span><span><i class="sw ln" style="background:#548235"></i>Hydrogen (right axis)</span><span><i class="sw dash" style="border-color:#C55A11"></i>Selected market</span></div></div>
       <div class="card"><h3><span class="h">Revenue of the selected market</span><span class="mini" id="revTot"></span></h3><svg id="revD" class="chart" viewBox="0 0 520 300"></svg><div class="lg" id="revLg"></div></div>
     </div>
     <div class="grid side" style="margin-top:18px">
@@ -249,7 +253,7 @@
           <div class="card"><h3><span class="h">Selected scenario</span></h3><div id="scenres"></div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn pri" id="scai">AI set point for this scenario</button><button class="btn" id="allai">AI set point for every scenario</button></div><p class="note" id="scnote"></p></div>
           <div class="card"><h3><span class="h">NPV of every scenario</span><span class="mini">million US$</span></h3><svg id="scchart" class="chart" viewBox="0 0 520 470"></svg>
-            <div class="lg"><span><i class="sw" style="background:#8FAADC"></i>Design point</span><span><i class="sw" style="background:#1F4E79"></i>AI set point</span></div></div>
+            <div class="lg"><span><i class="sw" style="background:#8FAADC"></i>Design point</span><span><i class="sw" style="background:var(--navy)"></i>AI set point</span></div></div>
         </div>
       </div>
     </div>
@@ -319,10 +323,11 @@
 </section>
 </main>
 <footer class="ft"><div class="wrap"><div class="cols">
-  <div><b style="font-size:19px">MPW Gasification Complex</b><p>Senior design project: gasification of mixed plastic waste for the production of methanol and hydrogen. College of Engineering, Department of Chemical Engineering, King Saud University.</p><p class="mini" style="color:#8ea3b8">Every number on this site comes from the design report or is calculated live from its models.</p></div>
+  <div><b style="font-size:19px">MPW Gasification Complex</b><p>Senior design project: gasification of mixed plastic waste for the production of methanol and hydrogen. College of Engineering, Department of Chemical Engineering, King Saud University.</p><p class="mini" style="color:#8ea3b8">Every number on this site comes from the design report or is calculated live from its models.</p><p class="by">Prepared by <b>Meshari A. Almuhaysin</b> and <b>Mohammed F. Alotaibi</b></p></div>
   <div><b>Explore</b><a data-go="process">Process flow diagram</a><a data-go="operations">Operations and AI</a><a data-go="heat">Heat integration</a><a data-go="control">Process control</a></div>
-  <div><b>Business</b><a data-go="economics">Economics</a><a data-go="market">Market and scenarios</a><a data-go="safety">Monitoring</a><a data-go="emethanol">e-Methanol</a><a data-go="validation">Validation</a></div>
-</div></div></footer>
+  <div><b>Business</b><a data-go="economics">Economics</a><a data-go="market">Market and scenarios</a><a data-go="safety">Monitoring</a><a data-go="emethanol">e-Methanol</a><a data-go="validation">Validation</a><a href="presentation/" class="tour" title="Open the live 3D presentation of the plant">3D tour ↗</a></div>
+</div>
+<div class="cr">© 2026 Meshari A. Almuhaysin and Mohammed F. Alotaibi. All rights reserved. The design, the models, the data and the code of this site may not be copied, republished or reused without the written permission of the authors.</div></div></footer>
 <aside class="drawer" id="drawer" aria-hidden="true"><button class="btn sm ghost x" id="dclose">✕</button><div id="dbody"></div></aside>
 <div class="palette" id="palette"><div class="pbox"><input id="pq" placeholder="Go to a page or run an action…" autocomplete="off"><div class="res" id="pres"></div></div></div>
 <div class="tip" id="tip"></div><div class="toast" id="toast"></div>

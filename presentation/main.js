@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {Kit, truck as truckK, liteOf} from './kit.js';
-import {UNITS, SLIDES, SNAME, SDATA, SVC} from './data.js';
+import {UNITS, SLIDES, SNAME, SDATA, SVC, TEAM} from './data.js';
+import {INFO, HAZ, RISK} from './info.js';
 import {makeLocalScene, PLOT} from './scene.js';
 import {makeGlobe, llVec} from './globe.js';
 import {makeGround} from './ground.js';
@@ -67,9 +68,9 @@ function flyGlobe(to, d, e = ease.io) { const G = globe.GC, A = {...G}; let dl =
 
 // ================================================================== shots (plant frame: x east, z south; az 0 = camera south of the target)
 const SHOTS = {hero: {x: 8, y: 0, z: 18, dist: 215, az: -15, el: 30, shift: 0.11}, streams: {x: 10, y: 0, z: 22, dist: 280, az: -4, el: 54, shift: -0.06}, heat: {x: 0, y: 0, z: 18, dist: 260, az: -12, el: 46, shift: 0.1},
-  control: {x: 18, y: 0, z: 40, dist: 180, az: 18, el: 38, shift: 0.1}, safety: {x: 34, y: 0, z: 50, dist: 150, az: 8, el: 58, shift: 0.1}, econ: {x: 0, y: 0, z: 0, dist: 470, az: 36, el: 38, shift: 0.12}, twin: {x: 0, y: 0, z: 0, dist: 340, az: -52, el: 26, shift: -0.05}};
-const FOCUS = {'CR-101': {y: 2.8, dist: 15, az: 62, el: 16}, 'R-101': {y: 6.6, dist: 25, az: -32, el: 12}, 'CY-101': {y: 15.0, dist: 21, az: -90, el: 7}, 'R-102': {y: 8.5, dist: 23, az: 22, el: 10},
-  'ME-101': {y: 4.0, dist: 7.2, az: 4, el: 6}, 'C-101': {y: 2.9, dist: 21, az: 180, el: 14}, 'R-103': {y: 10.6, dist: 19, az: -28, el: 6}, 'F-101': {y: 6.6, dist: 17, az: 40, el: 8}, 'T-101': {y: 21, dist: 54, az: -42, el: 4}};
+  control: {x: 15, y: 0, z: 14, dist: 250, az: 12, el: 48, shift: 0.12}, safety: {x: 128, y: 0, z: 46, dist: 290, az: 10, el: 60, shift: 0.12}, econ: {x: 0, y: 0, z: 0, dist: 470, az: 36, el: 38, shift: 0.12}, twin: {x: 0, y: 0, z: 0, dist: 340, az: -52, el: 26, shift: -0.05}};
+const FOCUS = {'CR-101': {y: 2.8, dist: 15, az: 62, el: 16}, 'R-101': {y: 6.6, dist: 25, az: -62, el: 12}, 'CY-101': {y: 15.0, dist: 21, az: -96, el: 7}, 'R-102': {y: 8.5, dist: 24, az: -40, el: 10},
+  'ME-101': {y: 4.0, dist: 8.5, az: 4, el: 10}, 'C-101': {y: 2.9, dist: 21, az: 8, el: 14}, 'R-103': {y: 10.6, dist: 19, az: -28, el: 6}, 'F-101': {y: 6.6, dist: 21, az: -50, el: 10}, 'T-101': {y: 21, dist: 54, az: -42, el: 4}};
 function focusShot(id) { const f = FOCUS[id], c = CUT[id]; return {x: c.o.x, y: f.y, z: c.o.z, dist: f.dist, az: f.az, el: f.el, shift: innerWidth > 980 ? -0.02 : 0}; }
 
 // ================================================================== labels: unit tags, stream tags, callouts, loop badges
@@ -78,20 +79,47 @@ const TAGS = {}, STAGS = {}, CALLS = [], LOOPS = []; let LABELS = true, ACTIVE_U
 function mkEl(cls, html, parent = labelsEl) { const e = document.createElement('div'); e.className = cls; e.innerHTML = html; parent.appendChild(e); return e; }
 const _v = new THREE.Vector3();
 function project(p, out) { _v.copy(p).project(L.cam); out.x = (_v.x + 1) / 2 * innerWidth; out.y = (1 - _v.y) / 2 * innerHeight; out.ok = _v.z < 1 && _v.z > -1 && Math.abs(_v.x) < 1.15 && Math.abs(_v.y) < 1.15; return out; }
-const SP = {x: 0, y: 0, ok: false};
-function setT(o, x, y) { const t = `translate3d(${Math.round(x)}px,${Math.round(y)}px,0)`; if (o.t !== t) { o.el.style.transform = t; o.t = t; } }
+const SP = {x: 0, y: 0, ok: false}; let REM = 16; const remSync = () => { REM = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16; CALLS.forEach(c => c.w = 0); }; remSync(); addEventListener('resize', remSync);
+function setT(o, x, y) { const t = `translate3d(${Math.round(x)}px,${Math.round(y)}px,0)${o.sfx || ''}`; if (o.t !== t) { o.el.style.transform = t; o.t = t; } }
 function updateLabels() {
-  const local = MODE === 'local' && !FADE.on, placed = [];
+  const local = MODE === 'local' && !FADE.on, placed = [], RECTS = [];
+  if (local) for (const e of [$('card').classList.contains('on') ? $('cardIn') : null, $('panel').classList.contains('on') ? $('panel') : null]) if (e) { const r = e.getBoundingClientRect(); if (r.right > 0 && r.left < innerWidth && r.width) RECTS.push(r); }
+  const inView = (x, y) => x > 44 && x < innerWidth - 44 && y > 4.6 * REM && y < innerHeight - 5.6 * REM && !RECTS.some(r => x > r.left - 30 && x < r.right + 30 && y > r.top - 20 && y < r.bottom + 20);
   const fits = (x, y, w, h) => { for (const r of placed) if (x < r[0] + r[2] && x + w > r[0] && y < r[1] + r[3] && y + h > r[1]) return false; placed.push([x, y, w, h]); return true; };
-  // callouts (always shown while a cutaway is open)
-  for (const c of CALLS) { let vis = local && c.cw.k > 0.65; if (vis) { project(c.p, SP); vis = SP.ok; if (vis) { setT(c, SP.x, SP.y); placed.push([SP.x + (c.side > 0 ? 40 : -260), SP.y - 18, 220, 36]); } } if (vis !== c.on) { c.on = vis; c.el.classList.toggle('on', vis); } }
+  // callouts (always shown while a cutaway is open): two columns beside the cutaway, sorted top to bottom so that the leader lines never cross,
+  // kept clear of the story card, the data sheet and the bars
+  const vis = []; for (const c of CALLS) { let v = local && c.cw.k > 0.65; if (v) { project(c.p, SP); v = SP.ok; if (v) { c.ax = SP.x; c.ay = SP.y; } }
+    if (v !== c.on) { c.on = v; c.el.classList.toggle('on', v); c.w = 0; c.col = 0; } if (v) vis.push(c); }
+  if (vis.length) { const W = innerWidth, top = 4.4 * REM, bot = innerHeight - 5.4 * REM, gap = 2.4 * REM, rects = [];
+    rects.push(...RECTS);
+    for (const c of vis) if (!c.w) { c.w = c.box.offsetWidth; c.h = c.box.offsetHeight; }
+    let x0 = Infinity, x1 = -Infinity, mx = 0; for (const c of vis) { x0 = Math.min(x0, c.ax); x1 = Math.max(x1, c.ax); mx += c.ax / vis.length; }
+    const L = [], R = []; for (const c of vis) { const want = c.ax < mx - 24 ? -1 : c.ax > mx + 24 ? 1 : (c.col || c.side); c.col = want; (want < 0 ? L : R).push(c); }
+    { let rl = W - 10, ll = 10; for (const r of rects) if (r.height > innerHeight * 0.6) { if (r.left > W / 2) rl = Math.min(rl, r.left - 10); else ll = Math.max(ll, r.right + 10); }
+      const rFree = rl - (x1 + gap), lFree = x0 - gap - ll;
+      for (const c of [...R]) if (c.w > rFree && c.w <= lFree) { R.splice(R.indexOf(c), 1); L.push(c); c.col = -1; }
+      for (const c of [...L]) if (c.w > lFree && c.w <= rFree) { L.splice(L.indexOf(c), 1); R.push(c); c.col = 1; } }
+    while (Math.abs(L.length - R.length) > 2) { const from = L.length > R.length ? L : R, to = from === L ? R : L; from.sort((a, b) => from === L ? b.ax - a.ax : a.ax - b.ax); const c = from.shift(); c.col = -c.col; to.push(c); }
+    const lay = (G, sd) => { G.sort((a, b) => a.ay - b.ay);
+      for (const c of G) { let bx = sd < 0 ? x0 - gap - c.w : x1 + gap; bx = clamp(bx, 10, W - 10 - c.w);
+        for (const r of rects) if (bx < r.right + 10 && bx + c.w > r.left - 10 && r.height > innerHeight * 0.6) bx = sd < 0 ? Math.max(bx, r.right + 10) : Math.min(bx, r.left - 10 - c.w);   // tall data sheet: stay beside it
+        c.bx = bx; c.by = c.ay - c.h / 2; }
+      let y = top; for (const c of G) { c.by = Math.max(c.by, y);   // downward pass, then keep clear of the story card
+        for (const r of rects) if (r.height <= innerHeight * 0.6 && c.bx < r.right + 10 && c.bx + c.w > r.left - 10 && c.by < r.bottom + 10 && c.by + c.h > r.top - 10) { const sh = r.right + 10 - c.bx; if (sd < 0 && sh < gap - 6) c.bx += sh; else c.by = r.bottom + 10; }
+        y = c.by + c.h + 8; }
+      let yb = bot; for (let i = G.length - 1; i >= 0; i--) { const c = G[i]; if (c.by + c.h > yb) c.by = yb - c.h; yb = c.by - 8; }
+      for (const c of G) { placed.push([c.bx, c.by, c.w, c.h]); setT(c, c.ax, c.ay);
+        const dx = Math.round(c.bx - c.ax), dy = Math.round(c.by - c.ay), ex = sd > 0 ? dx : dx + c.w, ey = clamp(0, dy + 12, dy + c.h - 12);
+        const bt = `translate3d(${dx}px,${dy}px,0)`; if (c.bt !== bt) { c.box.style.transform = bt; c.bt = bt; }
+        const lt = `rotate(${Math.atan2(ey, ex).toFixed(3)}rad)`, lw = Math.round(Math.hypot(ex, ey)) + 'px'; if (c.lt !== lt) { c.ln.style.transform = lt; c.lt = lt; } if (c.lw !== lw) { c.ln.style.width = lw; c.lw = lw; } } };
+    lay(L, -1); lay(R, 1); }
   for (const l of LOOPS) { let vis = local && SHOW_LOOPS; if (vis) { project(l.p, SP); vis = SP.ok; if (vis) { setT(l, SP.x, SP.y); placed.push([SP.x - 14, SP.y - 16, 240, 32]); } } if (vis !== l.on) { l.on = vis; l.el.classList.toggle('on', vis); } }
   const showAllTags = SLIDE && SLIDE.id === 'plant';
-  for (const id in TAGS) { const t = TAGS[id]; let vis = local && LABELS && (ACTIVE_UNITS.includes(id) || id === HOVER || (showAllTags && t.major));
-    if (vis) { project(t.p, SP); vis = SP.ok && fits(SP.x - 46, SP.y - 44, 92, 26); if (vis) setT(t, SP.x, SP.y); }
+  for (const id in TAGS) { const t = TAGS[id]; let vis = local && LABELS && (ACTIVE_UNITS.includes(id) || id === HOVER || (showAllTags && t.major) || PV);
+    if (vis) { project(t.p, SP); vis = SP.ok && inView(SP.x, SP.y - 1.4 * REM) && fits(SP.x - 3 * REM, SP.y - 3 * REM, 6 * REM, 1.9 * REM); if (vis) setT(t, SP.x, SP.y); }
     if (vis !== t.on) { t.on = vis; t.el.classList.toggle('on', vis); } const sel = id === FOCUSED; if (t.sel !== sel) { t.sel = sel; t.el.classList.toggle('sel', sel); } }
   for (const id in STAGS) { const s = STAGS[id]; let vis = local && LABELS && (SHOW_ALL_STREAMS || ACTIVE_STREAMS.includes(id));
-    if (vis) { project(s.p, SP); vis = SP.ok && fits(SP.x - 15, SP.y - 15, 30, 30); if (vis) setT(s, SP.x, SP.y); }
+    if (vis) { project(s.p, SP); vis = SP.ok && inView(SP.x, SP.y) && fits(SP.x - 1.1 * REM, SP.y - 1.1 * REM, 2.2 * REM, 2.2 * REM); if (vis) setT(s, SP.x, SP.y); }
     if (vis !== s.on) { s.on = vis; s.el.classList.toggle('on', vis); } }
   globe.updateLabels(MODE === 'globe' && !FADE.on);
 }
@@ -119,44 +147,97 @@ function tint(id, color, on) { const u = P.units[id]; if (!u) return; u.group.ch
 // ================================================================== panel
 function cnt(el, v) { const s = String(v), m = s.match(/^([^\d]*)([\d,]*\.?\d+)(.*)$/); if (!m) { el.textContent = s; return; } const num = parseFloat(m[2].replace(/,/g, '')), dec = (m[2].split('.')[1] || '').length, t0 = performance.now();
   const f = t => { const k = Math.min(1, (t - t0) / 1200), e = 1 - Math.pow(1 - k, 3); el.textContent = m[1] + (num * e).toLocaleString('en-US', {minimumFractionDigits: dec, maximumFractionDigits: dec}) + m[3]; if (k < 1) requestAnimationFrame(f); }; requestAnimationFrame(f); }
-function unitPanel(id) { const u = UNITS[id]; if (!u) return; const list = (SLIDE && SLIDE.units) || [];
-  $('pBody').innerHTML = `<div class="sec" style="color:${u.col}">${u.sec}</div><h3>${u.name}</h3><p class="role">${u.role}</p>
-    ${list.length > 1 ? `<div class="chips">${list.map(k => `<button data-u="${k}" class="${k === id ? 'on' : ''}">${TAGNAME[k] || k}</button>`).join('')}</div>` : ''}
-    ${u.kpi ? `<div class="kp">${u.kpi.map(([v, s, l]) => `<div><b><span data-v="${v}">${v}</span>${s ? `<u>${s}</u>` : ''}</b><span>${l}</span></div>`).join('')}</div>` : ''}
-    <dl>${u.data.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
-    <div class="nav"><button id="pBack">${SLIDE && SLIDE.focus === id ? 'Plant overview' : '← Back'}</button><button id="pNext">Next →</button></div>`;
+// ---- equipment data sheet: header (tag plate, name, key figures), four tabs, footer navigation
+const ICON = {
+  next: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 5 7 7-7 7"/></svg>',
+  plant: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 20h18M5 20V9l5 3V9l5 3V6h4v14"/></svg>',
+  shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 3 5 6v6c0 4.2 3 7.4 7 9 4-1.6 7-4.8 7-9V6z"/><path d="m9 12 2 2 4-4"/></svg>',
+  arrow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14m-5-5 5 5-5 5"/></svg>'};
+const GHS = {   // simple pictograms drawn for the hazard diamonds
+  flam: '<path d="M12 21c-3.9 0-6.5-2.6-6.5-6.2 0-3.3 2.4-5.4 3.6-8.3.6 1.7 1.6 2.8 2.7 3.3-.2-2.9.9-5.6 3-7.3-.1 2.5.8 4.4 2.1 6.2 1.1 1.5 1.6 3 1.6 4.6C18.5 18 16 21 12 21z" fill="#111"/>',
+  liq: '<path d="M12 21c-3.9 0-6.5-2.6-6.5-6.2 0-3.3 2.4-5.4 3.6-8.3.6 1.7 1.6 2.8 2.7 3.3-.2-2.9.9-5.6 3-7.3-.1 2.5.8 4.4 2.1 6.2 1.1 1.5 1.6 3 1.6 4.6C18.5 18 16 21 12 21z" fill="#111"/><path d="M3 22h18" stroke="#111" stroke-width="2"/>',
+  toxic: '<circle cx="12" cy="9.5" r="6" fill="#111"/><rect x="8.6" y="13.5" width="6.8" height="4" rx="1" fill="#111"/><circle cx="9.6" cy="9.3" r="1.6" fill="#fff"/><circle cx="14.4" cy="9.3" r="1.6" fill="#fff"/><path d="M4 18.5l16 3M20 18.5l-16 3" stroke="#111" stroke-width="2" stroke-linecap="round"/>',
+  hot: '<path d="M12 3a2.2 2.2 0 0 0-2.2 2.2v8.6a4.3 4.3 0 1 0 4.4 0V5.2A2.2 2.2 0 0 0 12 3z" fill="none" stroke="#111" stroke-width="2"/><circle cx="12" cy="17.4" r="2.4" fill="#111"/><path d="M12 9v8" stroke="#111" stroke-width="2.2"/>',
+  press: '<circle cx="12" cy="13" r="8" fill="none" stroke="#111" stroke-width="2"/><path d="M12 13l4.5-4" stroke="#111" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="13" r="1.6" fill="#111"/><path d="M8 3h8" stroke="#111" stroke-width="2"/>',
+  vac: '<circle cx="12" cy="12" r="8" fill="none" stroke="#111" stroke-width="2"/><path d="M8 12h8M12 8v8" stroke="#111" stroke-width="2" transform="rotate(45 12 12)"/>',
+  dust: '<circle cx="7" cy="8" r="1.8" fill="#111"/><circle cx="14" cy="6" r="1.4" fill="#111"/><circle cx="17.5" cy="12" r="2" fill="#111"/><circle cx="10" cy="14" r="2.4" fill="#111"/><circle cx="6" cy="18" r="1.4" fill="#111"/><circle cx="15" cy="18.5" r="1.6" fill="#111"/>',
+  steam: '<path d="M7 20c-2-2 2-4 0-6s2-4 0-6M12 20c-2-2 2-4 0-6s2-4 0-6M17 20c-2-2 2-4 0-6s2-4 0-6" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round"/>',
+  mech: '<circle cx="12" cy="12" r="3" fill="#111"/><path d="M12 2.5v4M12 17.5v4M2.5 12h4M17.5 12h4M5.3 5.3l2.8 2.8M15.9 15.9l2.8 2.8M5.3 18.7l2.8-2.8M15.9 8.1l2.8-2.8" stroke="#111" stroke-width="2.2" stroke-linecap="round"/>'};
+const svcOf = n => { const st = P && P.streams[n]; return (SVC[st ? st.svc : 'syn'] || SVC.syn)[0]; };
+const dia = (n, small) => `<span class="dia${small ? ' s' : ''}" style="--c:${svcOf(n)}"><span>${n}</span></span>`;
+function streamVals(n) { const d = SDATA[n], v = [];
+  if (d && d[0] != null) v.push(d[0].toLocaleString('en-US', {maximumFractionDigits: 2}) + ' °C');
+  if (d && d[1] != null) v.push(d[1].toLocaleString('en-US', {maximumFractionDigits: 3}) + ' bar');
+  if (d && d[2] != null) v.push(d[2].toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kmol/h'); else if (+n <= 2) v.push('37,879 kg/h');
+  return v; }
+const vals = a => `<div class="vals">${a.map(x => `<span>${x}</span>`).join('')}</div>`;
+const nozzle = n => typeof n === 'object' ? `<div class="noz"><div class="n"><span class="dia ps" style="--c:#8a99a8"><span>–</span></span></div><b>${n.t}</b>${vals(n.d.split(', '))}</div>`
+  : `<div class="noz"><div class="n">${dia(n)}</div><b>${SNAME[n] || 'Stream ' + n}</b>${vals(streamVals(n))}</div>`;
+const rows = r => `<dl>${r.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`;
+let PTAB = 'over';
+function tabBody(id, tab) { const u = UNITS[id], I = INFO[id] || {};
+  if (tab === 'design') return rows(I.design || []);
+  if (tab === 'op') { let h = '';
+    if (I.op) h += `<h4>Operating conditions</h4>${rows(I.op)}`;
+    if (I.ins && I.ins.length) h += `<h4>Inlet</h4>${I.ins.map(nozzle).join('')}`;
+    if (I.outs && I.outs.length) h += `<h4>Outlet</h4>${I.outs.map(nozzle).join('')}`;
+    if (I.loops) h += `<h4>Control</h4>${I.loops.map(([a, n, t]) => `<div class="isa"><div class="bub"><b>${a}</b><em>${n}</em></div><span>${t}</span></div>`).join('')}`;
+    return h; }
+  if (tab === 'safety') { let h = '';
+    if (I.haz) h += `<div class="hz">${I.haz.map(k => `<div><div class="ghs"><svg viewBox="0 0 24 24">${GHS[k]}</svg></div>${HAZ[k][0]}</div>`).join('')}</div>`;
+    if (I.risk) { const r = I.risk, src = typeof r.pha === 'number' ? `PHA scenario ${r.pha}` : `R-103 risk matrix, ${r.pha}`;
+      h += `<div class="risk"><span>${src}: severity ${r.S}, likelihood ${r.L}</span><span class="chip" style="--c:${RISK[r.level]}">${r.level}</span>${r.after !== r.level ? `${ICON.arrow}<span class="chip" style="--c:${RISK.Marginal}">${r.after}</span>` : ''}</div>`; }
+    if (I.fei) h += `<div class="fei"><div><b>${I.fei[0]}</b><span>Dow F&amp;EI</span></div><div><b>${I.fei[1]}</b><span>degree of hazard</span></div><div><b>${I.fei[2]}</b><span>radius of exposure</span></div></div>`;
+    h += (I.safety || []).map(([t, w, g]) => `<div class="sp"><b>${t}</b><p>${w}</p><div class="g">${ICON.shield}<span>${g}</span></div></div>`).join('');
+    return h; }
+  return rows(u.data); }
+function unitPanel(id, tab) { const u = UNITS[id]; if (!u) return; const I = INFO[id] || {}, list = (SLIDE && SLIDE.units) || [];
+  const TABS = [['over', 'Overview'], ['design', 'Design'], ['op', 'Operation'], ['safety', 'Safety']].filter(([k]) => k === 'over' || (k === 'design' && I.design) || (k === 'op' && (I.op || I.ins || I.outs || I.loops)) || (k === 'safety' && I.safety));
+  if (tab) PTAB = tab; const cur = TABS.some(t => t[0] === PTAB) ? PTAB : 'over';
+  const tagM = u.name.match(/\b([A-Z]{1,3}-\d{3}R?)\b/), plate = tagM ? tagM[1] : TAGNAME[id] || id, title = tagM ? u.name.replace(tagM[0], '').replace(/\s{2,}/g, ' ').trim() : u.name;
+  const P0 = $('panel'); P0.style.setProperty('--sec', u.col); P0.classList.toggle('compact', cur !== 'over');
+  $('pBody').innerHTML = `<div class="ph"><div class="row"><span class="plate">${plate}</span><span class="secn">${u.sec}</span></div><h3>${title}</h3><p class="role">${u.role}</p>
+    ${u.kpi ? `<div class="kp">${u.kpi.map(([v, s, l]) => `<div><b><span data-v="${v}">${v}</span>${s ? `<u>${s}</u>` : ''}</b><span class="l">${l}</span></div>`).join('')}</div>` : ''}
+    ${TABS.length > 1 ? `<div class="tabs" role="tablist">${TABS.map(([k, n]) => `<button role="tab" data-t="${k}" class="${k === cur ? 'on' : ''}">${n}${k === 'safety' ? `<i>${(I.safety || []).length}</i>` : ''}</button>`).join('')}</div>` : ''}</div>
+    <div class="pb" id="pTab">${tabBody(id, cur)}</div>
+    <div class="pf">${list.length > 1 ? `<div class="chips">${list.map(k => `<button data-u="${k}" class="${k === id ? 'on' : ''}">${TAGNAME[k] || k}</button>`).join('')}</div>` : ''}
+      <div class="nav"><button id="pBack">${ICON.plant}Plant view</button><button id="pNext" class="pri">Next slide${ICON.next}</button></div></div>`;
   $('pBody').querySelectorAll('[data-v]').forEach(s => cnt(s, s.dataset.v));
   $('pBody').querySelectorAll('.chips button').forEach(b => b.onclick = () => selectUnit(b.dataset.u));
-  $('pBack').onclick = () => { if (SLIDE && SLIDE.focus === id) go(2); else back(); }; $('pNext').onclick = () => go(IDX + 1);
-  $('panel').classList.add('on'); }
-function streamsPanel() { const ids = Object.keys(SNAME).map(Number);
-  $('pBody').innerHTML = `<div class="sec" style="color:#ffd29b">Heat-integrated PFD</div><h3>42 streams</h3>
-    <p class="role">${Object.entries(SVC).map(([k, [c, n]]) => `<span style="white-space:nowrap;margin-right:10px"><i class="sw" style="background:${c}"></i>${n}</span>`).join(' ')}</p>
-    <table>${ids.map(n => { const s = P.streams[n], d = SDATA[n], c = (SVC[s ? s.svc : 'syn'] || SVC.syn)[0]; return `<tr data-s="${n}"><td><i class="sw" style="background:${c}"></i>${n}</td><td>${SNAME[n]}</td><td style="text-align:right;color:#9fb0c1">${d && d[0] != null ? d[0].toFixed(0) + ' °C' : ''}</td></tr>`; }).join('')}</table>`;
-  $('pBody').querySelectorAll('tr').forEach(tr => { tr.onclick = () => focusStream(tr.dataset.s); tr.onmouseenter = () => pulseStream(tr.dataset.s, true); tr.onmouseleave = () => pulseStream(tr.dataset.s, false); });
-  $('panel').classList.add('on'); }
+  $('pBody').querySelectorAll('.tabs button').forEach(b => b.onclick = () => { PTAB = b.dataset.t; P0.classList.toggle('compact', PTAB !== 'over'); $('pBody').querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b)); const t = $('pTab'); t.innerHTML = tabBody(id, PTAB); t.scrollTop = 0; t.style.animation = 'none'; void t.offsetWidth; t.style.animation = ''; });
+  $('pBack').onclick = plantView; $('pNext').onclick = () => go(IDX + 1);
+  P0.classList.add('on'); }
+function streamsPanel() { const ids = Object.keys(SNAME).map(Number); const P0 = $('panel'); P0.style.setProperty('--sec', '#e8620c');
+  $('pBody').innerHTML = `<div class="ph"><div class="row"><span class="plate">PFD</span><span class="secn">Heat-integrated flowsheet, Figure 4.18</span></div><h3>42 streams</h3>
+    <div class="legend">${Object.entries(SVC).map(([k, [c, n]]) => `<span><i class="sw" style="background:${c}"></i>${n}</span>`).join('')}</div></div>
+    <div class="pb"><div class="slist">${ids.map(n => { const d = SDATA[n]; return `<button data-s="${n}">${dia(n)}<span>${SNAME[n]}</span><em>${d && d[0] != null ? d[0].toLocaleString('en-US', {maximumFractionDigits: 0}) + ' °C' : ''}</em></button>`; }).join('')}</div></div>`;
+  $('pBody').querySelectorAll('.slist button').forEach(tr => { tr.onclick = () => focusStream(tr.dataset.s); tr.onmouseenter = () => pulseStream(tr.dataset.s, true); tr.onmouseleave = () => pulseStream(tr.dataset.s, false); });
+  P0.classList.add('on'); }
 function pulseStream(id, on) { const m = flowMesh(id); if (!m) return; m.visible = true; m.material.uniforms.uA.value = on ? 2.2 : 1; }
 function focusStream(id) { const s = P.streams[id]; if (!s || !s.pts) return; const b = new THREE.Box3().setFromPoints(s.pts), c = b.getCenter(new THREE.Vector3()), sz = b.getSize(new THREE.Vector3());
   exitExplore(); flyTo({x: c.x, y: c.y * 0.5, z: c.z, dist: clamp(Math.max(sz.x, sz.z, sz.y * 1.5) * 1.6, 35, 260), az: LC.az - PLOT.rot / D2R, el: 42}, 1.8); pulseStream(id, true); setTimeout(() => pulseStream(id, false), 2600); }
 
 // ================================================================== slides
+let PV = false;   // plant view (whole plant from above): every unit tag shown
 let MODE = 'globe', IDX = -1, SLIDE = null, BUSY = false, EXPLORE = false, FOCUSED = null, OPEN_CUT = null, HOVER = null, AUTO = null, STEP = 0, STEP_TIMER = null;
 const FADE = {on: false, a: 0, other: 'globe'};
 const CF = [0, -217.45, -454.68, -423.16, -376.59, -323.39, -275.03, -231.07, -191.1, -155.41, -123.2, -93.93, -67.31, -43.12, -21.12, -1.13, 17.05, 33.58, 48.6, 62.26, 74.68, 85.96, 105.04];
-function cardHTML(o, sl) { let h = sl.steps ? `<div class="k">${sl.kicker}</div><h1>${o.kicker}</h1>` : `<div class="k">${o.kicker || sl.kicker || ''}</div><h1>${sl.title}</h1>`; if (o.text) h += `<p>${o.text}</p>`;
+function kick(t) { if (!t) return ''; const p = t.split(' · '); return p.length > 1 ? `<div class="k"><span class="kn">${p[0]}</span><span>${p.slice(1).join(', ')}</span></div>` : `<div class="k"><span>${t}</span></div>`; }
+function cardHTML(o, sl) { let h = sl.steps ? `${kick(sl.kicker)}<h1>${o.kicker}</h1>` : `${kick(o.kicker || sl.kicker)}<h1>${sl.title}</h1>`; if (o.text) h += `<p>${o.text}</p>`;
   if (o.bars) h += `<div class="bars">${o.bars.map(([n, v]) => `<div class="bar"><span>${n}</span><div class="t"><i data-w="${v / 10}"></i></div><b>${v}</b></div>`).join('')}</div>`;
-  if (o.bars2) h += `<div style="margin-top:14px">${o.bars2.map(([n, a, b, u]) => `<div class="b2"><span>${n}</span><div class="tt"><i data-w="100"></i><s data-w="${b / a * 100}"></s></div><em>${a.toLocaleString('en-US')} → <b style="color:#fff">${b.toLocaleString('en-US')}</b> ${u}</em></div>`).join('')}</div>`;
+  if (o.bars2) h += `<div style="margin-top:14px">${o.bars2.map(([n, a, b, u]) => `<div class="b2"><span>${n}</span><div class="tt"><i data-w="100"></i><s data-w="${b / a * 100}"></s></div><em>${a.toLocaleString('en-US')} → <b>${b.toLocaleString('en-US')}</b> ${u}</em></div>`).join('')}</div>`;
   if (o.stats) h += `<div class="stats">${o.stats.map(([v, u, l]) => `<div class="stat"><b><span data-c="${v}">${v}</span>${u ? `<u>${u}</u>` : ''}</b><span>${l}</span></div>`).join('')}</div>`;
   if (sl.id === 'econ') h += `<svg id="spark" viewBox="0 0 520 130"></svg>`;
+  if (sl.team) h += `<div class="team"><span>Prepared by</span><b>${TEAM[0]}</b><b>${TEAM[1]}</b></div>`;
   if (sl.steps) h += `<div class="steps">${sl.steps.map((s, i) => `<i class="${i <= STEP ? 'on' : ''}"></i>`).join('')}</div>`;
   return h; }
-function showCard(sl, o = sl) { const c = $('card'); c.classList.remove('on'); c.classList.toggle('globe', sl.cam === 'globe');
+function showCard(sl, o = sl) { const c = $('card'); c.classList.remove('on'); c.classList.toggle('globe', sl.cam === 'globe'); c.style.setProperty('--sec', sl.focus && UNITS[sl.focus] ? UNITS[sl.focus].col : '#e8620c');
   setTimeout(() => { $('cardIn').innerHTML = cardHTML(o, sl); c.classList.add('on'); setTimeout(() => { $('cardIn').querySelectorAll('[data-w]').forEach(i => i.style.width = i.dataset.w + '%'); $('cardIn').querySelectorAll('[data-c]').forEach(s => cnt(s, s.dataset.c)); if (sl.id === 'econ') spark(); }, 120); }, 260 * FAST); }
 function spark() { const s = $('spark'); if (!s) return; const X = i => 34 + i / 22 * 470, Y = v => 22 + (125 - v) / 600 * 84;
-  s.innerHTML = `<line x1="34" x2="504" y1="${Y(0)}" y2="${Y(0)}" stroke="rgba(255,255,255,.3)" stroke-dasharray="4 4"/><path d="${CF.map((v, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(v).toFixed(1)).join(' ')}" fill="none" stroke="#f0a35e" stroke-width="3" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="transition:stroke-dashoffset 2.2s ease .3s"/>
-    <circle cx="${X(22)}" cy="${Y(105.04)}" r="4.5" fill="#ffd29b"/><text x="${X(22) - 8}" y="${Y(105.04) - 9}" text-anchor="end" fill="#ffd29b" style="font:600 12px Inter">NPV 105.04 M$</text>
-    <text x="34" y="126" fill="#9fb0c2" style="font:500 11px Inter">Cumulative discounted cash flow, years 0–22 (M$)</text>`; requestAnimationFrame(() => s.querySelector('path').style.strokeDashoffset = 0); }
-function navUI(i) { $$('#dots button').forEach((b, k) => { b.classList.toggle('on', k === i); b.classList.toggle('done', k < i); }); $('num').textContent = `${i + 1} / ${SLIDES.length}`; $('chap').textContent = SLIDES[i].chap; }
+  s.innerHTML = `<line x1="34" x2="504" y1="${Y(0)}" y2="${Y(0)}" stroke="rgba(15,34,54,.3)" stroke-dasharray="4 4"/><path d="${CF.map((v, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(v).toFixed(1)).join(' ')}" fill="none" stroke="#e8620c" stroke-width="3" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="transition:stroke-dashoffset 2.2s ease .3s"/>
+    <circle cx="${X(22)}" cy="${Y(105.04)}" r="5" fill="#e8620c"/><text x="${X(22) - 8}" y="${Y(105.04) - 9}" text-anchor="end" fill="#0f2236" style="font:700 15px Barlow Semi Condensed">NPV 105.04 M$</text>
+    <text x="34" y="127" fill="#627589" style="font:500 13px Barlow">Cumulative discounted cash flow, years 0–22 (M$)</text>`; requestAnimationFrame(() => s.querySelector('path').style.strokeDashoffset = 0); }
+function navUI(i) { $$('#dots button').forEach((b, k) => { b.classList.toggle('on', k === i); b.classList.toggle('done', k < i); }); $('num').innerHTML = `<b>${SLIDES[i].chap}</b><span>${i + 1} / ${SLIDES.length}</span>`; $('chap').textContent = SLIDES[i].chap; }
 async function closeCut() { if (!OPEN_CUT) return; const c = OPEN_CUT; OPEN_CUT = null;  (c.meshes || []).forEach(m => m.userData.cut = false); await c.close(); }
 async function openCut(id) { const c = CUT[id]; if (!c) return; OPEN_CUT = c;  (c.meshes || []).forEach(m => { if (m.userData.orig === undefined) m.userData.orig = null; }); const f = FOCUS[id]; c.open(f.az * D2R); (c.meshes || []).forEach(m => m.userData.cut = true); }
 const GLOBE_INTRO = {lat: 18, lon: 34, alt: 21000, tilt: 0, head: 0, shift: 0.16}, GLOBE_END = {lat: 20, lon: 42, alt: 19000, tilt: 0, head: 0, shift: 0.16};
@@ -173,7 +254,7 @@ async function crossTo(mode, dur = 0.9) { FADE.other = MODE; MODE = mode; FADE.o
 
 async function go(i, opts = {}) {
   if (i < 0 || i >= SLIDES.length || (BUSY && !opts.force)) return; const prev = SLIDE, sl = SLIDES[i]; BUSY = true; IDX = i; SLIDE = sl; STEP = 0;
-  navUI(i); exitExplore(); $('panel').classList.remove('on'); $('qr').classList.toggle('on', sl.id === 'twin'); if (FOCUSED) { FOCUSED = null; }
+  PV = false; navUI(i); exitExplore(); $('panel').classList.remove('on'); $('qr').classList.toggle('on', sl.id === 'twin'); if (FOCUSED) { FOCUSED = null; }
   ACTIVE_UNITS = sl.units || []; ACTIVE_STREAMS = sl.streams === 'all' ? [] : (sl.streams || []); SHOW_ALL_STREAMS = sl.streams === 'all'; SHOW_LOOPS = sl.id === 'control';
   try {
     if (sl.cam === 'globe') {
@@ -195,7 +276,7 @@ async function go(i, opts = {}) {
 let heatOn = false; const HI_SET = ['E-101', 'E-102', 'E-103', 'E-104', 'E-105', 'E-106', 'E-107', 'T-101'];
 function setHeat(on) { if (on === heatOn) return; heatOn = on; HI_SET.forEach(id => tint(id, 0xff3a1e, on)); }
 let RINGS = []; function setSafety(on) { RINGS.forEach(r => tween(r.material, {opacity: on ? r.userData.op : 0}, 1)); }
-function selectUnit(id) { if (!UNITS[id]) return; exitExplore(); FOCUSED = id; unitPanel(id);
+function selectUnit(id) { if (!UNITS[id]) return; PV = false; exitExplore(); FOCUSED = id; unitPanel(id);
   if (CUT[id]) { if (OPEN_CUT && OPEN_CUT.id !== id) closeCut(); flyTo(focusShot(id), 1.9).then(() => { if (FOCUSED === id) openCut(id); }); return; }
   const u = P.units[id]; const b = (u.proxies && u.proxies[0]) || u.box, c = b.getCenter(new THREE.Vector3()), s = b.getSize(new THREE.Vector3());
   flyTo({x: c.x, y: Math.min(c.y, s.y * 0.45), z: c.z, dist: clamp(Math.max(s.x, s.z, s.y * 1.6) * 1.9, 28, 230), az: LC.az - PLOT.rot / D2R, el: 26, shift: innerWidth > 980 ? -0.06 : 0}, 2.2); }
@@ -209,22 +290,38 @@ function pick(e) { if (MODE !== 'local' || FADE.on) return null; mouse.set(e.cli
 canvas.addEventListener('pointermove', e => { pmPending = e; });
 function hoverStep() { const e = pmPending; if (!e) return; pmPending = null; const id = pick(e);
   if (id !== HOVER) { HOVER = id; canvas.style.cursor = id ? 'pointer' : 'grab'; }
-  const tip = $('tip'); if (id && UNITS[id]) { tip.innerHTML = `<b>${UNITS[id].name}</b><br><span style="color:#9fb0c1">${UNITS[id].sec}</span>`; tip.style.left = (e.clientX + 16) + 'px'; tip.style.top = (e.clientY + 14) + 'px'; tip.style.opacity = 1; } else if (!tip.dataset.lock) tip.style.opacity = 0; }
+  const tip = $('tip'); if (id && UNITS[id]) { tip.innerHTML = `<b>${UNITS[id].name}</b><br><span class="m">${UNITS[id].sec}</span>`; tip.style.left = Math.min(e.clientX + 16, innerWidth - tip.offsetWidth - 10) + 'px'; tip.style.top = Math.min(e.clientY + 14, innerHeight - tip.offsetHeight - 10) + 'px'; tip.style.opacity = 1; } else if (!tip.dataset.lock) tip.style.opacity = 0; }
 canvas.addEventListener('pointerdown', e => { downAt = [e.clientX, e.clientY]; });
 canvas.addEventListener('pointerup', e => { if (!downAt) return; const moved = Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]); downAt = null; if (moved < 6) { const id = pick(e); if (id) selectUnit(id); } });
-canvas.addEventListener('pointerdown', e => { if (MODE === 'local' && !EXPLORE && !BUSY) { const sx = e.clientX, sy = e.clientY; const mv = ev => { if (Math.hypot(ev.clientX - sx, ev.clientY - sy) > 5) { canvas.removeEventListener('pointermove', mv); if (!EXPLORE) { enterExplore(); } } }; canvas.addEventListener('pointermove', mv); canvas.addEventListener('pointerup', () => canvas.removeEventListener('pointermove', mv), {once: true}); } });
+// drag anywhere to orbit the plant at once (the orbit controls listen from this press on; a press without a drag stays a click)
+canvas.addEventListener('pointerdown', e => { if (MODE !== 'local' || EXPLORE || BUSY || !controls) return; FLY++; controls.target.set(LC.tx, LC.ty, LC.tz); controls.enabled = true; const sx = e.clientX, sy = e.clientY;
+  const mv = ev => { if (Math.hypot(ev.clientX - sx, ev.clientY - sy) > 4) { canvas.removeEventListener('pointermove', mv); if (!EXPLORE) enterExplore(); } };
+  canvas.addEventListener('pointermove', mv); addEventListener('pointerup', () => { canvas.removeEventListener('pointermove', mv); if (!EXPLORE) controls.enabled = false; }, {once: true}); });
+canvas.addEventListener('wheel', () => { if (MODE === 'local' && !EXPLORE && !BUSY && controls) enterExplore(); }, {passive: true});
 function toggleAuto() { if (AUTO) { clearInterval(AUTO); AUTO = null; } else AUTO = setInterval(() => { if (!BUSY && !EXPLORE) { if (IDX < SLIDES.length - 1) go(IDX + 1); else toggleAuto(); } }, 10000); $('bAuto').classList.toggle('on', !!AUTO); }
 function nextStep(d) { if (SLIDE && SLIDE.id === 'site' && d > 0 && STEP < 2 && !BUSY) { STEP++; runBeats(STEP); return true; } return false; }
 addEventListener('keydown', e => { if (e.target.closest && e.target.closest('input,textarea')) return; const k = e.key;
   if (k === 'ArrowRight' || k === 'PageDown') { if (!nextStep(1)) go(IDX + 1); } else if (k === 'ArrowLeft' || k === 'PageUp') go(IDX - 1);
-  else if (k === 'Escape') back(); else if (k === 'f' || k === 'F') toggleFull(); else if (k === 'e' || k === 'E') (EXPLORE ? exitExplore() : enterExplore());
-  else if (k === 'l' || k === 'L') toggleLabels(); else if (k === 's' || k === 'S') toggleStreams(); else if (k === ' ') { e.preventDefault(); toggleAuto(); } else if (k === 'Home') go(0); });
+  else if (k === 'Escape') { if ($('menu').classList.contains('on')) toggleMenu(false); else back(); } else if (k === 'f' || k === 'F') toggleFull(); else if (k === 'e' || k === 'E') (EXPLORE ? exitExplore() : enterExplore());
+  else if (k === 'l' || k === 'L') toggleLabels(); else if (k === 's' || k === 'S') toggleStreams(); else if (k === ' ') { e.preventDefault(); toggleAuto(); } else if (k === 'Home') go(0); else if (k === 'p' || k === 'P') plantView(); else if (k === 'm' || k === 'M') toggleMenu(); });
 function toggleFull() { if (!document.fullscreenElement) document.documentElement.requestFullscreen?.(); else document.exitFullscreen?.(); }
 function toggleLabels() { LABELS = !LABELS; $('bLabels').classList.toggle('on', LABELS); }
 let STREAMS_ON = false; function toggleStreams() { STREAMS_ON = !STREAMS_ON; $('bStreams').classList.toggle('on', STREAMS_ON); SHOW_ALL_STREAMS = STREAMS_ON || (SLIDE && SLIDE.streams === 'all'); if (MODE === 'local') setFlows(STREAMS_ON ? 'all' : (SLIDE && SLIDE.streams) || []); }
 function buildNav() { $('dots').innerHTML = SLIDES.map((s, i) => `<button data-t="${s.chap}" title="${s.chap}"></button>`).join(''); $$('#dots button').forEach((b, i) => b.onclick = () => go(i));
   $('next').onclick = () => { if (!nextStep(1)) go(IDX + 1); }; $('prev').onclick = () => go(IDX - 1); $('home').onclick = () => go(0);
-  $('bFull').onclick = toggleFull; $('bQ').onclick = () => { try { localStorage.setItem('mpwQuality', LITE ? 'high' : 'lite'); } catch (e) {} const u = new URL(location.href); u.searchParams.set('q', LITE ? 'high' : 'lite'); location.href = u.toString(); }; $('bExplore').onclick = () => (EXPLORE ? exitExplore() : enterExplore()); $('bLabels').onclick = toggleLabels; $('bAuto').onclick = toggleAuto; $('bStreams').onclick = toggleStreams; $('pClose').onclick = back; }
+  $('bFull').onclick = toggleFull; $('bQ').onclick = () => { try { localStorage.setItem('mpwQuality', LITE ? 'high' : 'lite'); } catch (e) {} const u = new URL(location.href); u.searchParams.set('q', LITE ? 'high' : 'lite'); location.href = u.toString(); }; $('bExplore').onclick = () => (EXPLORE ? exitExplore() : enterExplore()); $('bLabels').onclick = toggleLabels; $('bAuto').onclick = toggleAuto; $('bStreams').onclick = toggleStreams; $('pClose').onclick = back;
+  $('bTop').onclick = plantView; $('bMenu').onclick = () => toggleMenu();
+  $('menu').innerHTML = SLIDES.map((s, i) => `<button data-i="${i}"><i>${i + 1}</i><span>${s.chap}<small>${s.title.replace(/<br>/g, ' ').replace(/<[^>]+>/g, '')}</small></span></button>`).join('') + `<div class="cr">© 2026 ${TEAM[0]} and ${TEAM[1]}. All rights reserved.</div>`;
+  $$('#menu button').forEach(b => b.onclick = () => { toggleMenu(false); go(+b.dataset.i); });
+  addEventListener('pointerdown', e => { if ($('menu').classList.contains('on') && !e.target.closest('#menu,#bMenu')) toggleMenu(false); }); }
+function toggleMenu(on) { const m = $('menu'); on = on ?? !m.classList.contains('on'); m.classList.toggle('on', on); $('bMenu').classList.toggle('on', on);
+  if (on) $$('#menu button').forEach(b => b.classList.toggle('on', +b.dataset.i === IDX)); }
+// the whole plant from above, from any slide
+const TOP_SHOT = {x: 13, y: 0, z: 14, dist: 225, az: 0, el: 70, shift: 0};
+async function plantView() { if (BUSY) return; toggleMenu(false);
+  if (MODE !== 'local') await go(SLIDES.findIndex(s => s.id === 'plant'));
+  exitExplore(); FOCUSED = null; $('panel').classList.remove('on'); $('card').classList.remove('on'); if (OPEN_CUT) closeCut();
+  PV = true; BUSY = true; try { await flyTo(TOP_SHOT, 2.0); } finally { BUSY = false; } }
 
 // ================================================================== animated details
 const ANIM = [];
@@ -259,24 +356,26 @@ function plume(x, y, z, s) { const parts = []; for (let i = 0; i < 7; i++) { con
 function makeTags() {
   const U = P.units, major = ['HALL', 'CR-101', 'R-101', 'CY-101', 'D-102', 'R-102', 'ME-101', 'C-102', 'C-101', 'R-103', 'F-101', 'T-101', 'TANKS', 'FLARE', 'CONTROL', 'E-101', 'D-101'];
   for (const id in U) { const u = U[id]; if (u.hidden) continue; let b = u.box;
-    const prox = []; if (id === 'R-101') TRAINS.forEach(x => prox.push(new THREE.Box3(new THREE.Vector3(x - 5, 0, -34), new THREE.Vector3(x + 6.5, 28, -2)))); else if (id === 'CY-101') TRAINS.forEach(x => prox.push(new THREE.Box3(new THREE.Vector3(x - 7, 6, -21.5), new THREE.Vector3(x + 7, 27, -14.5)))); else prox.push(b.clone());
+    const prox = []; if (id === 'R-101') TRAINS.forEach(x => prox.push(new THREE.Box3(new THREE.Vector3(x - 5, 0, -34), new THREE.Vector3(x + 6.5, 28, -2)))); else if (id === 'CY-101') TRAINS.forEach(x => prox.push(new THREE.Box3(new THREE.Vector3(x - 7, 6, 2.5), new THREE.Vector3(x + 7, 26, 9.5)))); else prox.push(b.clone());
     if (id === 'R-101') prox.forEach(p => { p.min.z = -10; p.max.z = -1.8; p.max.y = 14; p.min.x += 0.6; });
     u.proxies = prox; prox.forEach(bx => { const s = bx.getSize(new THREE.Vector3()), c = bx.getCenter(new THREE.Vector3()); const m = new THREE.Mesh(new THREE.BoxGeometry(s.x, s.y, s.z)); m.position.copy(c); m.visible = false; m.userData.unit = id; P.root.add(m); m.updateMatrixWorld(true); PROX.push(m); });
     if (!UNITS[id]) continue; const bb = prox[0], c = bb.getCenter(new THREE.Vector3()), p = toW(c.x, bb.max.y + 1.2, c.z);
     const el = mkEl('tag', `<div class="p"><i></i>${TAGNAME[id] || id}</div><div class="s"></div>`); el.style.setProperty('--c', UNITS[id].col); el.onclick = () => selectUnit(id);
-    TAGS[id] = {el, p, on: false, major: major.includes(id)}; }
+    TAGS[id] = {el, p, on: false, major: major.includes(id), sfx: ' translate(-50%,-100%)'}; }
   for (const id in P.streams) { const s = P.streams[id]; if (!s.pts || !s.pts.length || !SNAME[id]) continue; const a = streamAnchor(s.pts), p = toW(a.x, a.y + 0.2, a.z), col = (SVC[s.svc] || SVC.syn)[0];
-    const el = mkEl('st', `<b style="--c:${col}"><span>${id}</span></b>`); STAGS[id] = {el, p, on: false};
+    const el = mkEl('st', `<b style="--c:${col}"><span>${id}</span></b>`); STAGS[id] = {el, p, on: false, sfx: ' translate(-50%,-50%)'};
     el.onmouseenter = e => { const d = SDATA[id]; const tip = $('tip'); tip.dataset.lock = 1; tip.innerHTML = `<b>Stream ${id}</b> – ${SNAME[id]}<br>${d && d[0] != null ? `T = ${d[0].toLocaleString('en-US')} °C` : ''}${d && d[1] != null ? ` · P = ${d[1]} bar` : ''}${d && d[2] != null ? `<br>F = ${d[2].toLocaleString('en-US')} kmol/h` : id <= 2 ? '<br>MPW = 37,879 kg/h' : ''}`;
       const r = el.getBoundingClientRect(); tip.style.left = (r.right + 8) + 'px'; tip.style.top = (r.top - 4) + 'px'; tip.style.opacity = 1; pulseStream(id, true); };
     el.onmouseleave = () => { const tip = $('tip'); delete tip.dataset.lock; tip.style.opacity = 0; pulseStream(id, false); }; el.onclick = () => focusStream(id); }
   // control-loop badges
-  const loopAt = (tag, unit, d, tt, dy = 0) => { const u = P.units[unit]; if (!u) return; const b = u.proxies[0], c = b.getCenter(new THREE.Vector3()); const el = mkEl('loop', `<div class="c">${tt}</div><div class="t"><b>${tag}</b><span>${d}</span></div>`); LOOPS.push({el, p: toW(c.x, b.max.y * 0.8 + 3 + dy, c.z), on: false}); };
+  const loopAt = (tag, unit, d, tt, dy = 0) => { const u = P.units[unit]; if (!u) return; const b = u.proxies[0], c = b.getCenter(new THREE.Vector3()); const [lt, ln] = tag.split('-'), el = mkEl('loop', `<div class="bub"><b>${lt.split('/').pop()}</b><em>${ln}</em></div><div class="t"><b>${tag}</b><span>${d.replace(/ · /g, ', ')}</span></div>`); LOOPS.push({el, p: toW(c.x, b.max.y * 0.8 + 3 + dy, c.z), on: false, sfx: ' translate(-1.3rem,-50%)'}); };
   loopAt('TC-310', 'E-104', 'R-103 feed temperature · Cohen–Coon PID', 'TT'); loopAt('LC-318', 'F-101', 'Flash-drum level · P-only (averaging)', 'LT'); loopAt('PC-319', 'D-103', 'Loop pressure · PI on the purge', 'PT', 4);
   loopAt('FY/FC-106', 'D-101', 'Steam-to-MPW ratio 1.33 kg/kg', 'FT'); loopAt('PC-301', 'C-101', 'Suction pressure → compressor speed', 'PT'); loopAt('TC-202', 'E-103', 'Shift-feed temperature · syngas bypass', 'TT'); loopAt('PC-210', 'C-102', 'H₂ pressure → speed', 'PT');
   // callouts of the cutaways
-  for (const id in CUT) CUT[id].callouts.forEach((c, i) => { const side = i % 2 ? -1 : 1; const el = mkEl('co', `<div class="dt"></div><div class="ln" style="${side > 0 ? 'left:4px' : 'right:4px'};width:56px"></div><div class="box" style="${side > 0 ? 'left:60px' : 'right:60px'}">${c.html}</div>`);
-    CALLS.push({el, p: c.p, cw: CUT[id], side, on: false}); });
+  for (const id in CUT) CUT[id].callouts.forEach((c, i) => { const side = i % 2 ? -1 : 1, m = c.html.match(/^<b>(.*?)<\/b>(.*)$/), title = m ? m[1] : c.html, parts = m && m[2] ? m[2].split(' · ') : [];
+    const body = parts.map(t => { const q = t.match(/^Stream (\d+)(.*)$/); return q ? `<span>${dia(q[1], 1)}${q[2].trim()}</span>` : `<span>${t}</span>`; }).join('');
+    const el = mkEl('co', `<div class="ln"></div><div class="dt"></div><div class="box"><b>${title}</b>${body ? `<div class="vals">${body}</div>` : ''}</div>`); el.style.setProperty('--c', UNITS[id] ? UNITS[id].col : '#e8620c');
+    CALLS.push({el, box: el.querySelector('.box'), ln: el.querySelector('.ln'), p: c.p, cw: CUT[id], side, on: false, w: 0}); });
 }
 
 // ================================================================== render loop with adaptive resolution
@@ -299,7 +398,7 @@ async function prewarmCuts() {
   const fc = []; L.scene.traverse(o => { if (o.frustumCulled) { fc.push(o); o.frustumCulled = false; } }); renderScene('local'); fc.forEach(o => o.frustumCulled = true);
   for (const id in CUT) { const c = CUT[id]; (c.meshes || []).forEach(m => m.material = m.userData.orig); c.group.visible = false; } }
 // far-away details (handrails, ladders, grating, bolts, wheels) are switched off for wide shots
-let DETAIL = [], detailOn = true, DETAIL_FAR = 200; const DETAIL_MK = new Set(['yellow', 'galv', 'grate', 'dark', 'rubber', 'ss']);
+let DETAIL = [], detailOn = true, DETAIL_FAR = 200; const DETAIL_MK = new Set(['yellow', 'grate', 'rubber', 'ssF']);          // handrails, gratings, flanges only: equipment never disappears
 function lod() { const want = LC.dist < (detailOn ? DETAIL_FAR : DETAIL_FAR - 25) || EXPLORE && LC.dist < DETAIL_FAR * 1.3; if (want !== detailOn) { detailOn = want; DETAIL.forEach(m => m.visible = want); } }
 // frame-rate governor: watches the real frame interval and trades resolution for smoothness
 const GOV = {acc: 0, n: 0, t: 0, good: 0, ceil: DPR_MAX, last: 0};
@@ -347,7 +446,7 @@ async function init() {
   if (!LOW) { bench(3); let ms = Math.min(bench(5), bench(5)); window.__q = {ms, lite: LITE, gpu: GPU};
     if (!LITE && ms > 9 && Q.get('q') !== 'high') { status('Optimising for this computer…'); LITE = true; applyLite(); await prewarmCuts(); renderScene('local'); ms = Math.min(bench(5), bench(5)); window.__q.lite = ms; }
     if (ms > 12) setDPR(DPR * Math.sqrt(10 / ms)); }
-  $('bQ').classList.toggle('on', LITE);
+  $('bQ').classList.toggle('on', LITE); document.body.classList.toggle('lite', LITE);
   { const w = Math.floor(innerWidth * DPR * 0.5), h = Math.floor(innerHeight * DPR * 0.5); fadeRT.setSize(w, h); renderScene('globe', fadeRT); renderScene('local'); fadeQ.material.uniforms.a.value = 0.5; renderer.autoClear = false; renderer.render(fadeS, fadeC); renderer.autoClear = true; }
   $('lbar').firstElementChild.style.width = '100%'; status('Ready'); $('start').classList.add('on');
   requestAnimationFrame(frame);
@@ -355,4 +454,4 @@ async function init() {
 }
 $('start').onclick = () => { $('loader').classList.add('off'); go(0); };
 init();
-window.__app = {get LITE() { return LITE; }, GPU, get REFRESH() { return REFRESH; }, LONG, CALLS, TAGS, bench, GOV, get DPR() { return DPR; }, frame: t => frame(t), render: renderScene, go, get IDX() { return IDX; }, get MODE() { return MODE; }, LC, globe, renderer, get L() { return L; }, get CUT() { return CUT; }, selectUnit, get BUSY() { return BUSY; }};
+window.__app = {THREE, get P() { return P; }, get LITE() { return LITE; }, GPU, get REFRESH() { return REFRESH; }, LONG, CALLS, TAGS, bench, GOV, get DPR() { return DPR; }, frame: t => frame(t), render: renderScene, go, get IDX() { return IDX; }, get MODE() { return MODE; }, LC, globe, renderer, get L() { return L; }, get CUT() { return CUT; }, selectUnit, get BUSY() { return BUSY; }};

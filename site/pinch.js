@@ -1,17 +1,19 @@
 // ===== Pinch analysis (Chapter 4, problem table algorithm) =====
 const HI_STREAMS = [
- {id: 'H1', n: 'Syngas to R-102 (13)', ts: 941.87, tt: 270, cp: 69.41},
- {id: 'H2', n: 'C-101 suction gas, cooling (11+17)', ts: 639.4, tt: 66.26, cp: 64.39},
- {id: 'H3', n: 'R-103 effluent, gas (21)', ts: 200, tt: 129.19, cp: 195.24},
- {id: 'H4', n: 'R-103 effluent, condensing (21)', ts: 129.19, tt: 40, cp: 374.59},
- {id: 'H5', n: 'T-101 overhead (29)', ts: 64.28, tt: 63.28, cp: 18843},
- {id: 'H6', n: 'Suction gas, condensing', ts: 66.26, tt: 40, cp: 680.09},
- {id: 'H7', n: 'Suction gas, chilled', ts: 40, tt: 24.18, cp: 256.19},
- {id: 'C1', n: 'Gasifier water, preheat (3)', ts: 25, tt: 100, cp: 114.47},
- {id: 'C2', n: 'Gasifier water, boiling (3)', ts: 100, tt: 101, cp: 61793.6},
- {id: 'C3', n: 'Steam superheat (3)', ts: 101, tt: 600, cp: 54.83},
- {id: 'C4', n: 'T-101 reboiler (28)', ts: 99.22, tt: 100.22, cp: 19977},
- {id: 'C5', n: 'Synthesis feed (19)', ts: 72.19, tt: 200, cp: 186.36}];
+ {id: 'H1', n: 'Syngas to R-102 (13)', ts: 941.87, tt: 270, q: 46633.10},
+ {id: 'H2', n: 'C-101 suction gas, cooling (11+17)', ts: 639.4, tt: 66.26, q: 36903.74},
+ {id: 'H3', n: 'R-103 effluent, gas (21)', ts: 200, tt: 129.19, q: 13825.10},
+ {id: 'H4', n: 'R-103 effluent, condensing (21)', ts: 129.19, tt: 40, q: 33409.70},
+ {id: 'H5', n: 'T-101 overhead (29)', ts: 64.28, tt: 63.28, q: 18843.00},
+ {id: 'H6', n: 'Suction gas, condensing', ts: 66.26, tt: 40, q: 17859.09},
+ {id: 'H7', n: 'Suction gas, chilled', ts: 40, tt: 24.18, q: 4052.93},
+ {id: 'C1', n: 'Gasifier water, preheat (3)', ts: 25, tt: 100, q: 8585.30},
+ {id: 'C2', n: 'Gasifier water, boiling (3)', ts: 100, tt: 101, q: 61793.60},
+ {id: 'C3', n: 'Steam superheat (3)', ts: 101, tt: 600, q: 27362.61},
+ {id: 'C4', n: 'T-101 reboiler (28)', ts: 99.22, tt: 100.22, q: 19977.00},
+ {id: 'C5', n: 'Synthesis feed (19)', ts: 72.19, tt: 200, q: 23818.78}];
+// heat-capacity flow rates from the duties of Table 4.1 (CP = Q / ΔT, unrounded, as in the report's problem table)
+HI_STREAMS.forEach(s => { if (s.q && !s.cp) s.cp = s.q / Math.abs(s.ts - s.tt); });
 function pinchAnalysis(dT, streams) {
   streams = streams || HI_STREAMS; const h = dT / 2;
   const sh = streams.map(s => { const hot = s.ts > s.tt; return Object.assign({}, s, {hot, a: hot ? s.ts - h : s.ts + h, b: hot ? s.tt - h : s.tt + h}); });
@@ -45,7 +47,7 @@ function areaTarget(P, hProc, hu) {
     const out = []; let H = 0; for (let k = 0; k < Tset.length - 1; k++) { const lo = Tset[k], hi = Tset[k + 1]; const act = ss.filter(s => Math.min(s.ts, s.tt) <= lo + 1e-9 && Math.max(s.ts, s.tt) >= hi - 1e-9);
       const cp = act.reduce((a, s) => a + s.cp, 0), q = cp * (hi - lo); const rh = act.reduce((a, s) => a + s.cp * (hi - lo) / s.hk, 0); out.push({lo, hi, H0: H, H1: H + q, cp, rh}); H += q; } return out; };
   const hs = segs(true), cs = segs(false); const Hb = [...new Set(hs.flatMap(s => [s.H0, s.H1]).concat(cs.flatMap(s => [s.H0, s.H1])).map(v => +v.toFixed(4)))].sort((a, b) => a - b);
-  const Tat = (sg, H) => { for (const s of sg) if (H >= s.H0 - 1e-6 && H <= s.H1 + 1e-6) return s.cp > 0 ? s.lo + (H - s.H0) / s.cp : s.lo; return null; };
+  const Tat = (sg, H) => { for (const s of sg) if (H >= s.H0 - 1e-3 && H <= s.H1 + 1e-3) return s.cp > 0 ? s.lo + Math.min(s.H1 - s.H0, Math.max(0, H - s.H0)) / s.cp : s.lo; return H < sg[0].H0 ? sg[0].lo : sg[sg.length - 1].hi; };
   const rAt = (sg, H0, H1) => { let a = 0; sg.forEach(s => { const o = Math.min(H1, s.H1) - Math.max(H0, s.H0); if (o > 1e-9) a += s.rh * o / (s.H1 - s.H0); }); return a; };
   let A = 0;
   for (let k = 0; k < Hb.length - 1; k++) { const H0 = Hb[k], H1 = Hb[k + 1]; if (H1 - H0 < 1e-6) continue;
