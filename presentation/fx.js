@@ -9,12 +9,13 @@ const dirW = (a) => V(Math.sin(a), 0, Math.cos(a)).applyAxisAngle(UP, PLOT.rot);
 
 function dotTex() { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'); const r = g.createRadialGradient(32, 32, 0, 32, 32, 32); r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(.4, 'rgba(255,255,255,.8)'); r.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = r; g.fillRect(0, 0, 64, 64); const t = new THREE.CanvasTexture(c); return t; }
 let DOT; const dot = () => DOT || (DOT = dotTex());
+export const LITE_FX = {on: false};
 // simple CPU particle cloud (Points). update(fn) writes positions; colours fixed per particle.
 function cloud(n, size, color, o = {}) { const g = new THREE.BufferGeometry(); const pos = new Float32Array(n * 3), col = new Float32Array(n * 3); const c = new THREE.Color();
   for (let i = 0; i < n; i++) { c.set(typeof color === 'function' ? color(i) : color); col.set([c.r, c.g, c.b], i * 3); }
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 3));
   const m = new THREE.PointsMaterial({size, map: dot(), vertexColors: true, transparent: true, depthWrite: false, opacity: o.opacity ?? 0.95, blending: o.add ? THREE.AdditiveBlending : THREE.NormalBlending, sizeAttenuation: true});
-  const p = new THREE.Points(g, m); p.frustumCulled = false; p.userData.seed = Float32Array.from({length: n}, () => Math.random()); return p; }
+  const p = new THREE.Points(g, m); p.frustumCulled = false; if (LITE_FX.on) g.setDrawRange(0, Math.ceil(n * 0.5)); p.userData.seed = Float32Array.from({length: n}, () => Math.random()); return p; }
 
 export class Cutaway {
   constructor(app, id, o) { this.app = app; this.id = id; this.o = o; this.k = 0; this.on = false; this.group = new THREE.Group(); this.group.visible = false; app.scene.add(this.group);
@@ -32,7 +33,10 @@ export class Cutaway {
   close() { if (!this.on) return; return this.app.tween(this, {k: 0}, 0.6).then(() => { this.on = false; this.group.visible = false; (this.meshes || []).forEach(m => { if (m.userData.orig) m.material = m.userData.orig; }); }); }
   backHalf() { const a = this.camAz || 0, cx = Math.sin(a), cz = Math.cos(a); this.group.traverse(o => { if (!o.isPoints && !o.isInstancedMesh) return; if (o.userData.noMirror) return; const p = o.isPoints ? o.geometry.attributes.position : null;
     if (p) { const A = p.array; for (let i = 0; i < p.count; i++) { const x = A[i * 3], z = A[i * 3 + 2], d = x * cx + z * cz; if (d > 0) { A[i * 3] = x - 2 * d * cx; A[i * 3 + 2] = z - 2 * d * cz; } } } }); }
-  tick(t, dt) { if (!this.on && this.k <= 0) return; this.apply(); { const Lc = this.app.cutLight; if (this.k > 0.001) { this.light.updateMatrixWorld(); Lc.position.setFromMatrixPosition(this.light.matrixWorld); Lc.color.set(this.o.light || 0xfff1dc); Lc.intensity = this.k * (this.o.li ?? 14); } else if (Lc.userData.owner === this.id) Lc.intensity = 0; Lc.userData.owner = this.id; } this.updates.forEach(f => f(t, dt, this.k)); this.backHalf(); }
+  tick(t, dt) { if (!this.on && this.k <= 0) return;
+    // the opening always faces the viewer, also while the camera is moved by hand
+    if (this.app.camAz) { const a = this.app.camAz(); let d = Math.abs(((a - (this.camAz || 0)) % 6.2832 + 9.4248) % 6.2832 - 3.1416); if (d > 0.02) { this.camAz = a; this.setBox(a); } }
+    this.apply(); { const Lc = this.app.cutLight; if (this.k > 0.001) { this.light.updateMatrixWorld(); Lc.position.setFromMatrixPosition(this.light.matrixWorld); Lc.color.set(this.o.light || 0xfff1dc); Lc.intensity = this.k * (this.o.li ?? 14); } else if (Lc.userData.owner === this.id) Lc.intensity = 0; Lc.userData.owner = this.id; } this.updates.forEach(f => f(t, dt, this.k)); this.backHalf(); }
   lightAt(w) { this.group.updateMatrixWorld(true); this.light.position.copy(this.group.worldToLocal(w.clone())); }
   callout(p, html, side = 1) { this.callouts.push({p: toW(...p), html, side}); }
   mat(o) { return new THREE.MeshStandardMaterial(o); }

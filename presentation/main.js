@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {Kit, truck as truckK} from './kit.js';
+import {Kit, truck as truckK, liteOf} from './kit.js';
 import {UNITS, SLIDES, SNAME, SDATA, SVC} from './data.js';
 import {makeLocalScene, PLOT} from './scene.js';
 import {makeGlobe, llVec} from './globe.js';
 import {makeGround} from './ground.js';
-import {buildCutaways} from './fx.js';
+import {buildCutaways, LITE_FX} from './fx.js';
 import {TRAINS} from './plant.js';
 
 // ================================================================== basics
@@ -14,9 +14,14 @@ const D2R = Math.PI / 180, clamp = (v, a, b) => Math.max(a, Math.min(b, v)), ler
 const ease = {smooth: t => t * t * t * (t * (t * 6 - 15) + 10), io: t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2, out: t => 1 - Math.pow(1 - t, 3), sine: t => -(Math.cos(Math.PI * t) - 1) / 2, lin: t => t};
 const Q = new URLSearchParams(location.search), FAST = Q.has('fast') ? 0.02 : 1, LOW = Q.has('lo');
 const canvas = $('c');
-const renderer = new THREE.WebGLRenderer({canvas, antialias: true, powerPreference: 'high-performance', stencil: false});
+// ---- quality tier: 'lite' for weak GPUs (integrated graphics, old laptops, phones), chosen before the context is created
+const GPU = (() => { try { const g = document.createElement('canvas').getContext('webgl2') || document.createElement('canvas').getContext('webgl'); const e = g.getExtension('WEBGL_debug_renderer_info'); return e ? g.getParameter(e.UNMASKED_RENDERER_WEBGL) : ''; } catch (e) { return ''; } })();
+let saved = null; try { saved = localStorage.getItem('mpwQuality'); } catch (e) {}
+const WEAK = /Intel|UHD|HD Graphics|Iris|Mali|Adreno|PowerVR|SwiftShader|llvmpipe|Basic Render|Radeon\(TM\) Graphics|Vega [0-9]/i.test(GPU) || (navigator.hardwareConcurrency || 8) <= 4 || /Mobi|Android/i.test(navigator.userAgent);
+let LITE = Q.get('q') === 'lite' || (Q.get('q') !== 'high' && (saved === 'lite' || (saved !== 'high' && WEAK)));
+const renderer = new THREE.WebGLRenderer({canvas, antialias: !LITE, powerPreference: 'high-performance', stencil: false});
 // render at CSS-pixel resolution at most; a governor lowers it further whenever frames get slower than ~50 fps
-const DPR_MAX = Math.min(devicePixelRatio || 1, 1), DPR_MIN = 0.55; let DPR = LOW ? 0.75 : DPR_MAX; renderer.setPixelRatio(DPR); renderer.setSize(innerWidth, innerHeight);
+const DPR_MAX = Math.min(devicePixelRatio || 1, LITE ? 0.85 : 1), DPR_MIN = LITE ? 0.5 : 0.55; let DPR = LOW ? 0.75 : DPR_MAX; renderer.setPixelRatio(DPR); renderer.setSize(innerWidth, innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1;
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap; renderer.localClippingEnabled = true;
 // ---- time-based tweens (independent of the frame rate, so a slow frame never slows the motion)
@@ -46,7 +51,7 @@ const _off = new THREE.Vector3();
 function applyLocal() { const c = L.cam, a = LC.az * D2R, e = LC.el * D2R;
   _off.set(Math.sin(a) * Math.cos(e), Math.sin(e), Math.cos(a) * Math.cos(e)).multiplyScalar(LC.dist);
   c.position.set(LC.tx + _off.x, LC.ty + _off.y, LC.tz + _off.z); c.lookAt(LC.tx, LC.ty, LC.tz);
-  c.near = clamp(LC.dist * 0.0025, 0.15, 60); c.far = Math.max(60000, LC.dist * 6); c.aspect = innerWidth / innerHeight;
+  c.near = clamp(LC.dist * 0.0025, 0.08, 60); c.far = Math.max(60000, LC.dist * 6); c.aspect = innerWidth / innerHeight;
   if (Math.abs(LC.shift) > 0.001) c.setViewOffset(innerWidth, innerHeight, -LC.shift * innerWidth, 0, innerWidth, innerHeight); else c.clearViewOffset(); c.updateProjectionMatrix();
   L.scene.fog.density = LC.dist > 3000 ? 0.000012 : lerp(0.00009, 0.000012, LC.dist / 3000); }
 function syncFromCamera() { const c = L.cam, t = controls.target; _off.copy(c.position).sub(t); LC.tx = t.x; LC.ty = t.y; LC.tz = t.z; LC.dist = _off.length(); LC.el = Math.asin(clamp(_off.y / LC.dist, -1, 1)) / D2R; LC.az = Math.atan2(_off.x, _off.z) / D2R; }
@@ -203,7 +208,7 @@ function enterExplore() { if (MODE !== 'local') return; EXPLORE = true; FLY++; c
 function pick(e) { if (MODE !== 'local' || FADE.on) return null; mouse.set(e.clientX / innerWidth * 2 - 1, -e.clientY / innerHeight * 2 + 1); ray.setFromCamera(mouse, L.cam); const h = ray.intersectObjects(PROX, false); return h.length ? h[0].object.userData.unit : null; }
 canvas.addEventListener('pointermove', e => { pmPending = e; });
 function hoverStep() { const e = pmPending; if (!e) return; pmPending = null; const id = pick(e);
-  if (id !== HOVER) { if (HOVER && !(heatOn && HI_SET.includes(HOVER))) tint(HOVER, 0, false); HOVER = id; if (id && !(heatOn && HI_SET.includes(id)) && !(OPEN_CUT && OPEN_CUT.id === id)) tint(id, 0xffa040, true); canvas.style.cursor = id ? 'pointer' : 'grab'; }
+  if (id !== HOVER) { HOVER = id; canvas.style.cursor = id ? 'pointer' : 'grab'; }
   const tip = $('tip'); if (id && UNITS[id]) { tip.innerHTML = `<b>${UNITS[id].name}</b><br><span style="color:#9fb0c1">${UNITS[id].sec}</span>`; tip.style.left = (e.clientX + 16) + 'px'; tip.style.top = (e.clientY + 14) + 'px'; tip.style.opacity = 1; } else if (!tip.dataset.lock) tip.style.opacity = 0; }
 canvas.addEventListener('pointerdown', e => { downAt = [e.clientX, e.clientY]; });
 canvas.addEventListener('pointerup', e => { if (!downAt) return; const moved = Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]); downAt = null; if (moved < 6) { const id = pick(e); if (id) selectUnit(id); } });
@@ -219,7 +224,7 @@ function toggleLabels() { LABELS = !LABELS; $('bLabels').classList.toggle('on', 
 let STREAMS_ON = false; function toggleStreams() { STREAMS_ON = !STREAMS_ON; $('bStreams').classList.toggle('on', STREAMS_ON); SHOW_ALL_STREAMS = STREAMS_ON || (SLIDE && SLIDE.streams === 'all'); if (MODE === 'local') setFlows(STREAMS_ON ? 'all' : (SLIDE && SLIDE.streams) || []); }
 function buildNav() { $('dots').innerHTML = SLIDES.map((s, i) => `<button data-t="${s.chap}" title="${s.chap}"></button>`).join(''); $$('#dots button').forEach((b, i) => b.onclick = () => go(i));
   $('next').onclick = () => { if (!nextStep(1)) go(IDX + 1); }; $('prev').onclick = () => go(IDX - 1); $('home').onclick = () => go(0);
-  $('bFull').onclick = toggleFull; $('bExplore').onclick = () => (EXPLORE ? exitExplore() : enterExplore()); $('bLabels').onclick = toggleLabels; $('bAuto').onclick = toggleAuto; $('bStreams').onclick = toggleStreams; $('pClose').onclick = back; }
+  $('bFull').onclick = toggleFull; $('bQ').onclick = () => { try { localStorage.setItem('mpwQuality', LITE ? 'high' : 'lite'); } catch (e) {} const u = new URL(location.href); u.searchParams.set('q', LITE ? 'high' : 'lite'); location.href = u.toString(); }; $('bExplore').onclick = () => (EXPLORE ? exitExplore() : enterExplore()); $('bLabels').onclick = toggleLabels; $('bAuto').onclick = toggleAuto; $('bStreams').onclick = toggleStreams; $('pClose').onclick = back; }
 
 // ================================================================== animated details
 const ANIM = [];
@@ -284,9 +289,18 @@ function renderScene(mode, target) { renderer.setRenderTarget(target || null);
   if (mode === 'globe') { renderer.toneMappingExposure = 1.0; renderer.autoClear = true; renderer.render(globe.scene, globe.cam); }
   else { renderer.toneMappingExposure = 0.86; renderer.autoClear = false; renderer.clear(); renderer.render(L.under, L.cam); renderer.clearDepth(); renderer.render(L.scene, L.cam); renderer.autoClear = true; }
   renderer.setRenderTarget(null); }
+function applyLite() { L.scene.traverse(o => { if (!o.isMesh || !o.material || o.parent && o.parent.isPoints) return; if (o.userData.orig) o.userData.orig = liteOf(o.userData.orig); if (o.userData.base) o.userData.base = liteOf(o.userData.base); o.material = liteOf(o.material); o.castShadow = false; o.receiveShadow = false; });
+  for (const id in CUT) CUT[id].group.traverse(o => { if (o.isPoints) o.geometry.setDrawRange(0, Math.ceil(o.geometry.attributes.position.count * 0.5)); });
+  renderer.shadowMap.enabled = false; L.sun.castShadow = false; L.hemi.intensity = 1.05; L.sun.intensity = 2.5; L.scene.environment = null; DETAIL_FAR = 120; }
+// compile every program (cut-open variants included) and upload every buffer before the tour starts
+async function prewarmCuts() {
+  for (const id in CUT) { const c = CUT[id]; c.mats.clear(); c.setBox(0); (c.meshes || []).forEach(m => { m.userData.orig = m.userData.orig || m.material; m.material = c.clipMaterial(m.userData.orig); }); c.group.visible = true; c.group.traverse(x => { if (x.isMesh && x.material && x.userData.clip !== false && !x.material.isPointsMaterial) { x.material.clippingPlanes = c.planes; x.material.clipIntersection = true; } }); }
+  try { await renderer.compileAsync(L.scene, L.cam); } catch (e) { renderer.compile(L.scene, L.cam); }
+  const fc = []; L.scene.traverse(o => { if (o.frustumCulled) { fc.push(o); o.frustumCulled = false; } }); renderScene('local'); fc.forEach(o => o.frustumCulled = true);
+  for (const id in CUT) { const c = CUT[id]; (c.meshes || []).forEach(m => m.material = m.userData.orig); c.group.visible = false; } }
 // far-away details (handrails, ladders, grating, bolts, wheels) are switched off for wide shots
-let DETAIL = [], detailOn = true; const DETAIL_MK = new Set(['yellow', 'galv', 'grate', 'dark', 'rubber', 'ss']);
-function lod() { const want = LC.dist < (detailOn ? 200 : 175) || EXPLORE && LC.dist < 260; if (want !== detailOn) { detailOn = want; DETAIL.forEach(m => m.visible = want); } }
+let DETAIL = [], detailOn = true, DETAIL_FAR = 200; const DETAIL_MK = new Set(['yellow', 'galv', 'grate', 'dark', 'rubber', 'ss']);
+function lod() { const want = LC.dist < (detailOn ? DETAIL_FAR : DETAIL_FAR - 25) || EXPLORE && LC.dist < DETAIL_FAR * 1.3; if (want !== detailOn) { detailOn = want; DETAIL.forEach(m => m.visible = want); } }
 // frame-rate governor: watches the real frame interval and trades resolution for smoothness
 const GOV = {acc: 0, n: 0, t: 0, good: 0, ceil: DPR_MAX, last: 0};
 const RATE = []; let REFRESH = 0;   // display refresh interval, measured on the first frames (a 30 Hz screen must not be mistaken for a slow GPU)
@@ -297,7 +311,7 @@ function governor(dt, now) { if (!REFRESH) { RATE.push(dt * 1000); if (RATE.leng
 function setDPR(v) { DPR = clamp(+v.toFixed(2), DPR_MIN, DPR_MAX); renderer.setPixelRatio(DPR); renderer.setSize(innerWidth, innerHeight); }
 const LONG = []; function frame(now) { requestAnimationFrame(frame); const dt = Math.min(0.1, (now - last) / 1000); last = now; const tf0 = performance.now(); TT += dt; stepTweens(now);
   if (MODE === 'globe' || (FADE.on && FADE.other === 'globe')) { if (IDX === 0 && !BUSY) globe.GC.lon += dt * 0.5; globe.tick(TT); }
-  if (L && (MODE === 'local' || (FADE.on && FADE.other === 'local'))) { if (EXPLORE) { controls.update(); syncFromCamera(); } else applyLocal(); lod(); flowU.uT.value = TT; ANIM.forEach(f => f(TT, dt)); for (const id in CUT) CUT[id].tick(TT, dt); hoverStep(); }
+  if (L && (MODE === 'local' || (FADE.on && FADE.other === 'local'))) { if (EXPLORE) { controls.update(); syncFromCamera(); const c = L.cam, nn = clamp(LC.dist * 0.0025, 0.08, 60); if (Math.abs(c.near - nn) > nn * 0.2) { c.near = nn; c.far = Math.max(60000, LC.dist * 6); c.updateProjectionMatrix(); } } else applyLocal(); lod(); flowU.uT.value = TT; ANIM.forEach(f => f(TT, dt)); for (const id in CUT) CUT[id].tick(TT, dt); hoverStep(); }
   if (FADE.on && FADE.a > 0.002) { const w = Math.floor(innerWidth * DPR * 0.5), h = Math.floor(innerHeight * DPR * 0.5); if (fadeRT.width !== w || fadeRT.height !== h) fadeRT.setSize(w, h);
     renderScene(FADE.other, fadeRT); renderScene(MODE); fadeQ.material.uniforms.a.value = FADE.a; renderer.toneMappingExposure = FADE.other === 'globe' ? 1.0 : 0.86; renderer.autoClear = false; renderer.render(fadeS, fadeC); renderer.autoClear = true; }
   else renderScene(MODE);
@@ -313,26 +327,27 @@ async function init() {
   await new Promise(r => { manager.onLoad = r; if (loadedFrac >= 1) r(); setTimeout(r, 25000); });
   status('Building the plant…'); await new Promise(r => setTimeout(r, 30));
   L = makeLocalScene(renderer, {shadow: 2048, sky: LOW ? 256 : 512}); P = L.P; app.scene = L.scene;
-  controls = new OrbitControls(L.cam, canvas); controls.enabled = false; controls.enableDamping = true; controls.dampingFactor = 0.08; controls.maxPolarAngle = 1.48; controls.minDistance = 6; controls.maxDistance = 9000;
-  app.cutLight = new THREE.PointLight(0xfff1dc, 0, 40, 1.6); L.scene.add(app.cutLight); CUT = buildCutaways(app, P); addDetails(); makeTags();
+  controls = new OrbitControls(L.cam, canvas); controls.enabled = false; controls.enableDamping = true; controls.dampingFactor = 0.2; controls.rotateSpeed = 0.85; controls.zoomSpeed = 1.1; controls.panSpeed = 0.9; controls.maxPolarAngle = 1.48; controls.minDistance = 2.5; controls.maxDistance = 9000;
+  LITE_FX.on = LITE; app.cutLight = new THREE.PointLight(0xfff1dc, 0, 40, 1.6); L.scene.add(app.cutLight); CUT = buildCutaways(app, P); addDetails(); makeTags();
   // the ground below the plot: one plane, bundled textures first, real imagery when it arrives
   { const fk = Math.cos(PLOT.lat * D2R), W0 = 49.4083, E0 = 49.7117, S0 = 26.8849, N0 = 27.1551; const lr = new THREE.Vector4((W0 - PLOT.lon) * 111320 * fk, (E0 - PLOT.lon) * 111320 * fk, -(N0 - PLOT.lat) * 110574, -(S0 - PLOT.lat) * 110574);
     const G = makeGround(L.under, renderer, PLOT.lat, PLOT.lon, regionTex, fallbackTex, lr); if (!Q.has('nosat')) G.done.then(r => { if (r.patch) globe.setPatch(r.patch.tex, r.patch.geo); }).catch(() => {}); }
   P.root.traverse(m => { if (m.isMesh && DETAIL_MK.has(m.userData.mk)) DETAIL.push(m); });
+  app.camAz = () => (LC.az - PLOT.rot / D2R) * D2R;
+  if (LITE) applyLite();
   // compile every program now so that no slide stalls on a shader compile later
   status('Preparing the shaders…'); await new Promise(r => setTimeout(r, 20));
   Object.assign(LC, shotW(SHOTS.hero)); applyLocal(); globe.apply();
-  for (const id in CUT) { const c = CUT[id]; c.setBox(0); (c.meshes || []).forEach(m => { m.userData.orig = m.userData.orig || m.material; m.material = c.clipMaterial(m.userData.orig); }); c.group.visible = true; c.group.traverse(x => { if (x.isMesh && x.material && x.userData.clip !== false && !x.material.isPointsMaterial) { x.material.clippingPlanes = c.planes; x.material.clipIntersection = true; } }); }
-  try { await renderer.compileAsync(L.scene, L.cam); } catch (e) { renderer.compile(L.scene, L.cam); }
+  await prewarmCuts();
   // upload every buffer and texture now (one render with culling off), so nothing is uploaded mid-flight later
-  { const fc = []; L.scene.traverse(o => { if (o.frustumCulled) { fc.push(o); o.frustumCulled = false; } }); renderScene('local'); fc.forEach(o => o.frustumCulled = true); }
   renderScene('local');
-  for (const id in CUT) { const c = CUT[id]; (c.meshes || []).forEach(m => m.material = m.userData.orig); c.group.visible = false; }
-  for (const id of ['R-101', 'T-101', 'R-103']) tint(id, 0xffa040, true), tint(id, 0xffa040, false);
   try { await renderer.compileAsync(globe.scene, globe.cam); } catch (e) { renderer.compile(globe.scene, globe.cam); }
   renderer.shadowMap.needsUpdate = true; renderScene('local'); renderScene('globe');
   // a quick start-up measure picks a safe first resolution for slow GPUs
-  if (!LOW) { bench(3); const ms = Math.min(bench(5), bench(5)); window.__q = {ms}; if (ms > 14) setDPR(DPR * Math.sqrt(12 / ms)); }
+  if (!LOW) { bench(3); let ms = Math.min(bench(5), bench(5)); window.__q = {ms, lite: LITE, gpu: GPU};
+    if (!LITE && ms > 9 && Q.get('q') !== 'high') { status('Optimising for this computer…'); LITE = true; applyLite(); await prewarmCuts(); renderScene('local'); ms = Math.min(bench(5), bench(5)); window.__q.lite = ms; }
+    if (ms > 12) setDPR(DPR * Math.sqrt(10 / ms)); }
+  $('bQ').classList.toggle('on', LITE);
   { const w = Math.floor(innerWidth * DPR * 0.5), h = Math.floor(innerHeight * DPR * 0.5); fadeRT.setSize(w, h); renderScene('globe', fadeRT); renderScene('local'); fadeQ.material.uniforms.a.value = 0.5; renderer.autoClear = false; renderer.render(fadeS, fadeC); renderer.autoClear = true; }
   $('lbar').firstElementChild.style.width = '100%'; status('Ready'); $('start').classList.add('on');
   requestAnimationFrame(frame);
@@ -340,4 +355,4 @@ async function init() {
 }
 $('start').onclick = () => { $('loader').classList.add('off'); go(0); };
 init();
-window.__app = {get REFRESH() { return REFRESH; }, LONG, CALLS, TAGS, bench, GOV, get DPR() { return DPR; }, frame: t => frame(t), render: renderScene, go, get IDX() { return IDX; }, get MODE() { return MODE; }, LC, globe, renderer, get L() { return L; }, get CUT() { return CUT; }, selectUnit, get BUSY() { return BUSY; }};
+window.__app = {get LITE() { return LITE; }, GPU, get REFRESH() { return REFRESH; }, LONG, CALLS, TAGS, bench, GOV, get DPR() { return DPR; }, frame: t => frame(t), render: renderScene, go, get IDX() { return IDX; }, get MODE() { return MODE; }, LC, globe, renderer, get L() { return L; }, get CUT() { return CUT; }, selectUnit, get BUSY() { return BUSY; }};

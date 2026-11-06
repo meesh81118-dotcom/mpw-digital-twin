@@ -25,7 +25,7 @@ export function makeLocalScene(renderer, q = {}) {
   const sun = new THREE.DirectionalLight(0xffdcb4, 2.9); sun.castShadow = true; const SM = q.shadow || 2048;
   sun.shadow.mapSize.set(SM, SM); Object.assign(sun.shadow.camera, {left: -250, right: 250, top: 250, bottom: -250, near: 50, far: 1600}); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.45;
   sun.position.copy(sunDir).multiplyScalar(800); scene.add(sun, sun.target);
-  scene.add(new THREE.HemisphereLight(0xd6e4ff, 0xa88a66, 0.22));
+  const hemi = new THREE.HemisphereLight(0xd6e4ff, 0xa88a66, 0.22); scene.add(hemi);
   const T = makeTextures(renderer.capabilities.getMaxAnisotropy());
   const M = makeMaterials(T);
   M.blob = new THREE.MeshBasicMaterial({map: T.blob, transparent: true, depthWrite: false, color: 0xffffff, opacity: 0.85, polygonOffset: true, polygonOffsetFactor: -2});
@@ -34,5 +34,5 @@ export function makeLocalScene(renderer, q = {}) {
   const plant = P.root; plant.rotation.y = PLOT.rot; scene.add(plant); plant.updateMatrixWorld(true);
   // static shadows: rendered once (and again only when asked)
   renderer.shadowMap.autoUpdate = false; renderer.shadowMap.needsUpdate = true;
-  return {scene, under, cam, sun, sunDir, sky, M, T, P, plant, plantMs};
+  return {scene, under, cam, sun, hemi, sunDir, sky, M, T, P, plant, plantMs};
 }

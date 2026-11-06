@@ -30,12 +30,14 @@ export function makeGround(scene, renderer, lat0, lon0, regionTex, localTex, loc
     fragmentShader: `#include <fog_pars_fragment>\nuniform sampler2D tR,tF,t0,t1,t2,t3; uniform vec4 rR,rF,r0,r1,r2,r3,on; uniform float onF; varying vec2 vW;
       vec2 uvOf(vec4 r){ return vec2((vW.x - r.x) / (r.y - r.x), 1.0 - (vW.y - r.z) / (r.w - r.z)); }
       float inside(vec2 u, float f){ vec2 e = min(u, 1.0 - u); return smoothstep(0.0, f, min(e.x, e.y)); }
-      void main(){ vec3 c = texture2D(tR, uvOf(rR)).rgb; vec2 u;
-        u = uvOf(rF); c = mix(c, texture2D(tF, u).rgb, inside(u, 0.05) * onF);
-        u = uvOf(r0); if (on.x > 0.5) c = mix(c, texture2D(t0, u).rgb, inside(u, 0.06));
-        u = uvOf(r1); if (on.y > 0.5) c = mix(c, texture2D(t1, u).rgb, inside(u, 0.06));
-        u = uvOf(r2); if (on.z > 0.5) c = mix(c, texture2D(t2, u).rgb, inside(u, 0.06));
-        u = uvOf(r3); if (on.w > 0.5) c = mix(c, texture2D(t3, u).rgb, inside(u, 0.06));
+      // finest level first; stop as soon as a level covers the pixel completely (one texture read for most pixels)
+      void main(){ vec3 c = vec3(0.); float left = 1.0; vec2 u; float w;
+        if (on.w > 0.5) { u = uvOf(r3); w = inside(u, 0.06); if (w > 0.0) { c += texture2D(t3, u).rgb * w * left; left *= 1.0 - w; } }
+        if (left > 0.001 && on.z > 0.5) { u = uvOf(r2); w = inside(u, 0.06); if (w > 0.0) { c += texture2D(t2, u).rgb * w * left; left *= 1.0 - w; } }
+        if (left > 0.001 && on.y > 0.5) { u = uvOf(r1); w = inside(u, 0.06); if (w > 0.0) { c += texture2D(t1, u).rgb * w * left; left *= 1.0 - w; } }
+        if (left > 0.001 && on.x > 0.5) { u = uvOf(r0); w = inside(u, 0.06); if (w > 0.0) { c += texture2D(t0, u).rgb * w * left; left *= 1.0 - w; } }
+        if (left > 0.001 && onF > 0.5) { u = uvOf(rF); w = inside(u, 0.05); if (w > 0.0) { c += texture2D(tF, u).rgb * w * left; left *= 1.0 - w; } }
+        if (left > 0.001) c += texture2D(tR, uvOf(rR)).rgb * left;
         gl_FragColor = vec4(c * 0.92, 1.0);\n#include <colorspace_fragment>\n#include <fog_fragment>\n}`});
   m.toneMapped = false;
   const plane = new THREE.Mesh(new THREE.PlaneGeometry(900000, 900000).rotateX(-Math.PI / 2), m); plane.position.y = -0.5; plane.frustumCulled = false; scene.add(plane);

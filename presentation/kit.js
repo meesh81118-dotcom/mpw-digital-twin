@@ -387,3 +387,13 @@ export function road(K, x0, z0, x1, z1, w, o = {}) { const dx = x1 - x0, dz = z1
   if (o.curb !== false) for (const s of [-1, 1]) { const c = new THREE.BoxGeometry(L, 0.18, 0.3); const lc = new M4().makeRotationY(ry); const nx = -Math.sin(ry) * 0, nz = 0; lc.setPosition((x0 + x1) / 2 + Math.sin(ry) * s * (w / 2 + 0.15), 0.09, (z0 + z1) / 2 + Math.cos(ry) * s * (w / 2 + 0.15)); K.add(c, 'curb', lc); }
 }
 export function blob(K, x, z, w, d, sq = false, ry = 0, y = 0.16) { const g = new THREE.PlaneGeometry(w, d); g.rotateX(-Math.PI / 2); g.rotateY(ry); g.translate(x, y, z); K.add(g, sq ? 'blobSq' : 'blob'); }
+
+// ------------------------------------------------------------------ lite materials for weak GPUs (Lambert / Phong, same colours and textures)
+const LITE_CACHE = new WeakMap();
+export function liteOf(m) {
+  if (!m || !m.isMeshStandardMaterial) return m; if (LITE_CACHE.has(m)) return LITE_CACHE.get(m);
+  const o = {color: m.color.clone(), map: m.map, alphaTest: m.alphaTest, side: m.side, transparent: m.transparent, opacity: m.opacity, depthWrite: m.depthWrite, clippingPlanes: m.clippingPlanes, clipIntersection: m.clipIntersection, emissive: m.emissive.clone(), emissiveIntensity: m.emissiveIntensity};
+  const n = m.metalness > 0.5 ? new THREE.MeshPhongMaterial({...o, shininess: 70, specular: new THREE.Color(0x8a8f94)}) : new THREE.MeshLambertMaterial(o);
+  if (m.metalness > 0.5) n.color.multiplyScalar(0.9); else n.color.multiplyScalar(0.97);
+  n.onBeforeCompile = m.onBeforeCompile; n.customProgramCacheKey = () => 'lite' + (m.customProgramCacheKey ? m.customProgramCacheKey() : ''); n.userData = {...m.userData}; LITE_CACHE.set(m, n); return n;
+}
