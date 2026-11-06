@@ -14,14 +14,16 @@ export function makeLocalScene(renderer, q = {}) {
   const sunDir = sunLocal.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), PLOT.rot);
   const sky = new Sky(); sky.scale.setScalar(450000); const su = sky.material.uniforms;
   su.turbidity.value = 6.5; su.rayleigh.value = 1.25; su.mieCoefficient.value = 0.0048; su.mieDirectionalG.value = 0.86; su.sunPosition.value.copy(sunDir);
-  sky.renderOrder = -20; const under = new THREE.Scene(); under.add(sky);    // drawn first: sky and satellite ground, then the depth is cleared
+  // the sky shader is evaluated once into a cube map; every frame then only samples a texture
+  const skyScene = new THREE.Scene(); skyScene.add(sky); const cubeRT = new THREE.WebGLCubeRenderTarget(q.sky || 512, {type: THREE.HalfFloatType}); const cc = new THREE.CubeCamera(1, 1e6, cubeRT); cc.update(renderer, skyScene);
+  const under = new THREE.Scene(); under.background = cubeRT.texture;    // drawn first: sky and satellite ground, then the depth is cleared
   // environment from the same sky + warm ground bounce
   const pm = new THREE.PMREMGenerator(renderer); const es = new THREE.Scene(); const sk2 = new Sky(); sk2.scale.setScalar(1000); Object.keys(su).forEach(k => { if (sk2.material.uniforms[k]) sk2.material.uniforms[k].value = su[k].value; }); es.add(sk2);
   const gnd = new THREE.Mesh(new THREE.CircleGeometry(900, 32), new THREE.MeshBasicMaterial({color: 0x9c8466})); gnd.rotation.x = -Math.PI / 2; gnd.position.y = -6; es.add(gnd);
   const env = pm.fromScene(es, 0.02).texture; scene.environment = env; scene.environmentIntensity = 0.62;
   scene.fog = new THREE.FogExp2(0xcdbfa6, 0.00009); under.fog = scene.fog;
-  const sun = new THREE.DirectionalLight(0xffdcb4, 2.9); sun.castShadow = true; const SM = q.shadow || 4096;
-  sun.shadow.mapSize.set(SM, SM); Object.assign(sun.shadow.camera, {left: -250, right: 250, top: 250, bottom: -250, near: 50, far: 1600}); sun.shadow.bias = -0.00025; sun.shadow.normalBias = 0.35; sun.shadow.radius = 2;
+  const sun = new THREE.DirectionalLight(0xffdcb4, 2.9); sun.castShadow = true; const SM = q.shadow || 2048;
+  sun.shadow.mapSize.set(SM, SM); Object.assign(sun.shadow.camera, {left: -250, right: 250, top: 250, bottom: -250, near: 50, far: 1600}); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.45;
   sun.position.copy(sunDir).multiplyScalar(800); scene.add(sun, sun.target);
   scene.add(new THREE.HemisphereLight(0xd6e4ff, 0xa88a66, 0.22));
   const T = makeTextures(renderer.capabilities.getMaxAnisotropy());

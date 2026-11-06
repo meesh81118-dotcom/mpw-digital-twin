@@ -96,7 +96,7 @@ export function makeMaterials(T, env) {
   const M = {
     paint: S({color: 0xeef0f1, roughness: 0.42, metalness: 0.12}),
     paint2: S({color: 0xe3e6e8, roughness: 0.48, metalness: 0.1}),
-    clad: S({color: 0xc8cdd2, roughness: 0.3, metalness: 0.88, bumpMap: T.seam, bumpScale: 0.6}),
+    clad: S({color: 0xc8cdd2, roughness: 0.3, metalness: 0.88}),
     cladS: S({color: 0xd0d4d8, roughness: 0.28, metalness: 0.9}),
     ss: S({color: 0xb7bdc3, roughness: 0.24, metalness: 0.95}),
     refr: S({color: 0xd9d6cf, roughness: 0.6, metalness: 0.05}),
@@ -123,10 +123,10 @@ export function makeMaterials(T, env) {
     gravel: worldMap(S({color: 0xffffff, map: T.gravel, roughness: 0.95}), 3),
     wall: S({color: 0xf0eee8, roughness: 0.82}),
     wallWin: S({color: 0xffffff, map: T.windows, roughness: 0.7}),
-    roofR: S({color: 0xb8302c, roughness: 0.5, metalness: 0.35, bumpMap: T.corr, bumpScale: 1.5}),
-    roofB: S({color: 0x2e66ad, roughness: 0.5, metalness: 0.35, bumpMap: T.corr, bumpScale: 1.5}),
-    roofG: S({color: 0xa4a9ab, roughness: 0.45, metalness: 0.55, bumpMap: T.corr, bumpScale: 1.5}),
-    roofBr: S({color: 0x8c4a34, roughness: 0.6, metalness: 0.2, bumpMap: T.corr, bumpScale: 1.5}),
+    roofR: S({color: 0xb8302c, roughness: 0.5, metalness: 0.35}),
+    roofB: S({color: 0x2e66ad, roughness: 0.5, metalness: 0.35}),
+    roofG: S({color: 0xa4a9ab, roughness: 0.45, metalness: 0.55}),
+    roofBr: S({color: 0x8c4a34, roughness: 0.6, metalness: 0.2}),
     glass: S({color: 0x223a52, roughness: 0.08, metalness: 0.9}),
     trunk: S({color: 0x7a6040, roughness: 0.95}),
     frond: S({color: 0xffffff, map: T.frond, alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.8}),
@@ -138,7 +138,6 @@ export function makeMaterials(T, env) {
     tankW: S({color: 0xf2f3f3, roughness: 0.38, metalness: 0.1}),
     water: new THREE.MeshStandardMaterial({color: 0x3d7f88, roughness: 0.08, metalness: 0.1}),
   };
-  M.clad.bumpMap = M.clad.bumpMap; M.clad.userData.seam = true;
   for (const k in M) { M[k].userData.key = k; }
   return M;
 }
@@ -374,13 +373,13 @@ export function palm(K, x, z, s = 1, R = Math.random) { K.push().tr(x, 0, z, R()
     g.rotateX(-Math.PI / 2 + 0.55); g.rotateY(a); g.translate(top[0], top[1], top[2]); K.add(g, 'frond'); }
   K.pop(); }
 export function car(K, x, z, ry, mk = 'carW') { K.push().tr(x, 0, z, ry); K.boxC(4.5, 0.75, 1.85, mk, 0, 0.62, 0); K.boxC(2.5, 0.62, 1.7, 'glass', -0.25, 1.28, 0); K.boxC(2.3, 0.08, 1.6, mk, -0.25, 1.62, 0);
-  for (const sx of [-1.45, 1.45]) for (const sz of [-0.85, 0.85]) K.add(new THREE.CylinderGeometry(0.36, 0.36, 0.25, 12).rotateX(Math.PI / 2).translate(sx, 0.36, sz), 'rubber'); K.pop(); }
+  for (const sx of [-1.45, 1.45]) for (const sz of [-0.85, 0.85]) K.add(new THREE.CylinderGeometry(0.36, 0.36, 0.25, 8).rotateX(Math.PI / 2).translate(sx, 0.36, sz), 'rubber'); K.pop(); }
 export function truck(K, x, z, ry, type = 'tanker', cab = 'carW') { K.push().tr(x, 0, z, ry);
   K.boxC(2.3, 2.5, 2.45, cab, 5.6, 1.95, 0); K.boxC(0.1, 1.0, 2.2, 'glass', 6.78, 2.5, 0); K.boxC(12.5, 0.35, 2.3, 'dark', -0.6, 1.0, 0);
   if (type === 'tanker') { K.add(new THREE.CylinderGeometry(1.15, 1.15, 10.5, 24).rotateZ(Math.PI / 2).translate(-1.2, 2.45, 0), 'carS'); for (const s of [-1, 1]) K.add(new THREE.SphereGeometry(1.15, 16, 10).scale(0.35, 1, 1).translate(-1.2 + s * 5.25, 2.45, 0), 'carS'); }
   else if (type === 'fire') { K.boxC(7, 2.6, 2.45, 'carR', 1.0, 2.4, 0); K.boxC(9.5, 0.3, 2.45, 'carR', 1.6, 1.0, 0); }
   else K.boxC(10, 2.9, 2.45, 'white', -1.2, 2.6, 0);
-  for (const sx of [-5.5, -4.2, 0.5, 5.6]) for (const sz of [-1.0, 1.0]) K.add(new THREE.CylinderGeometry(0.5, 0.5, 0.35, 14).rotateX(Math.PI / 2).translate(sx, 0.5, sz), 'rubber'); K.pop(); }
+  for (const sx of [-5.5, -4.2, 0.5, 5.6]) for (const sz of [-1.0, 1.0]) K.add(new THREE.CylinderGeometry(0.5, 0.5, 0.35, 8).rotateX(Math.PI / 2).translate(sx, 0.5, sz), 'rubber'); K.pop(); }
 // straight road strip with markings: from (x0,z0) to (x1,z1), width w; textured along its length
 export function road(K, x0, z0, x1, z1, w, o = {}) { const dx = x1 - x0, dz = z1 - z0, L = Math.hypot(dx, dz), ry = Math.atan2(-dz, dx);
   const g = new THREE.PlaneGeometry(L, w); g.rotateX(-Math.PI / 2); const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getY(i), uv.getX(i) * L / 12); // u across, v along

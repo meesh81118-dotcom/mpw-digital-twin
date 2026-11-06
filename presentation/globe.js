@@ -32,9 +32,9 @@ export function makeGlobe(renderer, tl, site, labelsEl) {
       #include <tonemapping_fragment>
       #include <colorspace_fragment>
     }`});
-  scene.add(new THREE.Mesh(new THREE.SphereGeometry(1, 320, 160), mat));
+  scene.add(new THREE.Mesh(new THREE.SphereGeometry(1, 256, 128), mat));
   const CU = {tC: {value: tex('assets/earth_clouds.jpg', false)}, uSun: {value: SUN}, uOp: {value: 0.9}, uT: {value: 0}, uSite: {value: llVec(site.lat, site.lon)}, uClr: {value: 0}};
-  scene.add(new THREE.Mesh(new THREE.SphereGeometry(1.007, 192, 96), new THREE.ShaderMaterial({uniforms: CU, transparent: true, depthWrite: false,
+  scene.add(new THREE.Mesh(new THREE.SphereGeometry(1.007, 144, 72), new THREE.ShaderMaterial({uniforms: CU, transparent: true, depthWrite: false,
     vertexShader: `varying vec3 vN; varying vec2 vUv; void main(){vUv=uv; vN=normalize(position); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
     fragmentShader: `uniform sampler2D tC; uniform vec3 uSun,uSite; uniform float uOp,uT,uClr; varying vec3 vN; varying vec2 vUv;
     void main(){ float c=texture2D(tC,vUv+vec2(uT*.0015,0.)).r; float d=dot(normalize(vN),uSun); float l=clamp(d*1.1+.06,0.,1.);
@@ -70,7 +70,7 @@ export function makeGlobe(renderer, tl, site, labelsEl) {
     site: geo(site.lat, site.lon, pin('MPW Gasification Complex', '27.013° N · 49.554° E', true), 'pin')};
   function showGeo(keys) { GEO.forEach(o => o.show = false); keys.forEach(k => G[k] && (G[k].show = true)); }
   function updateLabels(active) { const v = tmp; GEO.forEach(o => { let vis = active && o.show; if (vis) { const n = o.p.clone().normalize(); vis = n.dot(cam.position.clone().sub(o.p).normalize()) > 0.05; }
-      if (vis) { v.copy(o.p).project(cam); vis = v.z < 1; if (vis) o.el.style.transform = `translate3d(${((v.x + 1) / 2 * innerWidth).toFixed(1)}px,${((1 - v.y) / 2 * innerHeight).toFixed(1)}px,0)`; }
+      if (vis) { v.copy(o.p).project(cam); vis = v.z < 1; if (vis) { const t = `translate3d(${Math.round((v.x + 1) / 2 * innerWidth)}px,${Math.round((1 - v.y) / 2 * innerHeight)}px,0)`; if (o.t !== t) { o.el.style.transform = t; o.t = t; } } }
       if (vis !== o.on) { o.on = vis; o.el.classList.toggle('on', vis); } }); }
   function tick(t) { U.uTime.value = t; CU.uT.value = t; SUN.copy(llVec(SUNP.lat, SUNP.lon)).normalize(); sun.position.copy(SUN).multiplyScalar(120); apply(); }
   function setPatch(texture, b) { U.tJB.value = texture; U.uJB.value.set(b.w, b.e, b.s, b.n); U.uJBon.value = 1; }

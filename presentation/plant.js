@@ -331,6 +331,7 @@ export function buildPlant(M, T, opts = {}) {
     const x0 = b.min.x - 2.2, x1 = b.max.x + 2.2, z0 = b.min.z - 2.2, z1 = b.max.z + 2.2; padK.box(x1 - x0, 0.22, z1 - z0, 'conc', (x0 + x1) / 2, 0, (z0 + z1) / 2); padK.box(x1 - x0 + 0.3, 0.3, 0.3, 'curb', (x0 + x1) / 2, 0, z0); padK.box(x1 - x0 + 0.3, 0.3, 0.3, 'curb', (x0 + x1) / 2, 0, z1); padK.box(0.3, 0.3, z1 - z0, 'curb', x0, 0, (z0 + z1) / 2); padK.box(0.3, 0.3, z1 - z0, 'curb', x1, 0, (z0 + z1) / 2); }
   padK.box(240, 0.22, 10, 'conc', 13, 0, RZ);       // under the rack
   const padG = padK.build(M, {name: 'pads', cast: false}); root.add(padG);
-  for (const id in streams) { const s = streams[id]; if (s.K) { s.group = s.K.build(M, {name: 'S' + id}); root.add(s.group); delete s.K; } }
+  const allS = new Kit(); for (const id in streams) { const s = streams[id]; if (s.K) { for (const mk in s.K.parts) (allS.parts[mk] || (allS.parts[mk] = [])).push(...s.K.parts[mk]); delete s.K; } }
+  root.add(allS.build(M, {name: 'streams'}));
   return {root, units, streams, N, featured, anim};
 }

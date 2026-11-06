@@ -1,27 +1,24 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
-import {Pass} from 'three/addons/postprocessing/Pass.js';
-import {GTAOPass} from 'three/addons/postprocessing/GTAOPass.js';
-import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
 import {Kit, truck as truckK} from './kit.js';
 import {UNITS, SLIDES, SNAME, SDATA, SVC} from './data.js';
 import {makeLocalScene, PLOT} from './scene.js';
 import {makeGlobe, llVec} from './globe.js';
-import {buildGround} from './ground.js';
+import {makeGround} from './ground.js';
 import {buildCutaways} from './fx.js';
 import {TRAINS} from './plant.js';
 
 // ================================================================== basics
 const $ = id => document.getElementById(id), $$ = s => [...document.querySelectorAll(s)];
 const D2R = Math.PI / 180, clamp = (v, a, b) => Math.max(a, Math.min(b, v)), lerp = (a, b, t) => a + (b - a) * t;
-const ease = {io: t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2, out: t => 1 - Math.pow(1 - t, 3), sine: t => -(Math.cos(Math.PI * t) - 1) / 2, lin: t => t};
+const ease = {smooth: t => t * t * t * (t * (t * 6 - 15) + 10), io: t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2, out: t => 1 - Math.pow(1 - t, 3), sine: t => -(Math.cos(Math.PI * t) - 1) / 2, lin: t => t};
 const Q = new URLSearchParams(location.search), FAST = Q.has('fast') ? 0.02 : 1, LOW = Q.has('lo');
 const canvas = $('c');
 const renderer = new THREE.WebGLRenderer({canvas, antialias: true, powerPreference: 'high-performance', stencil: false});
-let DPR = LOW ? 1 : Math.min(devicePixelRatio || 1, 1.5); renderer.setPixelRatio(DPR); renderer.setSize(innerWidth, innerHeight);
+// render at CSS-pixel resolution at most; a governor lowers it further whenever frames get slower than ~50 fps
+const DPR_MAX = Math.min(devicePixelRatio || 1, 1), DPR_MIN = 0.55; let DPR = LOW ? 0.75 : DPR_MAX; renderer.setPixelRatio(DPR); renderer.setSize(innerWidth, innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1;
-renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.localClippingEnabled = true;
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap; renderer.localClippingEnabled = true;
 // ---- time-based tweens (independent of the frame rate, so a slow frame never slows the motion)
 const TW = [];
 function tween(o, to, d = 1.6, e = ease.io, onUpdate) { for (const w of TW) if (w.o === o) for (const k in to) delete w.to[k];
@@ -55,11 +52,11 @@ function applyLocal() { const c = L.cam, a = LC.az * D2R, e = LC.el * D2R;
 function syncFromCamera() { const c = L.cam, t = controls.target; _off.copy(c.position).sub(t); LC.tx = t.x; LC.ty = t.y; LC.tz = t.z; LC.dist = _off.length(); LC.el = Math.asin(clamp(_off.y / LC.dist, -1, 1)) / D2R; LC.az = Math.atan2(_off.x, _off.z) / D2R; }
 // cinematic flight: log-distance interpolation, shortest azimuth, and a lift for long moves
 let FLY = 0;
-function flyTo(s, d = 2.4, e = ease.io) { const A = {...LC}, B = shotW(s); let da = ((B.az - A.az) % 360 + 540) % 360 - 180; B.az = A.az + da;
-  const span = Math.hypot(B.tx - A.tx, B.tz - A.tz), lift = clamp(span / Math.max(A.dist, B.dist) - 0.4, 0, 1.6); const id = ++FLY; const st = {u: 0};
+function flyTo(s, d = 2.2, e = ease.smooth) { const A = {...LC}, B = shotW(s); let da = ((B.az - A.az) % 360 + 540) % 360 - 180; B.az = A.az + da;
+  const span = Math.hypot(B.tx - A.tx, B.tz - A.tz), lift = clamp(span / Math.max(A.dist, B.dist) - 0.6, 0, 0.9); const id = ++FLY; const st = {u: 0};
   return tween(st, {u: 1}, d, ease.lin, () => { if (id !== FLY) return; const v = e(st.u), arc = Math.sin(Math.PI * v) * lift;
-    LC.tx = lerp(A.tx, B.tx, v); LC.ty = lerp(A.ty, B.ty, v); LC.tz = lerp(A.tz, B.tz, v); LC.dist = Math.exp(lerp(Math.log(A.dist), Math.log(B.dist), v)) * (1 + arc * 0.6);
-    LC.az = lerp(A.az, B.az, v); LC.el = lerp(A.el, B.el, v) + arc * 10; LC.shift = lerp(A.shift, B.shift, v); }); }
+    LC.tx = lerp(A.tx, B.tx, v); LC.ty = lerp(A.ty, B.ty, v); LC.tz = lerp(A.tz, B.tz, v); LC.dist = Math.exp(lerp(Math.log(A.dist), Math.log(B.dist), v)) * (1 + arc * 0.45);
+    LC.az = lerp(A.az, B.az, v); LC.el = lerp(A.el, B.el, v) + arc * 6; LC.shift = lerp(A.shift, B.shift, v); }); }
 function flyGlobe(to, d, e = ease.io) { const G = globe.GC, A = {...G}; let dl = ((to.lon - A.lon) % 360 + 540) % 360 - 180; const st = {u: 0}; const id = ++FLY;
   return tween(st, {u: 1}, d, ease.lin, () => { if (id !== FLY) return; const v = e(st.u); G.lat = lerp(A.lat, to.lat, v); G.lon = A.lon + dl * v; G.alt = Math.exp(lerp(Math.log(A.alt), Math.log(to.alt), v)); G.tilt = lerp(A.tilt, to.tilt, v); G.head = lerp(A.head, to.head, v); G.shift = lerp(A.shift, to.shift ?? 0, v); }); }
 
@@ -77,18 +74,19 @@ function mkEl(cls, html, parent = labelsEl) { const e = document.createElement('
 const _v = new THREE.Vector3();
 function project(p, out) { _v.copy(p).project(L.cam); out.x = (_v.x + 1) / 2 * innerWidth; out.y = (1 - _v.y) / 2 * innerHeight; out.ok = _v.z < 1 && _v.z > -1 && Math.abs(_v.x) < 1.15 && Math.abs(_v.y) < 1.15; return out; }
 const SP = {x: 0, y: 0, ok: false};
+function setT(o, x, y) { const t = `translate3d(${Math.round(x)}px,${Math.round(y)}px,0)`; if (o.t !== t) { o.el.style.transform = t; o.t = t; } }
 function updateLabels() {
   const local = MODE === 'local' && !FADE.on, placed = [];
   const fits = (x, y, w, h) => { for (const r of placed) if (x < r[0] + r[2] && x + w > r[0] && y < r[1] + r[3] && y + h > r[1]) return false; placed.push([x, y, w, h]); return true; };
   // callouts (always shown while a cutaway is open)
-  for (const c of CALLS) { let vis = local && c.cw.k > 0.65; if (vis) { project(c.p, SP); vis = SP.ok; if (vis) { c.el.style.transform = `translate3d(${SP.x.toFixed(1)}px,${SP.y.toFixed(1)}px,0)`; placed.push([SP.x + (c.side > 0 ? 40 : -260), SP.y - 18, 220, 36]); } } if (vis !== c.on) { c.on = vis; c.el.classList.toggle('on', vis); } }
-  for (const l of LOOPS) { let vis = local && SHOW_LOOPS; if (vis) { project(l.p, SP); vis = SP.ok; if (vis) { l.el.style.transform = `translate3d(${SP.x.toFixed(1)}px,${SP.y.toFixed(1)}px,0)`; placed.push([SP.x - 14, SP.y - 16, 240, 32]); } } if (vis !== l.on) { l.on = vis; l.el.classList.toggle('on', vis); } }
+  for (const c of CALLS) { let vis = local && c.cw.k > 0.65; if (vis) { project(c.p, SP); vis = SP.ok; if (vis) { setT(c, SP.x, SP.y); placed.push([SP.x + (c.side > 0 ? 40 : -260), SP.y - 18, 220, 36]); } } if (vis !== c.on) { c.on = vis; c.el.classList.toggle('on', vis); } }
+  for (const l of LOOPS) { let vis = local && SHOW_LOOPS; if (vis) { project(l.p, SP); vis = SP.ok; if (vis) { setT(l, SP.x, SP.y); placed.push([SP.x - 14, SP.y - 16, 240, 32]); } } if (vis !== l.on) { l.on = vis; l.el.classList.toggle('on', vis); } }
   const showAllTags = SLIDE && SLIDE.id === 'plant';
   for (const id in TAGS) { const t = TAGS[id]; let vis = local && LABELS && (ACTIVE_UNITS.includes(id) || id === HOVER || (showAllTags && t.major));
-    if (vis) { project(t.p, SP); vis = SP.ok && fits(SP.x - 46, SP.y - 44, 92, 26); if (vis) t.el.style.transform = `translate3d(${SP.x.toFixed(1)}px,${SP.y.toFixed(1)}px,0)`; }
-    if (vis !== t.on) { t.on = vis; t.el.classList.toggle('on', vis); } t.el.classList.toggle('sel', id === FOCUSED); }
+    if (vis) { project(t.p, SP); vis = SP.ok && fits(SP.x - 46, SP.y - 44, 92, 26); if (vis) setT(t, SP.x, SP.y); }
+    if (vis !== t.on) { t.on = vis; t.el.classList.toggle('on', vis); } const sel = id === FOCUSED; if (t.sel !== sel) { t.sel = sel; t.el.classList.toggle('sel', sel); } }
   for (const id in STAGS) { const s = STAGS[id]; let vis = local && LABELS && (SHOW_ALL_STREAMS || ACTIVE_STREAMS.includes(id));
-    if (vis) { project(s.p, SP); vis = SP.ok && fits(SP.x - 15, SP.y - 15, 30, 30); if (vis) s.el.style.transform = `translate3d(${SP.x.toFixed(1)}px,${SP.y.toFixed(1)}px,0)`; }
+    if (vis) { project(s.p, SP); vis = SP.ok && fits(SP.x - 15, SP.y - 15, 30, 30); if (vis) setT(s, SP.x, SP.y); }
     if (vis !== s.on) { s.on = vis; s.el.classList.toggle('on', vis); } }
   globe.updateLabels(MODE === 'globe' && !FADE.on);
 }
@@ -154,8 +152,8 @@ function spark() { const s = $('spark'); if (!s) return; const X = i => 34 + i /
     <circle cx="${X(22)}" cy="${Y(105.04)}" r="4.5" fill="#ffd29b"/><text x="${X(22) - 8}" y="${Y(105.04) - 9}" text-anchor="end" fill="#ffd29b" style="font:600 12px Inter">NPV 105.04 M$</text>
     <text x="34" y="126" fill="#9fb0c2" style="font:500 11px Inter">Cumulative discounted cash flow, years 0–22 (M$)</text>`; requestAnimationFrame(() => s.querySelector('path').style.strokeDashoffset = 0); }
 function navUI(i) { $$('#dots button').forEach((b, k) => { b.classList.toggle('on', k === i); b.classList.toggle('done', k < i); }); $('num').textContent = `${i + 1} / ${SLIDES.length}`; $('chap').textContent = SLIDES[i].chap; }
-async function closeCut() { if (!OPEN_CUT) return; const c = OPEN_CUT; OPEN_CUT = null; if (gtao) tween(gtao, {blendIntensity: 0.95}, 1.2); (c.meshes || []).forEach(m => m.userData.cut = false); await c.close(); }
-async function openCut(id) { const c = CUT[id]; if (!c) return; OPEN_CUT = c; if (gtao) tween(gtao, {blendIntensity: 0}, 0.8); (c.meshes || []).forEach(m => { if (m.userData.orig === undefined) m.userData.orig = null; }); const f = FOCUS[id]; c.open(f.az * D2R); (c.meshes || []).forEach(m => m.userData.cut = true); }
+async function closeCut() { if (!OPEN_CUT) return; const c = OPEN_CUT; OPEN_CUT = null;  (c.meshes || []).forEach(m => m.userData.cut = false); await c.close(); }
+async function openCut(id) { const c = CUT[id]; if (!c) return; OPEN_CUT = c;  (c.meshes || []).forEach(m => { if (m.userData.orig === undefined) m.userData.orig = null; }); const f = FOCUS[id]; c.open(f.az * D2R); (c.meshes || []).forEach(m => m.userData.cut = true); }
 const GLOBE_INTRO = {lat: 18, lon: 34, alt: 21000, tilt: 0, head: 0, shift: 0.16}, GLOBE_END = {lat: 20, lon: 42, alt: 19000, tilt: 0, head: 0, shift: 0.16};
 const BEATS = [{lat: 23.8, lon: 44.2, alt: 3700, tilt: 0, head: 0, shift: 0.13}, {lat: 25.8, lon: 49.0, alt: 1050, tilt: 26, head: -18, shift: 0.1}, {lat: PLOT.lat, lon: PLOT.lon, alt: 42, tilt: 34, head: -40, shift: 0.08}];
 const BEAT_GEO = [['ksa', 'gulf', 'red', 'riyadh', 'yanbu', 'jubail'], ['east', 'gulf', 'jubail', 'dammam'], ['site', 'gulf']];
@@ -166,7 +164,7 @@ async function runBeats(from) { clearTimeout(STEP_TIMER); for (let b = from; b <
 function localFromGlobe() { const G = globe.GC, k = Math.cos(PLOT.lat * D2R); const t = new THREE.Vector3((G.lon - PLOT.lon) * 111320 * k, 0, -(G.lat - PLOT.lat) * 110574);
   Object.assign(LC, {tx: t.x, ty: 0, tz: t.z, dist: G.alt * 1000, el: 90 - G.tilt, az: -G.head, shift: G.shift}); }
 function globeFromLocal() { const k = Math.cos(PLOT.lat * D2R); Object.assign(globe.GC, {lat: PLOT.lat - LC.tz / 110574, lon: PLOT.lon + LC.tx / (111320 * k), alt: LC.dist / 1000, tilt: 90 - LC.el, head: -LC.az, shift: LC.shift}); }
-async function crossTo(mode, dur = 1.3) { FADE.other = MODE; MODE = mode; FADE.on = true; FADE.a = 1; renderer.shadowMap.needsUpdate = true; await tween(FADE, {a: 0}, dur, ease.sine); FADE.on = false; }
+async function crossTo(mode, dur = 0.9) { FADE.other = MODE; MODE = mode; FADE.on = true; FADE.a = 1; await tween(FADE, {a: 0}, dur, ease.sine); FADE.on = false; }
 
 async function go(i, opts = {}) {
   if (i < 0 || i >= SLIDES.length || (BUSY && !opts.force)) return; const prev = SLIDE, sl = SLIDES[i]; BUSY = true; IDX = i; SLIDE = sl; STEP = 0;
@@ -174,17 +172,17 @@ async function go(i, opts = {}) {
   ACTIVE_UNITS = sl.units || []; ACTIVE_STREAMS = sl.streams === 'all' ? [] : (sl.streams || []); SHOW_ALL_STREAMS = sl.streams === 'all'; SHOW_LOOPS = sl.id === 'control';
   try {
     if (sl.cam === 'globe') {
-      if (MODE === 'local') { await closeCut(); setFlows([]); await flyTo({x: 0, y: 0, z: 0, dist: 42000, az: -16, el: 56}, 3.2, ease.io); globeFromLocal(); await crossTo('globe', 1.2); }
+      if (MODE === 'local') { closeCut(); setFlows([]); await flyTo({x: 0, y: 0, z: 0, dist: 42000, az: -16, el: 56}, 2.8, ease.io); globeFromLocal(); await crossTo('globe', 0.9); }
       if (sl.id === 'site') { showCard(sl, sl.steps[0]); runBeats(0); }
       else { showCard(sl); globe.showGeo(sl.id === 'end' ? ['site'] : []); tween(globe.U.uKSA, {value: sl.id === 'end' ? 0.6 : 0}, 1.4); tween(globe.U.uEast, {value: 0}, 1.4); tween(globe.CU.uClr, {value: 0.35}, 2);
         tween(globe.SUNP, {lon: sl.id === 'end' ? -50 : 8}, sl.id === 'end' ? 6 : 2.5, ease.sine); await flyGlobe(sl.id === 'end' ? GLOBE_END : GLOBE_INTRO, prev ? (sl.id === 'end' ? 4.5 : 3.2) : 0.01); }
     } else {
-      if (MODE === 'globe') { clearTimeout(STEP_TIMER); STEP = 3; if (!prev || prev.id !== 'site' || Math.abs(globe.GC.alt - BEATS[2].alt) > 2) await flyGlobe(BEATS[2], prev ? 2.6 : 0.01); localFromGlobe(); applyLocal(); crossTo('local', 1.4); }
+      if (MODE === 'globe') { clearTimeout(STEP_TIMER); STEP = 3; if (!prev || prev.id !== 'site' || Math.abs(globe.GC.alt - BEATS[2].alt) > 2) await flyGlobe(BEATS[2], prev ? 2.6 : 0.01); localFromGlobe(); applyLocal(); crossTo('local', 0.9); }
       $('attr').classList.add('on');
-      if (OPEN_CUT && OPEN_CUT.id !== sl.focus) await closeCut();
+      if (OPEN_CUT && OPEN_CUT.id !== sl.focus) closeCut();
       showCard(sl); setFlows(sl.streams || []); setHeat(sl.id === 'heat'); setSafety(sl.id === 'safety');
-      if (sl.focus) { await flyTo(focusShot(sl.focus), prev && prev.cam === 'globe' ? 6 : 2.6); FOCUSED = sl.focus; unitPanel(sl.focus); openCut(sl.focus); }
-      else { await flyTo(SHOTS[sl.shot], prev && prev.cam === 'globe' ? 6.2 : 2.8); if (sl.streams === 'all') streamsPanel(); }
+      if (sl.focus) { const d = prev && prev.cam === 'globe' ? 5 : 2.0; setTimeout(() => { if (SLIDE === sl) { FOCUSED = sl.focus; unitPanel(sl.focus); } }, d * 600 * FAST); await flyTo(focusShot(sl.focus), d); if (SLIDE === sl) openCut(sl.focus); }
+      else { await flyTo(SHOTS[sl.shot], prev && prev.cam === 'globe' ? 5 : 2.2); if (sl.streams === 'all' && SLIDE === sl) streamsPanel(); }
     }
     if (sl.cam === 'globe') $('attr').classList.remove('on');
   } finally { BUSY = false; }
@@ -193,10 +191,10 @@ let heatOn = false; const HI_SET = ['E-101', 'E-102', 'E-103', 'E-104', 'E-105',
 function setHeat(on) { if (on === heatOn) return; heatOn = on; HI_SET.forEach(id => tint(id, 0xff3a1e, on)); }
 let RINGS = []; function setSafety(on) { RINGS.forEach(r => tween(r.material, {opacity: on ? r.userData.op : 0}, 1)); }
 function selectUnit(id) { if (!UNITS[id]) return; exitExplore(); FOCUSED = id; unitPanel(id);
-  if (CUT[id]) { if (OPEN_CUT && OPEN_CUT.id !== id) closeCut(); flyTo(focusShot(id), 2.2).then(() => { if (FOCUSED === id) openCut(id); }); return; }
+  if (CUT[id]) { if (OPEN_CUT && OPEN_CUT.id !== id) closeCut(); flyTo(focusShot(id), 1.9).then(() => { if (FOCUSED === id) openCut(id); }); return; }
   const u = P.units[id]; const b = (u.proxies && u.proxies[0]) || u.box, c = b.getCenter(new THREE.Vector3()), s = b.getSize(new THREE.Vector3());
   flyTo({x: c.x, y: Math.min(c.y, s.y * 0.45), z: c.z, dist: clamp(Math.max(s.x, s.z, s.y * 1.6) * 1.9, 28, 230), az: LC.az - PLOT.rot / D2R, el: 26, shift: innerWidth > 980 ? -0.06 : 0}, 2.2); }
-function back() { FOCUSED = null; $('panel').classList.remove('on'); if (OPEN_CUT && (!SLIDE || OPEN_CUT.id !== SLIDE.focus)) closeCut(); if (SLIDE && SLIDE.cam === 'local') flyTo(SLIDE.focus ? focusShot(SLIDE.focus) : SHOTS[SLIDE.shot], 2.0); }
+function back() { FOCUSED = null; $('panel').classList.remove('on'); if (OPEN_CUT && (!SLIDE || OPEN_CUT.id !== SLIDE.focus)) closeCut(); if (SLIDE && SLIDE.cam === 'local') flyTo(SLIDE.focus ? focusShot(SLIDE.focus) : SHOTS[SLIDE.shot], 1.8); }
 
 // ================================================================== input
 let controls, ray = new THREE.Raycaster(), mouse = new THREE.Vector2(), PROX = [], downAt = null, pmPending = null;
@@ -281,35 +279,30 @@ let last = performance.now(), TT = 0, frames = 0, acc = 0, slowRuns = 0;
 const fadeRT = new THREE.WebGLRenderTarget(4, 4, {type: THREE.HalfFloatType}); const fadeQ = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.ShaderMaterial({uniforms: {t: {value: fadeRT.texture}, a: {value: 0}}, transparent: true, depthTest: false, depthWrite: false,
   vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0., 1.); }', fragmentShader: 'uniform sampler2D t; uniform float a; varying vec2 vUv; void main(){ gl_FragColor = vec4(texture2D(t, vUv).rgb, a);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}'}));
 const fadeS = new THREE.Scene(); fadeS.add(fadeQ); const fadeC = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-// ---- ambient occlusion (GTAO) for fast GPUs: sky + satellite ground first, then the plant, then AO, then tone mapping
-let composer = null, gtao = null, AO = false;
-class LocalPass extends Pass { constructor() { super(); this.needsSwap = false; } render(r, w, read) { r.setRenderTarget(read); r.autoClear = false; r.clear(); r.render(L.under, L.cam); r.clearDepth(); r.render(L.scene, L.cam); r.autoClear = true; } }
-function makeComposer() { const rt = new THREE.WebGLRenderTarget(innerWidth * DPR, innerHeight * DPR, {type: THREE.HalfFloatType, samples: 4});
-  composer = new EffectComposer(renderer, rt); composer.setPixelRatio(DPR); composer.setSize(innerWidth, innerHeight); composer.addPass(new LocalPass());
-  gtao = new GTAOPass(L.scene, L.cam, innerWidth * DPR, innerHeight * DPR); gtao.output = GTAOPass.OUTPUT.Default; gtao.blendIntensity = 0.95;
-  gtao.updateGtaoMaterial({radius: 2.6, distanceExponent: 1.4, thickness: 2.5, scale: 1.25, samples: 16, distanceFallOff: 1, screenSpaceRadius: false});
-  gtao.updatePdMaterial({lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 5, rings: 2, samples: 16});
-  gtao.overrideVisibility = function () { const cache = this._visibilityCache; this.scene.traverse(o => { cache.set(o, o.visible); if (o.isPoints || o.isLine || o.isSprite || (o.material && o.material.transparent)) o.visible = false; }); };
-  const ss = gtao.setSize.bind(gtao); gtao.setSize = (w, h) => ss(Math.ceil(w * 0.6), Math.ceil(h * 0.6)); gtao.setSize(innerWidth * DPR, innerHeight * DPR);
-  composer.addPass(gtao); composer.addPass(new OutputPass()); }
 function bench(n = 8) { const gl = renderer.getContext(), px = new Uint8Array(4); renderScene('local'); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); const t = performance.now(); for (let i = 0; i < n; i++) { renderScene('local'); gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); } return (performance.now() - t) / n; }
-function renderScene(mode, target) { if (mode === 'local' && !target && AO && composer) { renderer.toneMappingExposure = 0.86; gtao.enabled = gtao.blendIntensity > 0.02; composer.render(); return; }
-  renderer.setRenderTarget(target || null);
+function renderScene(mode, target) { renderer.setRenderTarget(target || null);
   if (mode === 'globe') { renderer.toneMappingExposure = 1.0; renderer.autoClear = true; renderer.render(globe.scene, globe.cam); }
   else { renderer.toneMappingExposure = 0.86; renderer.autoClear = false; renderer.clear(); renderer.render(L.under, L.cam); renderer.clearDepth(); renderer.render(L.scene, L.cam); renderer.autoClear = true; }
   renderer.setRenderTarget(null); }
+// far-away details (handrails, ladders, grating, bolts, wheels) are switched off for wide shots
+let DETAIL = [], detailOn = true; const DETAIL_MK = new Set(['yellow', 'galv', 'grate', 'dark', 'rubber', 'ss']);
+function lod() { const want = LC.dist < (detailOn ? 200 : 175) || EXPLORE && LC.dist < 260; if (want !== detailOn) { detailOn = want; DETAIL.forEach(m => m.visible = want); } }
+// frame-rate governor: watches the real frame interval and trades resolution for smoothness
+const GOV = {acc: 0, n: 0, t: 0, good: 0, ceil: DPR_MAX, last: 0};
+function governor(dt, now) { GOV.acc += dt; GOV.n++; if (now - GOV.t < 1000) return; const avg = GOV.acc / GOV.n * 1000; GOV.acc = 0; GOV.n = 0; GOV.t = now; if (document.hidden) return;
+  if (avg > 19.5 && DPR > DPR_MIN) { if (GOV.raised) GOV.ceil = Math.max(DPR_MIN, DPR - 0.05); GOV.raised = false; setDPR(DPR - (avg > 28 ? 0.15 : 0.08)); GOV.good = 0; }
+  else if (avg < 17.6) { if (++GOV.good >= 4 && DPR < GOV.ceil - 0.01) { setDPR(Math.min(GOV.ceil, DPR + 0.05)); GOV.raised = true; GOV.good = 0; } } else GOV.good = 0; }
+function setDPR(v) { DPR = clamp(+v.toFixed(2), DPR_MIN, DPR_MAX); renderer.setPixelRatio(DPR); renderer.setSize(innerWidth, innerHeight); }
 const LONG = []; function frame(now) { requestAnimationFrame(frame); const dt = Math.min(0.1, (now - last) / 1000); last = now; const tf0 = performance.now(); TT += dt; stepTweens(now);
   if (MODE === 'globe' || (FADE.on && FADE.other === 'globe')) { if (IDX === 0 && !BUSY) globe.GC.lon += dt * 0.5; globe.tick(TT); }
-  if (L && (MODE === 'local' || (FADE.on && FADE.other === 'local'))) { if (EXPLORE) { controls.update(); syncFromCamera(); } else applyLocal(); flowU.uT.value = TT; ANIM.forEach(f => f(TT, dt)); for (const id in CUT) CUT[id].tick(TT, dt); hoverStep();
-    if (app.shadowDirty > 0) { renderer.shadowMap.needsUpdate = true; app.shadowDirty--; } }
-  if (FADE.on && FADE.a > 0.002) { const w = Math.floor(innerWidth * DPR * 0.75), h = Math.floor(innerHeight * DPR * 0.75); if (fadeRT.width !== w || fadeRT.height !== h) fadeRT.setSize(w, h);
+  if (L && (MODE === 'local' || (FADE.on && FADE.other === 'local'))) { if (EXPLORE) { controls.update(); syncFromCamera(); } else applyLocal(); lod(); flowU.uT.value = TT; ANIM.forEach(f => f(TT, dt)); for (const id in CUT) CUT[id].tick(TT, dt); hoverStep(); }
+  if (FADE.on && FADE.a > 0.002) { const w = Math.floor(innerWidth * DPR * 0.5), h = Math.floor(innerHeight * DPR * 0.5); if (fadeRT.width !== w || fadeRT.height !== h) fadeRT.setSize(w, h);
     renderScene(FADE.other, fadeRT); renderScene(MODE); fadeQ.material.uniforms.a.value = FADE.a; renderer.toneMappingExposure = FADE.other === 'globe' ? 1.0 : 0.86; renderer.autoClear = false; renderer.render(fadeS, fadeC); renderer.autoClear = true; }
   else renderScene(MODE);
   updateLabels(); const tf = performance.now() - tf0; if (tf > 25) LONG.push([Math.round(now), Math.round(tf), MODE, FADE.on ? 'fade' : '', IDX]); if (LONG.length > 40) LONG.shift();
-  // adaptive resolution: keep the frame time under ~20 ms
-  if (!BUSY && !FADE.on) { acc += dt; frames++; if (frames >= 90) { const ms = acc / frames * 1000; frames = 0; acc = 0; if (ms > 21 && (AO || DPR > 0.8)) { if (++slowRuns >= 2) { if (AO) AO = false; else { DPR = Math.max(0.75, DPR - 0.25); renderer.setPixelRatio(DPR); renderer.setSize(innerWidth, innerHeight); } slowRuns = 0; } } else slowRuns = 0; } } else { frames = 0; acc = 0; }
+  if (!LOW) governor(dt, now);
 }
-addEventListener('resize', () => { renderer.setSize(innerWidth, innerHeight); if (composer) { composer.setPixelRatio(DPR); composer.setSize(innerWidth, innerHeight); } globe.apply(); if (L) applyLocal(); });
+addEventListener('resize', () => { renderer.setSize(innerWidth, innerHeight); globe.apply(); if (L) applyLocal(); });
 
 // ================================================================== start-up
 const status = t => { $('lst').textContent = t; };
@@ -317,14 +310,13 @@ async function init() {
   buildNav(); status('Loading the Earth…');
   await new Promise(r => { manager.onLoad = r; if (loadedFrac >= 1) r(); setTimeout(r, 25000); });
   status('Building the plant…'); await new Promise(r => setTimeout(r, 30));
-  L = makeLocalScene(renderer, {shadow: LOW ? 2048 : 4096}); P = L.P; app.scene = L.scene;
+  L = makeLocalScene(renderer, {shadow: 2048, sky: LOW ? 256 : 512}); P = L.P; app.scene = L.scene;
   controls = new OrbitControls(L.cam, canvas); controls.enabled = false; controls.enableDamping = true; controls.dampingFactor = 0.08; controls.maxPolarAngle = 1.48; controls.minDistance = 6; controls.maxDistance = 9000;
   app.cutLight = new THREE.PointLight(0xfff1dc, 0, 40, 1.6); L.scene.add(app.cutLight); CUT = buildCutaways(app, P); addDetails(); makeTags();
-  // the ground below the plot: bundled fallback first, real imagery when it arrives
-  const fk = Math.cos(PLOT.lat * D2R), fb = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({map: fallbackTex, toneMapped: false, depthTest: false, depthWrite: false}));
-  { const W0 = 49.4083, E0 = 49.7117, S0 = 26.8849, N0 = 27.1551; fb.scale.set((E0 - W0) * 111320 * fk, 1, (N0 - S0) * 110574); fb.position.set(((W0 + E0) / 2 - PLOT.lon) * 111320 * fk, -1.6, -((S0 + N0) / 2 - PLOT.lat) * 110574); fb.renderOrder = -9.5; L.under.add(fb); }
-  const reg = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({map: regionTex, toneMapped: false, depthTest: false, depthWrite: false})); reg.scale.set(8 * 111320 * fk, 1, 8 * 110574); reg.position.set((49.5 - PLOT.lon) * 111320 * fk, -2, -(26.5 - PLOT.lat) * 110574); reg.renderOrder = -11; L.under.add(reg);
-  if (!Q.has('nosat')) buildGround(L.under, renderer, PLOT.lat, PLOT.lon, regionTex).then(G => { if (G.ok) { fb.visible = false; if (G.patch) globe.setPatch(G.patch.tex, G.patch.geo); } }).catch(() => {});
+  // the ground below the plot: one plane, bundled textures first, real imagery when it arrives
+  { const fk = Math.cos(PLOT.lat * D2R), W0 = 49.4083, E0 = 49.7117, S0 = 26.8849, N0 = 27.1551; const lr = new THREE.Vector4((W0 - PLOT.lon) * 111320 * fk, (E0 - PLOT.lon) * 111320 * fk, -(N0 - PLOT.lat) * 110574, -(S0 - PLOT.lat) * 110574);
+    const G = makeGround(L.under, renderer, PLOT.lat, PLOT.lon, regionTex, fallbackTex, lr); if (!Q.has('nosat')) G.done.then(r => { if (r.patch) globe.setPatch(r.patch.tex, r.patch.geo); }).catch(() => {}); }
+  P.root.traverse(m => { if (m.isMesh && DETAIL_MK.has(m.userData.mk)) DETAIL.push(m); });
   // compile every program now so that no slide stalls on a shader compile later
   status('Preparing the shaders…'); await new Promise(r => setTimeout(r, 20));
   Object.assign(LC, shotW(SHOTS.hero)); applyLocal(); globe.apply();
@@ -335,12 +327,13 @@ async function init() {
   for (const id of ['R-101', 'T-101', 'R-103']) tint(id, 0xffa040, true), tint(id, 0xffa040, false);
   try { await renderer.compileAsync(globe.scene, globe.cam); } catch (e) { renderer.compile(globe.scene, globe.cam); }
   renderer.shadowMap.needsUpdate = true; renderScene('local'); renderScene('globe');
-  if (!LOW && !Q.has('noao') && innerWidth > 820) { bench(4); const base = Math.min(bench(6), bench(6)); if (base < 12 || Q.has('ao')) { status('Tuning the image quality…'); makeComposer(); AO = true; renderScene('local'); bench(3); const withAO = Math.min(bench(6), bench(6)); if (withAO > 22 && !Q.has('ao')) AO = false; window.__q = {base, withAO, AO}; } else window.__q = {base}; }
-  { const w = Math.floor(innerWidth * DPR * 0.75), h = Math.floor(innerHeight * DPR * 0.75); fadeRT.setSize(w, h); renderScene('globe', fadeRT); renderScene('local'); fadeQ.material.uniforms.a.value = 0.5; renderer.autoClear = false; renderer.render(fadeS, fadeC); renderer.autoClear = true; }
+  // a quick start-up measure picks a safe first resolution for slow GPUs
+  if (!LOW) { bench(3); const ms = Math.min(bench(5), bench(5)); window.__q = {ms}; if (ms > 14) setDPR(DPR * Math.sqrt(12 / ms)); }
+  { const w = Math.floor(innerWidth * DPR * 0.5), h = Math.floor(innerHeight * DPR * 0.5); fadeRT.setSize(w, h); renderScene('globe', fadeRT); renderScene('local'); fadeQ.material.uniforms.a.value = 0.5; renderer.autoClear = false; renderer.render(fadeS, fadeC); renderer.autoClear = true; }
   $('lbar').firstElementChild.style.width = '100%'; status('Ready'); $('start').classList.add('on');
   requestAnimationFrame(frame);
   const s0 = Q.get('s'); if (s0 !== null) { $('loader').classList.add('off'); go(+s0); }
 }
 $('start').onclick = () => { $('loader').classList.add('off'); go(0); };
 init();
-window.__app = {LONG, CALLS, TAGS, bench, frame: t => frame(t), render: renderScene, get AO() { return AO; }, go, get IDX() { return IDX; }, get MODE() { return MODE; }, LC, globe, renderer, get L() { return L; }, get CUT() { return CUT; }, selectUnit, get BUSY() { return BUSY; }};
+window.__app = {LONG, CALLS, TAGS, bench, GOV, get DPR() { return DPR; }, frame: t => frame(t), render: renderScene, go, get IDX() { return IDX; }, get MODE() { return MODE; }, LC, globe, renderer, get L() { return L; }, get CUT() { return CUT; }, selectUnit, get BUSY() { return BUSY; }};
