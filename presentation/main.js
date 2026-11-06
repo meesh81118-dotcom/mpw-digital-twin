@@ -64,7 +64,7 @@ function flyGlobe(to, d, e = ease.io) { const G = globe.GC, A = {...G}; let dl =
   return tween(st, {u: 1}, d, ease.lin, () => { if (id !== FLY) return; const v = e(st.u); G.lat = lerp(A.lat, to.lat, v); G.lon = A.lon + dl * v; G.alt = Math.exp(lerp(Math.log(A.alt), Math.log(to.alt), v)); G.tilt = lerp(A.tilt, to.tilt, v); G.head = lerp(A.head, to.head, v); G.shift = lerp(A.shift, to.shift ?? 0, v); }); }
 
 // ================================================================== shots (plant frame: x east, z south; az 0 = camera south of the target)
-const SHOTS = {hero: {x: 4, y: 0, z: 6, dist: 250, az: -16, el: 32, shift: 0.11}, streams: {x: 10, y: 0, z: 22, dist: 280, az: -4, el: 54, shift: -0.06}, heat: {x: 0, y: 0, z: 18, dist: 260, az: -12, el: 46, shift: 0.1},
+const SHOTS = {hero: {x: 8, y: 0, z: 18, dist: 215, az: -15, el: 30, shift: 0.11}, streams: {x: 10, y: 0, z: 22, dist: 280, az: -4, el: 54, shift: -0.06}, heat: {x: 0, y: 0, z: 18, dist: 260, az: -12, el: 46, shift: 0.1},
   control: {x: 18, y: 0, z: 40, dist: 180, az: 18, el: 38, shift: 0.1}, safety: {x: 34, y: 0, z: 50, dist: 150, az: 8, el: 58, shift: 0.1}, econ: {x: 0, y: 0, z: 0, dist: 470, az: 36, el: 38, shift: 0.12}, twin: {x: 0, y: 0, z: 0, dist: 340, az: -52, el: 26, shift: -0.05}};
 const FOCUS = {'CR-101': {y: 2.8, dist: 15, az: 62, el: 16}, 'R-101': {y: 6.6, dist: 25, az: -32, el: 12}, 'CY-101': {y: 15.0, dist: 21, az: -90, el: 7}, 'R-102': {y: 8.5, dist: 23, az: 22, el: 10},
   'ME-101': {y: 4.0, dist: 7.2, az: 4, el: 6}, 'C-101': {y: 2.9, dist: 21, az: 180, el: 14}, 'R-103': {y: 10.6, dist: 19, az: -28, el: 6}, 'F-101': {y: 6.6, dist: 17, az: 40, el: 8}, 'T-101': {y: 21, dist: 54, az: -42, el: 4}};
@@ -335,7 +335,7 @@ async function init() {
   for (const id of ['R-101', 'T-101', 'R-103']) tint(id, 0xffa040, true), tint(id, 0xffa040, false);
   try { await renderer.compileAsync(globe.scene, globe.cam); } catch (e) { renderer.compile(globe.scene, globe.cam); }
   renderer.shadowMap.needsUpdate = true; renderScene('local'); renderScene('globe');
-  if (!LOW && !Q.has('noao') && innerWidth > 820) { const base = bench(6); if (base < 12 || Q.has('ao')) { status('Tuning the image quality…'); makeComposer(); AO = true; renderScene('local'); const withAO = bench(6); if (withAO > 22 && !Q.has('ao')) AO = false; console.log('frame ms', base.toFixed(2), 'with AO', withAO.toFixed(2)); } else console.log('frame ms', base.toFixed(2)); }
+  if (!LOW && !Q.has('noao') && innerWidth > 820) { bench(4); const base = Math.min(bench(6), bench(6)); if (base < 12 || Q.has('ao')) { status('Tuning the image quality…'); makeComposer(); AO = true; renderScene('local'); bench(3); const withAO = Math.min(bench(6), bench(6)); if (withAO > 22 && !Q.has('ao')) AO = false; console.log('frame ms', base.toFixed(2), 'with AO', withAO.toFixed(2)); } else console.log('frame ms', base.toFixed(2)); }
   { const w = Math.floor(innerWidth * DPR * 0.75), h = Math.floor(innerHeight * DPR * 0.75); fadeRT.setSize(w, h); renderScene('globe', fadeRT); renderScene('local'); fadeQ.material.uniforms.a.value = 0.5; renderer.autoClear = false; renderer.render(fadeS, fadeC); renderer.autoClear = true; }
   $('lbar').firstElementChild.style.width = '100%'; status('Ready'); $('start').classList.add('on');
   requestAnimationFrame(frame);
