@@ -1,5 +1,7 @@
 # MPW Gasification Complex – Digital Twin
 
+**3D presentation:** https://meesh81118-dotcom.github.io/mpw-digital-twin/presentation/ — a live, interactive tour from orbit down to the plant in Jubail Industrial City (arrow keys to move, click any unit for its data).
+
 Interactive digital twin of the mixed-plastic-waste (MPW) gasification plant that produces methanol and hydrogen in Jubail Industrial City. It was prepared for Chapter 10, *Smart and Sustainable Plant*, of the senior design project.
 
 **Open the tool:** https://meesh81118-dotcom.github.io/mpw-digital-twin/
