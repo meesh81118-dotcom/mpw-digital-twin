@@ -28,11 +28,11 @@ export class Cutaway {
   hook(meshes) { this.meshes = meshes; }
   open(camAz) { this.camAz = camAz; this.setBox(camAz); this.on = true; this.group.visible = true; (this.meshes || []).forEach(mesh => { mesh.userData.orig = mesh.userData.orig || mesh.material; mesh.material = this.clipMaterial(mesh.userData.orig); });
     this.group.traverse(x => { if (x.isMesh && x.material && !x.material.isPointsMaterial && x.userData.clip !== false) { x.material.clippingPlanes = this.planes; x.material.clipIntersection = true; } });
-    this.app.tween(this, {k: 1}, 1.6).then(() => { this.app.shadowDirty = 2; }); }
-  close() { if (!this.on) return; return this.app.tween(this, {k: 0}, 1.0).then(() => { this.on = false; this.group.visible = false; (this.meshes || []).forEach(m => { if (m.userData.orig) m.material = m.userData.orig; }); this.app.shadowDirty = 2; }); }
+    this.app.tween(this, {k: 1}, 1.6); }
+  close() { if (!this.on) return; return this.app.tween(this, {k: 0}, 1.0).then(() => { this.on = false; this.group.visible = false; (this.meshes || []).forEach(m => { if (m.userData.orig) m.material = m.userData.orig; }); }); }
   backHalf() { const a = this.camAz || 0, cx = Math.sin(a), cz = Math.cos(a); this.group.traverse(o => { if (!o.isPoints && !o.isInstancedMesh) return; if (o.userData.noMirror) return; const p = o.isPoints ? o.geometry.attributes.position : null;
     if (p) { const A = p.array; for (let i = 0; i < p.count; i++) { const x = A[i * 3], z = A[i * 3 + 2], d = x * cx + z * cz; if (d > 0) { A[i * 3] = x - 2 * d * cx; A[i * 3 + 2] = z - 2 * d * cz; } } } }); }
-  tick(t, dt) { if (!this.on && this.k <= 0) return; this.apply(); this.light.intensity = this.k * (this.o.li ?? 14); this.updates.forEach(f => f(t, dt, this.k)); this.backHalf(); if (this.k > 0 && this.k < 1) this.app.shadowDirty = 1; }
+  tick(t, dt) { if (!this.on && this.k <= 0) return; this.apply(); this.light.intensity = this.k * (this.o.li ?? 14); this.updates.forEach(f => f(t, dt, this.k)); this.backHalf(); }
   callout(p, html, side = 1) { this.callouts.push({p: toW(...p), html, side}); }
   mat(o) { return new THREE.MeshStandardMaterial(o); }
   add(obj, p) { if (p) obj.position.copy(toW(...p)); obj.rotation.y += PLOT.rot; this.group.add(obj); return obj; }
