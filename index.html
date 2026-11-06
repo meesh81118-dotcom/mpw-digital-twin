@@ -1288,11 +1288,15 @@ function bindTips(root, sel) { $$(sel, root).forEach(el => { el.addEventListener
 // ===================================================================== router
 const PAGES = ['overview', 'process', 'operations', 'heat', 'control', 'economics', 'market', 'safety', 'emethanol', 'validation'];
 const TITLES = {overview: 'Overview', process: 'Process flow diagram', operations: 'Operations and AI set points', heat: 'Heat integration', control: 'Process control', economics: 'Economics', market: 'Market and scenarios', safety: 'Process monitoring', emethanol: 'e-Methanol extension', validation: 'Validation'};
+let FIRST_SHOWN = false;
 function show(p) {
   if (!PAGES.includes(p)) p = 'overview'; PAGE = p;
-  const doit = () => { $$('.page').forEach(s => s.classList.toggle('on', s.dataset.page === p)); $$('nav.main a').forEach(a => a.classList.toggle('on', a.dataset.go === p));
-    window.scrollTo(0, 0); render(); requestAnimationFrame(reveal); document.title = TITLES[p] + ' – MPW Gasification Complex'; };
-  if (document.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches) document.startViewTransition(doit); else doit();
+  let done = false;
+  const doit = () => { if (done || PAGE !== p) return; done = true; $$('.page').forEach(s => s.classList.toggle('on', s.dataset.page === p)); $$('nav.main a').forEach(a => a.classList.toggle('on', a.dataset.go === p));
+    window.scrollTo(0, 0); render(); requestAnimationFrame(reveal); setTimeout(reveal, 60); document.title = TITLES[p] + ' – MPW Gasification Complex'; };
+  // animated page change when the browser supports it; the first page and any delayed transition are shown directly
+  if (document.startViewTransition && FIRST_SHOWN && !matchMedia('(prefers-reduced-motion: reduce)').matches) { try { document.startViewTransition(doit); } catch (e) { doit(); } setTimeout(doit, 400); } else doit();
+  FIRST_SHOWN = true;
   $('nav').classList.remove('open');
 }
 function go(p) { if (location.hash !== '#/' + p) location.hash = '#/' + p; else show(p); }
@@ -1302,6 +1306,9 @@ $('menu').addEventListener('click', () => $('nav').classList.toggle('open'));
 window.addEventListener('scroll', () => { const h = document.documentElement; $('prog').style.width = (h.scrollTop / Math.max(1, h.scrollHeight - h.clientHeight) * 100) + '%'; }, {passive: true});
 const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); if (e.target._count) e.target._count(); } }), {threshold: 0, rootMargin: '0px 0px -6% 0px'});
 function reveal() { $$('.page.on .reveal:not(.in)').forEach(el => io.observe(el)); }
+// safety net: anything already inside the window is shown even if the observer has not reported yet
+function revealVisible() { const H = innerHeight; $$('.page.on .reveal:not(.in)').forEach(el => { const r = el.getBoundingClientRect(); if (r.bottom > 0 && r.top < H) { el.classList.add('in'); io.unobserve(el); if (el._count) el._count(); } }); }
+setInterval(revealVisible, 900);
 // theme
 function setTheme(t) { document.documentElement.dataset.theme = t; try { localStorage.setItem('mpw-theme', t); } catch (e) {} if (PAGE) render(); }
 $('theme').addEventListener('click', () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'));
