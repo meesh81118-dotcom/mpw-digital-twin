@@ -133,7 +133,7 @@ function applyGlobeCam() {
 const labelsEl = $('labels');
 const GEO = [];
 function geo(lat, lon, html, cls) { const el = document.createElement('div'); el.className = cls; el.innerHTML = html; labelsEl.appendChild(el); const o = {el, p: llVec(lat, lon, 1.002), show: false}; GEO.push(o); return o; }
-const G = {ksa: geo(23.6, 44.2, 'Kingdom of Saudi Arabia', 'geo big'), gulf: geo(27.4, 51.3, 'Arabian Gulf', 'geo sea'), red: geo(20.6, 38.6, 'Red Sea', 'geo sea'), east: geo(24.2, 49.4, 'Eastern Province', 'geo'),
+const G = {ksa: geo(21.6, 45.2, 'Kingdom of Saudi Arabia', 'geo big'), gulf: geo(28.4, 50.6, 'Arabian Gulf', 'geo sea'), red: geo(20.6, 38.6, 'Red Sea', 'geo sea'), east: geo(24.2, 49.4, 'Eastern Province', 'geo'),
   riyadh: geo(24.63, 46.72, '<div class="d"></div><div class="n">Riyadh<small>Second Industrial City · 725</small></div>', 'pin'), yanbu: geo(24.09, 38.06, '<div class="d"></div><div class="n">Yanbu<small>Industrial City · 735</small></div>', 'pin'),
   jubail: geo(27.00, 49.62, '<div class="r"></div><div class="d"></div><div class="n">Jubail<small>Industrial City · 860</small></div>', 'pin'), dammam: geo(26.43, 50.10, '<div class="d" style="width:8px;height:8px;background:#fff;box-shadow:none"></div><div class="n" style="top:-8px;font-size:11px">Dammam</div>', 'pin'),
   jsite: geo(SITE.lat, SITE.lon, '<div class="r"></div><div class="d"></div><div class="n">MPW Gasification Complex<small>27.02° N · 49.56° E</small></div>', 'pin')};
