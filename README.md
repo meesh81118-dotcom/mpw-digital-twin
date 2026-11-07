@@ -2,7 +2,7 @@
 
 **Authors:** Meshari A. Almuhaysin and Mohammed F. Alotaibi — Department of Chemical Engineering, King Saud University.
 
-**3D presentation:** https://meesh81118-dotcom.github.io/mpw-digital-twin/presentation/ — a live, interactive tour from orbit down to the plant in Jubail Industrial City (arrow keys to move, click any unit for its data).
+**3D presentation:** https://meesh81118-dotcom.github.io/mpw-digital-twin/presentation/ — a live, interactive tour from orbit down to the plant in Jubail Industrial City (arrow keys to move, click any unit for its data). The **Digital twin** button (or the T key) returns to the twin at the sheet and settings the viewer left.
 
 Interactive digital twin of the mixed-plastic-waste (MPW) gasification plant that produces methanol and hydrogen in Jubail Industrial City. It was prepared for Chapter 10, *Smart and Sustainable Plant*, of the senior design project.
 
@@ -17,7 +17,7 @@ The site runs entirely in the browser. It needs no installation and no server. O
 | Operations | Set points β, φ, ρ and feed rate; AI search for the design point, safe operation, maximum profit, maximum throughput, maximum methanol or maximum hydrogen |
 | Heat integration | Pinch analysis (problem table, composite and grand composite curves), ΔTmin trade-off, area target, heat-exchanger network, comparison with Aspen Energy Analyzer, and the effect of heat integration on energy, economics, environment, equipment, control and operation |
 | Control | TC-310 loop simulator (P, PI, PID; five tuning methods of Table 6.15), Routh stability, the instrument loop index and both P&IDs |
-| Economics | Cash flow, NPV against interest rate, bare-module costs, cost of manufacturing, tornado sensitivity and the Monte Carlo simulation of Appendix G |
+| Economics | Economic inputs (prices, equipment costs, land, construction period, operating life, cost index, escalation, depreciation, tax and working capital), cash flow, NPV against interest rate and time, bare-module costs, cost of manufacturing, tornado sensitivity and the Monte Carlo simulation of Appendix G |
 | Market | Prices of 2025–2026, the risk levels of the 2026 Gulf and Red Sea crisis and 14 scenarios, each also solved at the AI set point |
 | Monitoring | PCA fault detection (T², Q) and k-NN diagnosis of five faults |
 | e-Methanol | Solar e-methanol from the purge gas |

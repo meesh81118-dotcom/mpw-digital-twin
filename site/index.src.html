@@ -53,24 +53,27 @@
       </div>
     </div>
   </div>
-  <div class="section"><div class="wrap">
-    <div class="split" style="margin-bottom:22px"><div><h2 class="t reveal">One plot, five process sections</h2><p class="sub reveal" style="margin-bottom:0">The process area as built in the 3D model of the plant, drawn as a technical isometric. Select a tag to open its data sheet on the flowsheet.</p></div></div>
+  <div class="section"><div class="wrap"><div class="ovplot">
     <figure class="drawing reveal"><div class="plot" id="plantPlot"><img src="art/plant.webp" alt="Isometric line drawing of the process area of the MPW gasification complex" width="2800" height="1524" loading="lazy" decoding="async"></div><div class="balloons" id="balloons"></div>
       <figcaption><span>Process area, isometric view from the south-west. Drawn from the 3D model.</span><span>Pipe rack on three tiers, 42 numbered streams</span></figcaption></figure>
-  </div></div>
-  <div class="section" style="padding-top:20px"><div class="wrap">
-    <h2 class="t reveal">From plastic bale to methanol, in five steps</h2>
-    <p class="sub reveal">Each section is designed in detail in the report and runs in the twin. The line between the steps is the main process stream, numbered as on the flowsheet.</p>
+    <div class="ovside">
+      <h2 class="t reveal">One plot, five process sections</h2>
+      <p class="sub reveal">The process area as built in the 3D model of the plant, drawn as a technical isometric. Select a tag to open its data sheet on the flowsheet.</p>
+      <h3 class="ovh reveal">Live readout</h3>
+      <p class="note reveal" style="margin-top:0">Current state of the twin with the set point, the market and the heat-integration choice of the other sheets.</p>
+      <div class="kpis two reveal" id="snap"></div>
+      <div class="cta reveal"><button class="btn pri" data-go="operations">Change the set points</button><button class="btn" data-go="economics">Change the economics</button></div>
+    </div>
+  </div></div></div>
+  <div class="section" style="padding-top:8px"><div class="wrap">
+    <div class="split"><div><h2 class="t reveal">From plastic bale to methanol, in five steps</h2>
+    <p class="sub reveal">Each section is designed in detail in the report and runs in the twin. The line between the steps is the main process stream, numbered as on the flowsheet.</p></div></div>
     <ol class="spine" id="chain"></ol>
   </div></div>
   <div class="section" style="background:var(--sheet);border-top:2px solid var(--ink);border-bottom:2px solid var(--ink)"><div class="wrap">
-    <h2 class="t reveal">The drawing set</h2>
-    <p class="sub reveal">Every sheet of the twin answers immediately and returns to the design point with one button.</p>
+    <div class="split"><div><h2 class="t reveal">The drawing set</h2>
+    <p class="sub reveal">Every sheet of the twin answers immediately and returns to the design point with one button.</p></div></div>
     <div class="reg" id="feats"></div>
-  </div></div>
-  <div class="section"><div class="wrap">
-    <div class="split reveal"><div><h2 class="t">Live readout</h2><p class="sub" style="margin-bottom:0">Current state of the twin with the set point, the market and the heat-integration choice of the other sheets.</p></div><button class="btn" data-go="operations">Change the set points</button></div>
-    <div class="kpis reveal" id="snap" style="margin-top:20px"></div>
   </div></div>
   <div class="section" style="padding-top:10px"><div class="wrap">
     <h2 class="t reveal">Equipment and project schedule</h2>
@@ -90,15 +93,15 @@
           <label class="switch"><input type="checkbox" id="pfdHI"><span class="tr"></span>Heat-integrated flowsheet</label>
           <label class="switch"><input type="checkbox" id="pfdFlow" checked><span class="tr" style="--x:1"></span>Animate the flows</label>
         </div>
-        <div class="seg" id="secSeg"><button data-s="all" class="on">All</button><button data-s="feed">Feed</button><button data-s="gas">Gasification</button><button data-s="wgs">Shift & H₂</button><button data-s="syn">Synthesis</button><button data-s="pur">Purification</button></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button class="btn sm" id="pfdFull">Full screen</button><div class="seg" id="secSeg"><button data-s="all" class="on">All</button><button data-s="feed">Feed</button><button data-s="gas">Gasification</button><button data-s="wgs">Shift & H₂</button><button data-s="syn">Synthesis</button><button data-s="pur">Purification</button></div></div>
       </div>
       <div class="pfdwrap"><svg id="pfd" class="pfd" viewBox="0 0 1940 1010" role="img" aria-label="Process flow diagram"></svg></div>
       <div class="lg"><span><i class="sw ln" style="background:var(--ink2)"></i>Process line</span><span><i class="sw dash" style="border-color:var(--grey)"></i>Utility</span><span><i class="sw ln" style="background:var(--red)"></i>Changed by heat integration</span><span><i class="sw ln" style="background:var(--orange)"></i>Flow animation</span><span class="mini">Select a unit for its data sheet · hover a stream number for its conditions</span></div>
     </div>
-    <div class="grid g2" style="margin-top:18px">
+    <div class="cq" style="margin-top:18px"><div class="grid pfg">
       <div class="card"><h3><span class="h">Products and feeds (live)</span></h3><div class="kpis" id="pfdK"></div><h4 id="secT" style="margin-top:18px"></h4><p class="note" id="secD" style="margin-top:0"></p><div id="secU" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div></div>
-      <div class="card"><h3><span class="h">Stream table</span><input class="search" id="stq" placeholder="Filter streams…" style="max-width:220px;padding:7px 10px;font-size:15px"></h3><div class="tbl" style="max-height:420px;overflow:auto"><table id="sttab"></table></div><p class="note">T and P of the design point (Chapter 2); flows follow the current set point of the twin.</p></div>
-    </div>
+      <div class="card"><h3><span class="h">Stream table</span><input class="search" id="stq" placeholder="Filter streams…" style="max-width:220px;padding:7px 10px;font-size:15px"></h3><div class="tbl" style="max-height:min(470px,52vh);overflow:auto"><table id="sttab"></table></div><p class="note">T and P of the design point (Chapter 2); flows follow the current set point of the twin.</p></div>
+    </div></div>
   </div></div>
 </section>
 <!-- =========================================================== OPERATIONS -->
@@ -121,15 +124,15 @@
       <button class="btn pri" id="toDesign" style="width:100%">Return to the design point</button>
       <p class="note" id="ainote">Design point of Chapter 2.</p>
     </aside>
-    <div style="min-width:0">
+    <div class="cq">
       <div class="kpis" id="opK"></div>
-      <div class="grid g2" style="margin-top:18px">
+      <div class="grid opg" style="margin-top:18px">
         <div class="card"><h3><span class="h">Equipment load</span><span class="mini">design load = 100 %</span></h3><div id="bars"></div>
           <div class="lg"><span><i class="sw" style="background:var(--blue)"></i>Normal</span><span><i class="sw" style="background:var(--gold)"></i>Within 2 % of the limit</span><span><i class="sw" style="background:var(--red)"></i>Limit exceeded</span><span><i class="sw ln" style="background:var(--ink)"></i>Design load</span><span><i class="sw ln" style="background:var(--red)"></i>Allowed limit</span></div></div>
         <div class="card"><h3><span class="h">Cumulative discounted cash flow</span><span class="mini">million US$</span></h3><svg id="opCF" class="chart" viewBox="0 0 520 300"></svg>
           <div class="lg"><span><i class="sw ln" style="background:var(--navy)"></i>Current set point and market</span><span><i class="sw dash" style="border-color:var(--c-lb)"></i>Design point, same market</span></div></div>
+        <div class="card wide"><h3><span class="h">Key streams at the current set point</span><button class="btn sm" data-go="process">Open on the flowsheet</button></h3><div class="tbl"><table id="opStreams"></table></div></div>
       </div>
-      <div class="card" style="margin-top:18px"><h3><span class="h">Key streams at the current set point</span><button class="btn sm" data-go="process">Open on the flowsheet</button></h3><div class="tbl"><table id="opStreams"></table></div></div>
     </div>
   </div></div></div>
 </section>
@@ -150,7 +153,7 @@
         <p class="note">550 $/m² is the bare-module cost per square metre of E-101 (Table 8.7). The design uses ΔTmin = 10 °C.</p>
         <div class="box or" id="hiBox" style="margin-top:12px"></div>
       </aside>
-      <div style="min-width:0">
+      <div class="cq">
         <div class="kpis" id="hiK"></div>
         <div class="grid g2" style="margin-top:18px">
           <div class="card"><h3><span class="h">Composite curves</span><span class="mini" id="ccNote"></span></h3><svg id="ccChart" class="chart" viewBox="0 0 520 330"></svg>
@@ -160,19 +163,21 @@
         </div>
       </div>
     </div>
+    <div class="cq">
     <div class="section" style="padding-bottom:0"><div class="kicker">Effect on every part of the plant</div><h2 class="t">What heat integration changes</h2><p class="sub">Every figure follows the two controls above and the market selected on the market page.</p>
       <div class="impact" id="impact"></div></div>
-    <div class="grid g2" style="margin-top:18px">
+    <div class="grid hig" style="margin-top:18px">
       <div class="card"><h3><span class="h">Choosing ΔTmin: energy against area</span><span class="mini">annual cost, million US$/y</span></h3><svg id="stChart" class="chart" viewBox="0 0 520 320"></svg>
         <div class="lg"><span><i class="sw ln" style="background:var(--c-or)"></i>Energy (fired heat, CW, chilled water)</span><span><i class="sw ln" style="background:var(--c-bl)"></i>Annualised exchanger area</span><span><i class="sw ln" style="background:var(--navy)"></i>Total</span><span><i class="sw dot" style="background:var(--c-gr)"></i>Optimum</span></div><p class="note" id="stNote"></p></div>
       <div class="card"><h3><span class="h">NPV of the plant against ΔTmin</span><span class="mini">million US$</span></h3><svg id="npvDt" class="chart" viewBox="0 0 520 320"></svg>
         <div class="lg"><span><i class="sw ln" style="background:var(--navy)"></i>Heat-integrated plant</span><span><i class="sw dash" style="border-color:var(--c-rd)"></i>Without heat integration</span><span><i class="sw dot" style="background:var(--c-or)"></i>Selected ΔTmin</span></div></div>
-    </div>
-    <div class="card" style="margin-top:18px"><h3><span class="h">Heat exchanger network (grid diagram, Section 4.2)</span><span class="mini">16 matches · 14 services · 2 new exchangers</span></h3><div style="overflow-x:auto"><svg id="hen" class="chart hen" viewBox="0 0 1180 560" style="min-width:860px"></svg></div>
-      <div class="lg"><span><i class="sw ln" style="background:var(--c-rd)"></i>Hot stream</span><span><i class="sw ln" style="background:var(--c-bl)"></i>Cold stream</span><span><i class="sw dot" style="background:var(--c-or)"></i>Process exchanger</span><span><i class="sw dot" style="background:var(--c-go)"></i>Fired heater</span><span><i class="sw dot" style="background:var(--c-lb)"></i>Cooling / chilled water</span><span><i class="sw dash" style="border-color:var(--ink2)"></i>Pinch 109.22 / 99.22 °C</span></div></div>
-    <div class="grid g2" style="margin-top:18px">
       <div class="card"><h3><span class="h">Utilities before and after (Table 8.31)</span></h3><div class="tbl"><table id="utilT"></table></div></div>
+    </div>
+    <div class="grid heng" style="margin-top:18px">
+    <div class="card"><h3><span class="h">Heat exchanger network (grid diagram, Section 4.2)</span><span class="mini">16 matches · 14 services · 2 new exchangers</span></h3><div style="overflow-x:auto"><svg id="hen" class="chart hen" viewBox="0 0 1180 560" style="min-width:760px"></svg></div>
+      <div class="lg"><span><i class="sw ln" style="background:var(--c-rd)"></i>Hot stream</span><span><i class="sw ln" style="background:var(--c-bl)"></i>Cold stream</span><span><i class="sw dot" style="background:var(--c-or)"></i>Process exchanger</span><span><i class="sw dot" style="background:var(--c-go)"></i>Fired heater</span><span><i class="sw dot" style="background:var(--c-lb)"></i>Cooling / chilled water</span><span><i class="sw dash" style="border-color:var(--ink2)"></i>Pinch 109.22 / 99.22 °C</span></div></div>
       <div class="card"><h3><span class="h">Hand calculation against Aspen Energy Analyzer (Section 4.4)</span></h3><div class="tbl"><table id="aeaT"></table></div><p class="note" id="aeaNote"></p></div>
+    </div>
     </div>
   </div></div>
 </section>
@@ -201,25 +206,29 @@
         <button class="btn pri" id="pidPlay" style="width:100%">Play the response</button>
         <button class="btn ghost" id="loopReset" style="width:100%;margin-top:8px">Reset this loop</button>
       </aside>
-      <div style="min-width:0">
+      <div class="cq">
         <div class="kpis" id="pidK"></div>
-        <div class="grid g2" style="margin-top:18px">
+        <div class="grid ctg" style="margin-top:18px">
           <div class="card"><h3><span class="h" id="yT">Controlled variable</span><span class="mini" id="yU"></span></h3><svg id="pidT" class="chart" viewBox="0 0 520 300"></svg>
             <div class="lg" id="yLg"></div></div>
           <div class="card"><h3><span class="h">Controller output</span><span class="mini">mA, deviation</span></h3><svg id="pidU" class="chart" viewBox="0 0 520 300"></svg>
             <div class="lg"><span><i class="sw ln" style="background:var(--c-or)"></i><span id="uN">Signal to the valve</span></span></div></div>
+          <div class="card wide"><h3><span class="h" id="tabT">Stability and performance</span></h3><div class="tbl"><table id="pidTab"></table></div><p class="note" id="routhNote"></p></div>
         </div>
-        <div class="card" style="margin-top:18px"><h3><span class="h" id="tabT">Stability and performance</span></h3><div class="tbl"><table id="pidTab"></table></div><p class="note" id="routhNote"></p></div>
       </div>
     </div>
+    <div class="cq">
     <div class="card" style="margin-top:18px"><h3><span class="h">All loops at a glance</span><span class="mini">recommended tuning, standard test of each loop</span></h3><div class="tbl"><table id="loopSum"></table></div></div>
-    <div class="card" style="margin-top:18px"><h3><span class="h">Instrument loop index (Table 6.26)</span><span style="display:flex;gap:8px;flex-wrap:wrap"><input class="search" id="iq" placeholder="Search loops, units or streams…" style="width:260px;padding:7px 10px;font-size:15px"></span></h3>
+    <div class="grid two-up" style="margin-top:18px">
+    <div class="card"><h3><span class="h">Instrument loop index (Table 6.26)</span><span style="display:flex;gap:8px;flex-wrap:wrap"><input class="search" id="iq" placeholder="Search loops, units or streams…" style="width:260px;padding:7px 10px;font-size:15px"></span></h3>
       <div class="seg" id="iSeg" style="margin-bottom:10px"><button data-k="all" class="on">All</button><button data-k="T">Temperature</button><button data-k="P">Pressure</button><button data-k="L">Level</button><button data-k="F">Flow</button><button data-k="A">Analysis</button><button data-k="W">Weight</button><button data-k="HI">Heat-integrated only</button></div>
-      <div class="tbl" style="max-height:440px;overflow:auto"><table id="iTab"></table></div></div>
+      <div class="tbl" style="max-height:min(560px,62vh);overflow:auto"><table id="iTab"></table></div></div>
+    <div class="card"><h3><span class="h">How heat integration changes the control system (Table 6.27)</span></h3><div class="tbl"><table id="hicT"></table></div></div>
+    </div>
     <div class="card" style="margin-top:18px"><h3><span class="h">Piping and instrumentation diagrams (Figures 6.22 and 6.26)</span><span class="seg" id="pidSel"><button data-k="base" class="on">Base flowsheet</button><button data-k="hi">Heat-integrated</button></span></h3>
       <div class="pidview" id="pidv"><div class="zc"><button class="btn sm" id="zin">＋</button><button class="btn sm" id="zout">－</button><button class="btn sm" id="zfit">Fit</button></div><img id="pidimg" alt="P&ID" src="pid_base.webp" draggable="false"></div>
       <p class="note">Drag to move, scroll or use the buttons to zoom.</p></div>
-    <div class="card" style="margin-top:18px"><h3><span class="h">How heat integration changes the control system (Table 6.27)</span></h3><div class="tbl"><table id="hicT"></table></div></div>
+    </div>
   </div></div>
 </section>
 <!-- =========================================================== ECONOMICS -->
@@ -228,25 +237,34 @@
     <p class="lead">The cash-flow model of Appendix G runs live with the market of the market page and the heat-integration choice of the heat-integration page.</p>
     <div class="pagebar"><span class="chip" id="ecChip"><i></i>Base case</span><button class="btn sm ghost" data-reset="economics">Reset this page</button></div></div>
     <dl class="tblock"><div><dt>Drawing</dt><dd class="no">MPW-ECO-06</dd></div><div><dt>Sheet</dt><dd class="no">06 / 10</dd></div><div class="w"><dt>Source</dt><dd>Chapter 8, economic analysis</dd></div><div class="w"><dt>Drawn by</dt><dd>Meshari A. Almuhaysin, Mohammed F. Alotaibi</dd></div><div><dt>Issued</dt><dd>November 2026</dd></div><div><dt>Units</dt><dd>SI, US$</dd></div></dl></div></div>
-  <div class="section"><div class="wrap">
-    <div class="kpis" id="ecK"></div>
-    <div class="grid g2" style="margin-top:18px">
-      <div class="card"><h3><span class="h">Cash flow over the project life</span><span class="mini">million US$</span></h3><svg id="ecCF" class="chart" viewBox="0 0 520 320"></svg>
-        <div class="lg"><span><i class="sw" style="background:var(--c-lb)"></i>Annual cash flow</span><span><i class="sw ln" style="background:var(--navy)"></i>Cumulative discounted</span><span><i class="sw dash" style="border-color:var(--c-or)"></i>Cumulative, not discounted</span></div></div>
-      <div class="card"><h3><span class="h">NPV against the interest rate</span><span class="mini">million US$</span></h3><svg id="ecIR" class="chart" viewBox="0 0 520 320"></svg>
-        <div class="lg"><span><i class="sw ln" style="background:var(--navy)"></i>NPV</span><span><i class="sw dot" style="background:var(--c-or)"></i>Selected rate</span><span><i class="sw dot" style="background:var(--c-gr)"></i>DCFROR (NPV = 0)</span></div></div>
+  <div class="section"><div class="wrap"><div class="grid side">
+    <aside class="card sticky ecin">
+      <h3><span class="h">Economic inputs</span><span class="mini">all pages follow</span></h3>
+      <div class="seg full" id="ecTab" style="grid-template-columns:repeat(4,1fr)"><button data-k="price" class="on">Prices</button><button data-k="cap">Capital</button><button data-k="time">Time</button><button data-k="fin">Finance</button></div>
+      <div class="ecg" data-g="price" id="ecPrice"></div>
+      <div class="ecg" data-g="cap" id="ecCap"></div>
+      <div class="ecg" data-g="time" id="ecTime"></div>
+      <div class="ecg" data-g="fin" id="ecFin"></div>
+      <div class="box" id="ecDiff"></div>
+    </aside>
+    <div class="cq">
+      <div class="kpis" id="ecK"></div>
+      <div class="grid ecgrid" style="margin-top:18px">
+        <div class="card"><h3><span class="h">Cash flow over the project life</span><span class="mini">million US$</span></h3><svg id="ecCF" class="chart" viewBox="0 0 520 320"></svg>
+          <div class="lg"><span><i class="sw" style="background:var(--c-lb)"></i>Annual cash flow</span><span><i class="sw ln" style="background:var(--navy)"></i>Cumulative discounted</span><span><i class="sw dash" style="border-color:var(--c-or)"></i>Cumulative</span></div></div>
+        <div class="card"><h3><span class="h">NPV against the interest rate</span><span class="mini">million US$</span></h3><svg id="ecIR" class="chart" viewBox="0 0 520 320"></svg>
+          <div class="lg"><span><i class="sw ln" style="background:var(--navy)"></i>NPV</span><span><i class="sw dot" style="background:var(--c-or)"></i>Selected rate</span><span><i class="sw dot" style="background:var(--c-gr)"></i>DCFROR (NPV = 0)</span></div></div>
+        <div class="card"><h3><span class="h">Effect of time on the NPV</span><span class="mini">million US$</span></h3><svg id="ecTimeC" class="chart" viewBox="0 0 520 320"></svg>
+          <div class="lg" id="ecTimeLg"></div></div>
+        <div class="card"><h3><span class="h">Bare-module cost by unit (Table 8.7)</span><span class="mini" id="cbmTot">∑CBM = $298.18 M</span></h3><div id="cbm"></div></div>
+        <div class="card"><h3><span class="h">Cost of manufacturing</span><span class="mini" id="comTot"></span></h3><svg id="comD" class="chart" viewBox="0 0 520 300"></svg><div class="lg" id="comLg"></div></div>
+        <div class="card"><h3><span class="h">Sensitivity of the NPV (±20 %)</span><span class="mini">million US$</span></h3><svg id="torn" class="chart" viewBox="0 0 520 330"></svg>
+          <div class="lg"><span><i class="sw" style="background:var(--c-gr)"></i>Favourable change</span><span><i class="sw" style="background:var(--c-rd)"></i>Unfavourable change</span></div></div>
+        <div class="card"><h3><span class="h">Monte Carlo simulation (Table 8.30)</span><button class="btn sm pri" id="mcRun">New random sample</button></h3><svg id="mcH" class="chart" viewBox="0 0 520 300"></svg><div class="kpis" id="mcK" style="margin-top:12px"></div></div>
+        <div class="card wide2"><h3><span class="h">Summary of the economic analysis (live, Table 8.33)</span></h3><div class="tbl"><table id="ecSum"></table></div></div>
+      </div>
     </div>
-    <div class="grid g2" style="margin-top:18px">
-      <div class="card"><h3><span class="h">Bare-module cost by unit (Table 8.7)</span><span class="mini">∑CBM = $298.18 M</span></h3><div id="cbm"></div></div>
-      <div class="card"><h3><span class="h">Cost of manufacturing</span><span class="mini" id="comTot"></span></h3><svg id="comD" class="chart" viewBox="0 0 520 300"></svg><div class="lg" id="comLg"></div></div>
-    </div>
-    <div class="grid g2" style="margin-top:18px">
-      <div class="card"><h3><span class="h">Sensitivity of the NPV (±20 %)</span><span class="mini">million US$</span></h3><svg id="torn" class="chart" viewBox="0 0 520 330"></svg>
-        <div class="lg"><span><i class="sw" style="background:var(--c-gr)"></i>Favourable change</span><span><i class="sw" style="background:var(--c-rd)"></i>Unfavourable change</span></div></div>
-      <div class="card"><h3><span class="h">Monte Carlo simulation (Table 8.30)</span><button class="btn sm pri" id="mcRun">New random sample</button></h3><svg id="mcH" class="chart" viewBox="0 0 520 300"></svg><div class="kpis" id="mcK" style="margin-top:10px"></div><p class="note">Triangular distributions of the methanol, hydrogen and MPW prices, the FCI, the electricity tariff, the natural-gas price and the availability. The first run uses the random sample of Appendix G (seed 2026), so in the base case it reproduces the report: mean 15.2 M$, P(NPV &gt; 0) = 54.5 %.</p></div>
-    </div>
-    <div class="card" style="margin-top:18px"><h3><span class="h">Summary of the economic analysis (live, Table 8.33)</span></h3><div class="tbl"><table id="ecSum"></table></div></div>
-  </div></div>
+  </div></div></div>
 </section>
 <!-- =========================================================== MARKET -->
 <section class="page" data-page="market">
@@ -254,30 +272,26 @@
     <p class="lead">Product prices of 2025–2026, the crisis levels of Table 8.27 and fourteen scenarios — each one evaluated at the design point and at the AI set point.</p>
     <div class="pagebar"><span class="chip" id="mkChip2"><i></i>Base case</span><button class="btn sm ghost" data-reset="market">Reset this page</button></div></div>
     <dl class="tblock"><div><dt>Drawing</dt><dd class="no">MPW-MKT-07</dd></div><div><dt>Sheet</dt><dd class="no">07 / 10</dd></div><div class="w"><dt>Source</dt><dd>Chapter 8, market and risk</dd></div><div class="w"><dt>Drawn by</dt><dd>Meshari A. Almuhaysin, Mohammed F. Alotaibi</dd></div><div><dt>Issued</dt><dd>November 2026</dd></div><div><dt>Units</dt><dd>SI, US$</dd></div></dl></div></div>
-  <div class="section"><div class="wrap">
-    <div class="grid g2">
-      <div class="card"><h3><span class="h">Methanol and hydrogen prices (Table 8.16)</span><span class="mini">US$/t</span></h3><svg id="prChart" class="chart" viewBox="0 0 520 300"></svg>
-        <div class="lg"><span><i class="sw ln" style="background:var(--navy)"></i>Methanol (left axis)</span><span><i class="sw ln" style="background:var(--c-gr)"></i>Hydrogen (right axis)</span><span><i class="sw dash" style="border-color:var(--c-or)"></i>Selected market</span></div></div>
-      <div class="card"><h3><span class="h">Revenue of the selected market</span><span class="mini" id="revTot"></span></h3><svg id="revD" class="chart" viewBox="0 0 520 300"></svg><div class="lg" id="revLg"></div></div>
-    </div>
-    <div class="grid side" style="margin-top:18px">
+  <div class="section"><div class="wrap"><div class="grid side">
       <aside class="card sticky">
         <h3><span class="h">Market and project conditions</span></h3>
         <div id="mkSliders"></div>
         <p class="note">Moving a slider creates a custom scenario. All pages use the market selected here.</p>
       </aside>
-      <div style="min-width:0">
-        <div class="card"><h3><span class="h">Scenarios</span><span class="seg" id="scFilt"><button data-k="all" class="on">All</button><button data-k="base">Base</button><button data-k="market">Market</button><button data-k="crisis">Crisis</button><button data-k="policy">Policy</button></span></h3><div class="scards" id="cards"></div></div>
-        <div class="grid g2" style="margin-top:18px">
-          <div class="card"><h3><span class="h">Selected scenario</span></h3><div id="scenres"></div>
+      <div class="cq">
+        <div class="grid mkg">
+          <div class="card mk-sc"><h3><span class="h">Scenarios</span><span class="seg" id="scFilt"><button data-k="all" class="on">All</button><button data-k="base">Base</button><button data-k="market">Market</button><button data-k="crisis">Crisis</button><button data-k="policy">Policy</button></span></h3><div class="scards" id="cards"></div></div>
+          <div class="card mk-res" id="mkRes"><h3><span class="h">Selected scenario</span></h3><div id="scenres"></div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn pri" id="scai">AI set point for this scenario</button><button class="btn" id="allai">AI set point for every scenario</button></div><p class="note" id="scnote"></p></div>
-          <div class="card"><h3><span class="h">NPV of every scenario</span><span class="mini">million US$</span></h3><svg id="scchart" class="chart" viewBox="0 0 520 470"></svg>
+          <div class="card mk-npv"><h3><span class="h">NPV of every scenario</span><span class="mini">million US$</span></h3><svg id="scchart" class="chart" viewBox="0 0 520 470"></svg>
             <div class="lg"><span><i class="sw" style="background:var(--c-lb)"></i>Design point</span><span><i class="sw" style="background:var(--navy)"></i>AI set point</span></div></div>
+          <div class="card mk-pr"><h3><span class="h">Methanol and hydrogen prices (Table 8.16)</span><span class="mini">US$/t</span></h3><svg id="prChart" class="chart" viewBox="0 0 520 300"></svg>
+        <div class="lg"><span><i class="sw ln" style="background:var(--navy)"></i>Methanol (left axis)</span><span><i class="sw ln" style="background:var(--c-gr)"></i>Hydrogen (right axis)</span><span><i class="sw dash" style="border-color:var(--c-or)"></i>Selected market</span></div></div>
+          <div class="card mk-rev"><h3><span class="h">Revenue of the selected market</span><span class="mini" id="revTot"></span></h3><svg id="revD" class="chart" viewBox="0 0 520 300"></svg><div class="lg" id="revLg"></div></div>
         </div>
+        <div class="card" style="margin-top:18px"><h3><span class="h">Risk levels of the 2026 Gulf and Red Sea crisis (Table 8.27)</span></h3><div class="tbl"><table id="riskT"></table></div></div>
       </div>
-    </div>
-    <div class="card" style="margin-top:18px"><h3><span class="h">Risk levels of the 2026 Gulf and Red Sea crisis (Table 8.27)</span></h3><div class="tbl"><table id="riskT"></table></div></div>
-  </div></div>
+  </div></div></div>
 </section>
 <!-- =========================================================== MONITORING -->
 <section class="page" data-page="safety">
@@ -292,16 +306,16 @@
       <button class="btn pri" id="play" style="width:100%">Play the fault from the start</button>
       <div id="falarm" class="alarm ok"></div><div id="finfo"></div>
     </aside>
-    <div style="min-width:0">
-      <div class="grid g2">
-        <div class="card"><h3><span class="h">Hotelling’s T²</span></h3><svg id="cT" class="chart" viewBox="0 0 520 290"></svg><div class="lg"><span><i class="sw ln" style="background:var(--navy)"></i>T²</span><span><i class="sw dash" style="border-color:var(--c-rd)"></i><span id="t2l"></span></span><span><i class="sw ln" style="background:var(--c-gy)"></i>Start of the fault</span></div></div>
-        <div class="card"><h3><span class="h">Squared prediction error Q</span></h3><svg id="cQ" class="chart" viewBox="0 0 520 290"></svg><div class="lg"><span><i class="sw ln" style="background:var(--navy)"></i>Q</span><span><i class="sw dash" style="border-color:var(--c-rd)"></i><span id="ql"></span></span><span><i class="sw ln" style="background:var(--c-gy)"></i>Start of the fault</span></div></div>
-      </div>
-      <div class="grid g2" style="margin-top:18px">
-        <div class="card"><h3><span class="h">Contribution of each signal to Q</span><span class="mini">%</span></h3><svg id="cC" class="chart" viewBox="0 0 520 290"></svg></div>
+    <div class="cq">
+      <div class="grid fdg">
+        <div class="card"><h3><span class="h">Hotelling’s T²</span><span class="mini">log scale</span></h3><svg id="cT" class="chart" viewBox="0 0 520 300"></svg><div class="lg"><span><i class="sw ln" style="background:var(--navy)"></i>T²</span><span><i class="sw dash" style="border-color:var(--c-rd)"></i><span id="t2l"></span></span><span><i class="sw ln" style="background:var(--c-gy)"></i>Start of the fault</span></div></div>
+        <div class="card"><h3><span class="h">Squared prediction error Q</span><span class="mini">log scale</span></h3><svg id="cQ" class="chart" viewBox="0 0 520 300"></svg><div class="lg"><span><i class="sw ln" style="background:var(--navy)"></i>Q</span><span><i class="sw dash" style="border-color:var(--c-rd)"></i><span id="ql"></span></span><span><i class="sw ln" style="background:var(--c-gy)"></i>Start of the fault</span></div></div>
+        <div class="card"><h3><span class="h">Contribution of each signal to Q</span><span class="mini">%</span></h3><svg id="cC" class="chart" viewBox="0 0 520 300"></svg><div class="lg"><span><i class="sw" style="background:var(--c-or)"></i>Largest contribution</span><span><i class="sw" style="background:var(--c-bl)"></i>Other signals</span></div></div>
         <div class="card"><h3><span class="h">Diagnosis and operator action</span></h3><div id="fact"></div></div>
+        <div class="card wide2"><h3><span class="h">The five faults of the HAZOP study (Table 10.6)</span><span class="mini">select a row to replay it</span></h3><div class="tbl"><table id="ftab" class="pick"></table></div>
+          <p class="note">An alarm needs three consecutive samples above a limit, which removes false alarms caused by noise.</p></div>
+        <div class="card"><h3><span class="h">Monitoring model</span><span class="mini">PCA, 8 signals</span></h3><div class="tbl"><table id="fmod"></table></div></div>
       </div>
-      <p class="note">An alarm needs three consecutive samples above a limit, which removes false alarms caused by noise.</p>
     </div>
   </div></div></div>
 </section>
@@ -321,11 +335,14 @@
       <div class="seg full" id="etech"><button data-k="today" class="on">Today</button><button data-k="2050">2050</button></div>
       <p class="note">Today: 1,000 $/kW and 55 kWh/kg. 2050: 200 $/kW and 45 kWh/kg (IRENA, 2020). The electricity price is set separately.</p>
     </aside>
-    <div style="min-width:0">
+    <div class="cq">
       <div class="kpis" id="ekpis"></div>
-      <div class="grid g2" style="margin-top:18px">
+      <div class="grid emg" style="margin-top:18px">
         <div class="card"><h3><span class="h">Production cost of the e-methanol</span><span class="mini">US$/t</span></h3><svg id="eC" class="chart" viewBox="0 0 520 300"></svg><div class="lg" id="eleg"></div><p class="verdict" id="everd"></p></div>
         <div class="card"><h3><span class="h">Cost against the electricity price</span><span class="mini">US$/t</span></h3><svg id="eL" class="chart" viewBox="0 0 520 300"></svg><div class="lg" id="eleg2"></div><p class="verdict ok" id="ebe"></p></div>
+        <div class="card"><h3><span class="h">Where the carbon of the plastic goes</span><span class="mini">% of the carbon fed</span></h3><svg id="eCarb" class="chart" viewBox="0 0 520 300"></svg><div class="lg" id="eleg3"></div></div>
+        <div class="card wide2"><h3><span class="h">Phases of the extension (Table 10.7)</span><span class="mini">live, with the electricity and technology selected</span></h3><div class="tbl"><table id="ephase" class="pick"></table></div></div>
+        <div class="card"><h3><span class="h">Extension at the selected share</span></h3><div class="tbl"><table id="eside"></table></div></div>
       </div>
     </div>
   </div></div></div>
@@ -336,7 +353,7 @@
     <p class="lead">Every model of the site is checked against the values of the report.</p></div>
     <dl class="tblock"><div><dt>Drawing</dt><dd class="no">MPW-VAL-10</dd></div><div><dt>Sheet</dt><dd class="no">10 / 10</dd></div><div class="w"><dt>Source</dt><dd>Models of all chapters against the report</dd></div><div class="w"><dt>Drawn by</dt><dd>Meshari A. Almuhaysin, Mohammed F. Alotaibi</dd></div><div><dt>Issued</dt><dd>November 2026</dd></div><div><dt>Units</dt><dd>SI, US$</dd></div></dl></div></div>
   <div class="section"><div class="wrap">
-    <div class="grid g3" id="howCards"></div>
+    <div class="cq"><div class="grid howg" id="howCards"></div></div>
     <div class="grid g2" style="margin-top:18px">
       <div class="card"><h3><span class="h">Plant and economic model</span></h3><div class="tbl"><table id="valtab"></table></div></div>
       <div class="card"><h3><span class="h">Heat integration and control</span></h3><div class="tbl"><table id="valtab2"></table></div></div>

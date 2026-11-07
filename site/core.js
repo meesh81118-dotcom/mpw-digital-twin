@@ -39,11 +39,19 @@ const P_BASE = {meoh_kgh: 33701.38806641478, h2_kgh: 7806.985623098963, mpw_kgh:
   p_elec: 0.23 / 3.75, p_ng: 2.5, p_water: 8.04 / 3.75, p_ww: 3.64 / 3.75, p_sw: 69.16 / 3.75 / 1000, eta_f: 0.85,
   cat_cost: (71198 + 17752) * 80.0 / 4.0, mem_cost: 6040 * 5000.0 * 840.9 / 797.9 * 0.8 / 5.0, COL: 78 * 132222 / 3.75, land: 0.0,
   Q_R101: 145.67, bfw: 72.9, proc_water: 98.58747, ww: 8.538 + 28.58746, wc: 0.1, salvage: 0.05, tax: 0.025, i: 0.1,
-  fci_mult: 1.0, op_factor: 1.0, logi: 0, Q_heat: 25.92758, hi: true, com_mult: 1.0, elec_mult: 1.0};
+  fci_mult: 1.0, op_factor: 1.0, logi: 0, Q_heat: 25.92758, hi: true, com_mult: 1.0, elec_mult: 1.0,
+  // economic inputs of the economics page (defaults = Chapter 8): construction years, operating years, depreciation,
+  // cost index, price and cost escalation, change of the bare-module cost, purchased land
+  build: 2, life: 20, dep: 'macrs5', cepci: 840.9, esc_p: 0, esc_c: 0, cbm_add: 0, land_buy: 0};
 const HI_X = 10429187, FCI_NOHI = 477231118.72, HI_DHEAT = 10139338.72, HI_DCW = 884645.81, HI_DSTEAM = 1813346.49, PSW0 = 69.16 / 3.75 / 1000;
 const FCI = 478400128.68, WCIRC = 823.07, C102W = 28551.90, WCH = 810.59, QR102 = 14.22877;
 const UT_CAL = -2.65, COM_CAL = -0.0578;
 const HRS = 7920.0, GJ_MW = 3.6 * HRS, MACRS5 = [20, 32, 19.2, 11.52, 11.52, 5.76];
+// depreciation schedules (% of FCI per operating year, Turton Table 10.4); straight line over 10 years on FCI − salvage
+const DEP = {macrs5: MACRS5, macrs7: [14.29, 24.49, 17.49, 12.49, 8.93, 8.92, 8.93, 4.46], macrs10: [10, 18, 14.4, 11.52, 9.22, 7.37, 6.55, 6.55, 6.56, 6.55, 3.28], sl10: null};
+const CEPCI0 = 840.9, SUM_CBM = 298183405.96, FCI_PER_CBM = 478400128.68 / SUM_CBM;   // FCI per US$ of bare-module cost (Chapter 8)
+function fciOf(p) { return (((p.hi ? FCI : FCI_NOHI) * p.fci_mult) + FCI_PER_CBM * (p.cbm_add || 0)) * (p.cepci || CEPCI0) / CEPCI0 + (p.fci_add || 0); }
+function depOf(p, k, F, S) { const t = DEP[p.dep || 'macrs5']; return t ? (k < t.length ? t[k] / 100 * F : 0) : (k < 10 ? (F - S) / 10 : 0); }
 const BASE_R = plant(0.40, 0.10, 0.90, 1);
 function econParams(r, mk) {
   const b = BASE_R, p = Object.assign({}, P_BASE, mk || {});
@@ -69,26 +77,26 @@ function comD(p, F, f) {
   const CWT = p.ww * HRS * f * p.p_ww, coef = (0.146 - 0.032 + 0.010) / 0.81;
   return [rev, p.com_mult * (coef * F + 2.73 * p.COL + 1.23 * (CRM + CUT + CWT) + COM_CAL * f) + p.land, {CRM, CUT, CWT, COL: p.COL, F, coefF: coef * F}];
 }
-function cashflow(p) {
-  const F = (p.hi ? FCI : FCI_NOHI) * p.fci_mult + (p.fci_add || 0), WC = p.wc * F, S = p.salvage * F; let carry = 0; const cf = [];
-  for (let y = 0; y < 23; y++) {
-    let c = 0; if (y === 1 || y === 2) c -= 0.5 * F; if (y === 2) c -= WC; const k = y - 3;
-    if (k >= 0) {
-      const f = k < 2 ? [0.75, 0.90][k] : 1.0; const [R, C] = comD(p, F, f * p.op_factor);
-      const d = k < 6 ? MACRS5[k] / 100 * F : 0; const ti = R - C - d; let taxable;
-      if (ti < 0) { carry -= ti; taxable = 0; } else { const use = Math.min(carry, ti); carry -= use; taxable = ti - use; }
-      c += ti - p.tax * taxable + d;
-    }
-    if (y === 22) c += WC + S; cf.push(c);
+function cashflow(p) { return econRows(p).rows.map(r => r.cf); }
+// yearly cash flows: land in year 0, FCI spread evenly over the construction years, WC at the end of construction,
+// operation at 75 % and 90 % in the first two years, losses carried forward, WC + salvage + land recovered in the last year
+function econRows(p) {
+  const F = fciOf(p), WC = p.wc * F, S = p.salvage * F, B = Math.max(1, Math.round(p.build || 2)), L = Math.max(1, Math.round(p.life || 20)), N = B + L, LB = p.land_buy || 0;
+  const ep = p.esc_p || 0, ec = p.esc_c || 0; let carry = 0; const rows = [];
+  for (let y = 0; y <= N; y++) {
+    let inv = 0; if (y === 0) inv -= LB; if (y >= 1 && y <= B) inv -= F / B; if (y === B) inv -= WC; const k = y - B - 1; let R = 0, C = 0, d = 0, np = 0, parts = null;
+    if (k >= 0) { const f = k < 2 ? [0.75, 0.90][k] : 1.0; const res = comD(p, F, f * p.op_factor); R = res[0] * Math.pow(1 + ep, y); C = res[1] * Math.pow(1 + ec, y); parts = res[2];
+      d = depOf(p, k, F, S); const ti = R - C - d; let taxable; if (ti < 0) { carry -= ti; taxable = 0; } else { const use = Math.min(carry, ti); carry -= use; taxable = ti - use; } np = ti - p.tax * taxable; }
+    let cf = inv + (k >= 0 ? np + d : 0); if (y === N) cf += WC + S + LB; rows.push({y, inv, R, C, d, np, cf, parts});
   }
-  return cf;
+  return {rows, F, WC, S, B, L, N};
 }
 const npvAt = (cf, i) => cf.reduce((a, c, y) => a + c / Math.pow(1 + i, y), 0);
-function indicators(cf, i) {
-  let lo = -0.3, hi = 0.6, irr = null;
+function indicators(cf, i, B) {
+  B = B || 2; let lo = -0.3, hi = 0.6, irr = null;
   if (npvAt(cf, lo) > 0 && npvAt(cf, hi) < 0) { for (let k = 0; k < 80; k++) { const m = (lo + hi) / 2; if (npvAt(cf, m) > 0) lo = m; else hi = m; } irr = (lo + hi) / 2; }
   let dc = 0, dpb = null, prev = 0;
-  for (let y = 0; y < cf.length; y++) { prev = dc; dc += cf[y] / Math.pow(1 + i, y); if (dpb === null && y > 2 && dc >= 0) dpb = y - 1 + (-prev) / (dc - prev) - 2; }
+  for (let y = 0; y < cf.length; y++) { prev = dc; dc += cf[y] / Math.pow(1 + i, y); if (dpb === null && y > B && dc >= 0) dpb = y - 1 + (-prev) / (dc - prev) - B; }
   return {npv: npvAt(cf, i) / 1e6, irr, dpb};
 }
 // ===== Design limits and operating modes =====
@@ -102,7 +110,7 @@ function evaluate(x, mk, L) {
   const r = plant(x[0], x[1], x[2], x[3] === undefined ? 1 : x[3]); const p = econParams(r, mk); const cf = cashflow(p);
   let worst = r.A / (A_INST * L.A), lim = 'ME-101 area';
   for (const k in LIMITS_MAX) { const v = r[k] / (L[k] * (k === 'feed' ? 1 : BASE_R[k])); if (v > worst) { worst = v; lim = k; } }
-  const ind = indicators(cf, p.i);
+  const ind = indicators(cf, p.i, p.build);
   return {r, p, cf, npv: ind.npv, irr: ind.irr, dpb: ind.dpb, worst, limiting: lim, ok: worst <= 1 + 1e-6};
 }
 // differential evolution (seeded, so every search gives the same answer for the same inputs)
@@ -144,14 +152,7 @@ function emethanol(f, c_el, capex_kw, e_spec) {
 }
 // detailed yearly results (Table 8.21)
 function econDetail(p) {
-  const F = (p.hi ? FCI : FCI_NOHI) * p.fci_mult + (p.fci_add || 0), WC = p.wc * F, S = p.salvage * F; let carry = 0; const rows = [];
-  for (let y = 0; y < 23; y++) {
-    let inv = 0; if (y === 1 || y === 2) inv -= 0.5 * F; if (y === 2) inv -= WC; const k = y - 3; let R = 0, C = 0, d = 0, np = 0, parts = null;
-    if (k >= 0) { const f = k < 2 ? [0.75, 0.90][k] : 1.0; const res = comD(p, F, f * p.op_factor); R = res[0]; C = res[1]; parts = res[2];
-      d = k < 6 ? MACRS5[k] / 100 * F : 0; const ti = R - C - d; let taxable; if (ti < 0) { carry -= ti; taxable = 0; } else { const use = Math.min(carry, ti); carry -= use; taxable = ti - use; } np = ti - p.tax * taxable; }
-    let cf = inv + (k >= 0 ? np + d : 0); if (y === 22) cf += WC + S; rows.push({y, inv, R, C, d, np, cf, parts});
-  }
-  const op = rows.filter(r => r.y >= 3), npavg = op.reduce((a, r) => a + r.np, 0) / op.length;
-  return {rows, F, WC, npavg, roroi: npavg / (F + WC), pbp: F / (npavg + F / op.length), full: rows[5]};
+  const E = econRows(p), op = E.rows.filter(r => r.y > E.B), npavg = op.reduce((a, r) => a + r.np, 0) / op.length;
+  return {rows: E.rows, F: E.F, WC: E.WC, B: E.B, L: E.L, N: E.N, npavg, roroi: npavg / (E.F + E.WC), pbp: E.F / (npavg + E.F / op.length), full: E.rows[Math.min(E.N, E.B + 3)]};
 }
-if (typeof module !== 'undefined') module.exports = {plant, evaluate, optimise, limitsFor, BASE_R, emethanol, cashflow, econParams, indicators, P_BASE, econDetail};
+if (typeof module !== 'undefined') module.exports = {plant, evaluate, optimise, limitsFor, BASE_R, emethanol, cashflow, econParams, indicators, P_BASE, econDetail, econRows, fciOf, CEPCI0, FCI_PER_CBM};

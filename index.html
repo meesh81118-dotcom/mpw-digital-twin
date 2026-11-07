@@ -83,18 +83,20 @@ footer.ft{margin-left:var(--rail)}
   nav.main.open{transform:none;opacity:1;pointer-events:auto} nav.main a{font-size:19px;padding:12px 22px} nav.main a i{font-size:18px}
   main#app{padding-top:var(--bar)}
 }
-@media (max-width:560px){.cur{display:none}.brand b{font-size:18px}.ibtn{height:36px;min-width:36px;padding:0 8px}#theme{display:none}}
+@media (max-width:560px){.tblock dd.no{font-size:17px}.cur{display:none}.brand b{font-size:18px}.ibtn{height:36px;min-width:36px;padding:0 8px}#theme{display:none}}
 /* =========================================================== pages and sheet heads */
 .page{display:none} .page.on{display:block}
-.wrap{max-width:1320px;margin:0 auto;padding:0 34px}
-@media (max-width:760px){.wrap{padding:0 16px}}
-.phead{position:relative;border-bottom:2px solid var(--ink);padding:46px 0 34px;background:transparent}
-.phead .wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,360px);gap:28px 48px;align-items:end}
-.sheetno{display:flex;align-items:baseline;gap:10px;font:500 15px var(--f);color:var(--graphite);margin-bottom:6px}
-.sheetno b{font:800 64px/0.8 var(--fd);color:var(--ink);letter-spacing:-.01em}
-.phead h1{margin:8px 0 12px;font:800 clamp(38px,4.6vw,64px)/0.95 var(--fd);letter-spacing:-.005em;max-width:22ch;text-wrap:balance}
+.wrap{max-width:3200px;margin:0 auto;padding:0 clamp(16px,2.1vw,48px)}
+.cq{container-type:inline-size;min-width:0}
+.phead{position:relative;border-bottom:2px solid var(--ink);padding:24px 0 22px;background:transparent}
+.phead .wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(330px,470px);gap:18px 48px;align-items:center}
+.phead .wrap>div:first-child{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:22px;align-items:start}
+.phead .wrap>div:first-child>*:not(.sheetno){grid-column:2}
+.sheetno{grid-column:1;grid-row:1/span 3;align-self:stretch;display:flex;align-items:flex-start;padding:2px 20px 0 0;border-right:2px solid var(--ink);font:500 15px var(--f);color:var(--graphite)}
+.sheetno b{font:800 clamp(52px,5.4vw,92px)/0.8 var(--fd);color:var(--ink);letter-spacing:-.01em}
+.phead h1{margin:0 0 8px;font:800 clamp(34px,3.3vw,56px)/0.95 var(--fd);letter-spacing:-.005em;max-width:30ch;text-wrap:balance}
 .phead p.lead{margin:0;max-width:62ch;font-size:clamp(17px,1.4vw,19px);color:var(--ink2);text-wrap:pretty}
-.phead .pagebar{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px;align-items:center}
+.phead .pagebar{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:center}
 .tblock{margin:0;border:2px solid var(--ink);background:var(--sheet);display:grid;grid-template-columns:1fr 1fr;align-self:end}
 .tblock>div{padding:8px 12px 9px;border-bottom:1px solid var(--rule);min-width:0}
 .tblock>div:nth-child(odd){border-right:1px solid var(--rule)}
@@ -102,13 +104,18 @@ footer.ft{margin-left:var(--rail)}
 .tblock>div:nth-last-child(-n+1){border-bottom:0}
 .tblock dt{font:600 11px/1.2 var(--f);font-stretch:80%;letter-spacing:.08em;text-transform:uppercase;color:var(--graphite)}
 .tblock dd{margin:3px 0 0;font:500 14.5px/1.3 var(--f);font-stretch:88%;color:var(--ink)}
-.tblock dd.no{font:800 22px/1 var(--fd);letter-spacing:.02em}
+.tblock dd.no{font:800 21px/1 var(--fd);letter-spacing:.02em;white-space:nowrap}
+/* compact title block: drawing, sheet and issue on the first line, source and units, then the authors */
+.tblock{grid-template-columns:1fr 1fr 1fr;grid-template-areas:"d s i" "src src u" "by by by"}
+.tblock>div,.tblock>div:nth-child(odd),.tblock>div.w,.tblock>div:nth-last-child(-n+1){border:0;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.tblock>div:nth-child(1){grid-area:d}.tblock>div:nth-child(2){grid-area:s}.tblock>div:nth-child(3){grid-area:src}
+.tblock>div:nth-child(4){grid-area:by;border-right:0;border-bottom:0}.tblock>div:nth-child(5){grid-area:i;border-right:0}.tblock>div:nth-child(6){grid-area:u;border-right:0}
 @media (max-width:960px){.phead .wrap{grid-template-columns:minmax(0,1fr)}.tblock{max-width:520px}}
 .chip{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border:1.5px solid var(--ink);background:var(--sheet);font:600 14px var(--f);font-stretch:90%;color:var(--ink)}
 .chip i{width:9px;height:9px;background:var(--ok);flex:0 0 auto}
 .chip.warn i{background:var(--warn)} .chip.bad{border-color:var(--bad);color:var(--bad)} .chip.bad i{background:var(--bad);animation:lamp 1s steps(2) infinite}
 @keyframes lamp{50%{opacity:.2}}
-.section{padding:40px 0}
+.section{padding:26px 0}
 .section h2.t{font:800 clamp(32px,3.4vw,46px)/1 var(--fd);margin:0 0 10px;letter-spacing:-.003em;text-wrap:balance}
 .section p.sub{margin:0 0 24px;color:var(--ink2);max-width:66ch}
 .kicker{font:600 15px var(--f);color:var(--hot);margin-bottom:6px}
@@ -139,7 +146,7 @@ footer.ft{margin-left:var(--rail)}
 .kpi .v small{font-family:var(--f)}
 .kpi .d{font:500 13px var(--f);color:var(--graphite);margin-top:2px} .d.up{color:var(--ok)} .d.dn{color:var(--bad)}
 /* =========================================================== controls */
-.ctl{margin:12px 0 16px}
+.ctl{margin:8px 0 12px}
 .ctl label{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font:500 15px/1.3 var(--f)}
 .ctl output{font:700 18px var(--fd);letter-spacing:.02em;color:var(--pen);font-variant-numeric:tabular-nums;white-space:nowrap}
 /* sliders as scale rulers: baseline, filled part, major and minor ticks, a pointer for the thumb */
@@ -277,6 +284,7 @@ svg text{font-family:var(--f)}
 .spine li:hover .art img{transform:translateY(-4px)}
 .spine .open{margin-top:16px;display:inline-flex;align-items:center;gap:10px;font:600 15px var(--f);color:var(--ink);border-bottom:2px solid var(--sc);padding-bottom:2px}
 .spine .link{grid-column:2/-1;display:flex;align-items:center;gap:10px;margin-top:18px;font:500 14px var(--f);font-stretch:88%;color:var(--graphite)}
+.spine .link{flex-wrap:wrap;gap:8px 16px}.spine .lk{display:inline-flex;align-items:center;gap:8px}
 .sdia{display:inline-grid;place-items:center;width:30px;height:30px;flex:0 0 auto}
 .sdia svg{width:30px;height:30px}
 @media (max-width:900px){.spine li{grid-template-columns:50px minmax(0,1fr);gap:16px 20px}.spine .art{grid-column:2;order:3;min-height:0}.spine .link{grid-column:2}}
@@ -358,7 +366,7 @@ svg text{font-family:var(--f)}
 .imp .k{font:600 14.5px var(--f);color:var(--hot)}
 .imp .big{font:800 32px/1.05 var(--fd);font-variant-numeric:tabular-nums;margin:6px 0 4px;letter-spacing:.005em}
 .imp ul{margin:8px 0 0;padding-left:18px;color:var(--ink2);font-size:15px} .imp li{margin:3px 0}
-.pidview{position:relative;overflow:hidden;border:1px solid var(--rule);background:#fff;cursor:grab;height:min(70vh,620px);touch-action:none}
+.pidview{position:relative;overflow:hidden;border:1px solid var(--rule);background:#fff;cursor:grab;height:min(78vh,860px);touch-action:none}
 .pidview img{position:absolute;left:0;top:0;transform-origin:0 0;user-select:none;-webkit-user-drag:none;max-width:none}
 .pidview .zc{position:absolute;right:10px;top:10px;display:flex;gap:6px;z-index:2}
 .pidview .zc .btn{background:#fff;color:#15191c;border-color:#15191c}
@@ -412,6 +420,95 @@ footer.ft .names b{display:block;font:700 21px/1.15 var(--fd);letter-spacing:.01
 footer.ft .cr{margin-top:16px;font-size:13.5px;color:var(--graphite);line-height:1.55;max-width:110ch}
 @media (max-width:900px){footer.ft .tb{grid-template-columns:1fr 1fr}footer.ft .tb>div:nth-child(2){border-right:0}footer.ft .tb>div:nth-child(3){padding-left:0}footer.ft .tb>div{border-bottom:1px solid var(--rule)}}
 @media (max-width:560px){footer.ft .tb{grid-template-columns:1fr}footer.ft .tb>div{border-right:0;padding-left:0}}
+/* =========================================================== wide sheets: panels share the width before they stack */
+.side{grid-template-columns:clamp(290px,20vw,370px) minmax(0,1fr)}
+@media (max-width:980px){.side{grid-template-columns:minmax(0,1fr)}}
+.kpis.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+/* overview: drawing with the live readout beside it */
+.ovplot{display:grid;gap:26px;align-items:start}
+.ovside .ovh{margin:22px 0 4px;font:800 26px/1 var(--fd)}
+.ovside .cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+@media (min-width:1280px){.ovplot{grid-template-columns:minmax(0,2.5fr) minmax(320px,1fr)}.ovside .t{margin-top:0}}
+/* overview: the five steps side by side, rows aligned across the columns */
+@media (min-width:1180px){
+  .spine{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:auto auto 200px auto auto auto auto;gap:0 26px}
+  .spine::before{left:25px;right:calc((100% - 104px) / 5 - 25px);top:23px;bottom:auto;width:auto;height:4px;background:linear-gradient(90deg,var(--sec-feed),var(--sec-gas) 25%,var(--sec-wgs) 50%,var(--sec-syn) 75%,var(--sec-pur))}
+  .spine li{grid-row:span 7;display:grid;grid-template-rows:subgrid;grid-template-columns:minmax(0,1fr);gap:0;padding:0 0 8px;border:0}
+  .spine .tx{display:contents}
+  .spine .no{margin-bottom:16px}
+  .spine .tx h3{grid-row:2;font-size:clamp(24px,1.75vw,32px);margin:0 0 10px}
+  .spine .art{grid-row:3;min-height:0;height:200px;margin-bottom:12px}
+  .spine .art img{max-height:200px;height:200px}
+  .spine .tx p{grid-row:4;font-size:15.5px;margin-bottom:12px}
+  .spine dl{grid-row:5;max-width:none}
+  .spine .open{grid-row:6;justify-self:start;margin-top:12px}
+  .spine .link{grid-row:7;grid-column:1;flex-wrap:wrap;margin-top:12px}
+  .spine li:hover .art img{transform:translateY(-3px)}
+}
+/* overview: register of the sheets in three columns */
+@media (min-width:1100px){
+  .reg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+  .reg a{grid-template-columns:58px minmax(0,1fr);gap:4px 14px;padding:18px 18px 18px 0;border-right:1px solid var(--rule)}
+  .reg a:not(:nth-child(3n+1)){padding-left:18px}
+  .reg a:nth-child(3n){border-right:0}
+  .reg p,.reg .src{grid-column:2;text-align:left}
+  .reg a:hover{padding-left:18px}
+}
+/* process */
+.pfg{grid-template-columns:minmax(0,1fr)}
+@container (min-width:1000px){.pfg{grid-template-columns:minmax(0,1fr) minmax(0,2fr)}}
+.card:fullscreen{overflow:auto;padding:18px 22px;background-color:var(--sheet)}
+.card:fullscreen .pfd{min-width:0;max-height:calc(100vh - 140px);width:auto;max-width:100%;margin:0 auto}
+/* shared pattern: two columns, three when the column is wide; .wide rows span */
+.opg,.ctg,.ecgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.opg>.wide,.ctg>.wide{grid-column:1/-1}
+@container (min-width:1180px){
+  #opK{grid-template-columns:repeat(6,minmax(0,1fr))}
+  .opg{grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);grid-template-areas:"load tbl" "cf tbl"}
+  .opg>:nth-child(1){grid-area:load}.opg>:nth-child(2){grid-area:cf}.opg>:nth-child(3){grid-area:tbl}
+  .opg>.wide{grid-column:auto}
+  .ecgrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .ecgrid>.wide2{grid-column:span 2}
+}
+@container (min-width:1700px){.opg{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.3fr);grid-template-areas:"load cf tbl"}}
+@container (max-width:680px){.opg,.ctg,.ecgrid,.hig,.mkg,.fdg,.emg,.howg{grid-template-columns:minmax(0,1fr)!important;grid-template-areas:none!important}.fdg>*,.emg>*,.mkg>*,.opg>*{grid-area:auto!important}}
+/* heat */
+.hig{grid-template-columns:repeat(2,minmax(0,1fr))} .hig>:last-child{grid-column:1/-1}
+.heng{grid-template-columns:minmax(0,1fr)}
+@container (min-width:1300px){.hig{grid-template-columns:repeat(3,minmax(0,1fr))}.hig>:last-child{grid-column:auto}.heng{grid-template-columns:minmax(0,1.9fr) minmax(0,1fr)}}
+@container (min-width:1500px){.impact{grid-template-columns:repeat(6,minmax(0,1fr))}}
+/* control */
+.two-up{grid-template-columns:minmax(0,1fr)}
+@container (min-width:1200px){.two-up{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* market: the result of the selected scenario sits next to the scenario cards */
+.mkg{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"sc res" "sc npv" "pr rev";align-items:start}
+.mk-sc{grid-area:sc}.mk-res{grid-area:res}.mk-npv{grid-area:npv}.mk-pr{grid-area:pr}.mk-rev{grid-area:rev}
+@container (min-width:1180px){.mkg{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-areas:"sc sc res" "npv pr rev"}}
+.mk-res.flash{animation:flash .9s ease}
+@keyframes flash{0%{background-color:color-mix(in srgb,var(--signal) 40%,var(--sheet))}100%{background-color:var(--sheet)}}
+/* monitoring */
+.fdg{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"t q" "c f" "tab tab" "m m";align-items:start}
+.fdg>:nth-child(1){grid-area:t}.fdg>:nth-child(2){grid-area:q}.fdg>:nth-child(3){grid-area:c}.fdg>:nth-child(4){grid-area:f}.fdg>:nth-child(5){grid-area:tab}.fdg>:nth-child(6){grid-area:m}
+@container (min-width:1180px){.fdg{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-areas:"t q c" "f tab tab" "m tab tab"}}
+/* e-methanol */
+.emg{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"c l" "k s" "ph ph";align-items:start}
+.emg>:nth-child(1){grid-area:c}.emg>:nth-child(2){grid-area:l}.emg>:nth-child(3){grid-area:k}.emg>:nth-child(4){grid-area:ph}.emg>:nth-child(5){grid-area:s}
+@container (min-width:1180px){.emg{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-areas:"c l k" "ph ph s"}}
+/* validation */
+.howg{grid-template-columns:repeat(2,minmax(0,1fr))}
+@container (min-width:1100px){.howg{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@container (min-width:1900px){.howg{grid-template-columns:repeat(6,minmax(0,1fr))}}
+/* rows that select something */
+table.pick tbody tr{cursor:pointer}
+table.pick tbody tr.on td{background:color-mix(in srgb,var(--signal) 30%,var(--sheet))}
+table.pick tbody tr.on td:first-child{box-shadow:inset 4px 0 0 var(--ink)}
+/* economics inputs */
+.ecin .ecg{display:none} .ecin .ecg.on{display:block}
+.ecin .ecg h4{margin:14px 0 4px}
+.ecin .ecg .note{margin:-2px 0 10px}
+.ecin #ecDiff{margin-top:14px}
+.ecin #ecDiff ul{margin:6px 0 0;padding-left:18px} .ecin #ecDiff li{margin:2px 0}
+.ctl .ref{display:block;font:500 12.5px var(--f);color:var(--graphite);margin-top:-2px}
 </style>
 </head>
 <body>
@@ -454,24 +551,27 @@ footer.ft .cr{margin-top:16px;font-size:13.5px;color:var(--graphite);line-height
       </div>
     </div>
   </div>
-  <div class="section"><div class="wrap">
-    <div class="split" style="margin-bottom:22px"><div><h2 class="t reveal">One plot, five process sections</h2><p class="sub reveal" style="margin-bottom:0">The process area as built in the 3D model of the plant, drawn as a technical isometric. Select a tag to open its data sheet on the flowsheet.</p></div></div>
+  <div class="section"><div class="wrap"><div class="ovplot">
     <figure class="drawing reveal"><div class="plot" id="plantPlot"><img src="art/plant.webp" alt="Isometric line drawing of the process area of the MPW gasification complex" width="2800" height="1524" loading="lazy" decoding="async"></div><div class="balloons" id="balloons"></div>
       <figcaption><span>Process area, isometric view from the south-west. Drawn from the 3D model.</span><span>Pipe rack on three tiers, 42 numbered streams</span></figcaption></figure>
-  </div></div>
-  <div class="section" style="padding-top:20px"><div class="wrap">
-    <h2 class="t reveal">From plastic bale to methanol, in five steps</h2>
-    <p class="sub reveal">Each section is designed in detail in the report and runs in the twin. The line between the steps is the main process stream, numbered as on the flowsheet.</p>
+    <div class="ovside">
+      <h2 class="t reveal">One plot, five process sections</h2>
+      <p class="sub reveal">The process area as built in the 3D model of the plant, drawn as a technical isometric. Select a tag to open its data sheet on the flowsheet.</p>
+      <h3 class="ovh reveal">Live readout</h3>
+      <p class="note reveal" style="margin-top:0">Current state of the twin with the set point, the market and the heat-integration choice of the other sheets.</p>
+      <div class="kpis two reveal" id="snap"></div>
+      <div class="cta reveal"><button class="btn pri" data-go="operations">Change the set points</button><button class="btn" data-go="economics">Change the economics</button></div>
+    </div>
+  </div></div></div>
+  <div class="section" style="padding-top:8px"><div class="wrap">
+    <div class="split"><div><h2 class="t reveal">From plastic bale to methanol, in five steps</h2>
+    <p class="sub reveal">Each section is designed in detail in the report and runs in the twin. The line between the steps is the main process stream, numbered as on the flowsheet.</p></div></div>
     <ol class="spine" id="chain"></ol>
   </div></div>
   <div class="section" style="background:var(--sheet);border-top:2px solid var(--ink);border-bottom:2px solid var(--ink)"><div class="wrap">
-    <h2 class="t reveal">The drawing set</h2>
-    <p class="sub reveal">Every sheet of the twin answers immediately and returns to the design point with one button.</p>
+    <div class="split"><div><h2 class="t reveal">The drawing set</h2>
+    <p class="sub reveal">Every sheet of the twin answers immediately and returns to the design point with one button.</p></div></div>
     <div class="reg" id="feats"></div>
-  </div></div>
-  <div class="section"><div class="wrap">
-    <div class="split reveal"><div><h2 class="t">Live readout</h2><p class="sub" style="margin-bottom:0">Current state of the twin with the set point, the market and the heat-integration choice of the other sheets.</p></div><button class="btn" data-go="operations">Change the set points</button></div>
-    <div class="kpis reveal" id="snap" style="margin-top:20px"></div>
   </div></div>
   <div class="section" style="padding-top:10px"><div class="wrap">
     <h2 class="t reveal">Equipment and project schedule</h2>
@@ -491,15 +591,15 @@ footer.ft .cr{margin-top:16px;font-size:13.5px;color:var(--graphite);line-height
           <label class="switch"><input type="checkbox" id="pfdHI"><span class="tr"></span>Heat-integrated flowsheet</label>
           <label class="switch"><input type="checkbox" id="pfdFlow" checked><span class="tr" style="--x:1"></span>Animate the flows</label>
         </div>
-        <div class="seg" id="secSeg"><button data-s="all" class="on">All</button><button data-s="feed">Feed</button><button data-s="gas">Gasification</button><button data-s="wgs">Shift & H₂</button><button data-s="syn">Synthesis</button><button data-s="pur">Purification</button></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button class="btn sm" id="pfdFull">Full screen</button><div class="seg" id="secSeg"><button data-s="all" class="on">All</button><button data-s="feed">Feed</button><button data-s="gas">Gasification</button><button data-s="wgs">Shift & H₂</button><button data-s="syn">Synthesis</button><button data-s="pur">Purification</button></div></div>
       </div>
       <div class="pfdwrap"><svg id="pfd" class="pfd" viewBox="0 0 1940 1010" role="img" aria-label="Process flow diagram"></svg></div>
       <div class="lg"><span><i class="sw ln" style="background:var(--ink2)"></i>Process line</span><span><i class="sw dash" style="border-color:var(--grey)"></i>Utility</span><span><i class="sw ln" style="background:var(--red)"></i>Changed by heat integration</span><span><i class="sw ln" style="background:var(--orange)"></i>Flow animation</span><span class="mini">Select a unit for its data sheet · hover a stream number for its conditions</span></div>
     </div>
-    <div class="grid g2" style="margin-top:18px">
+    <div class="cq" style="margin-top:18px"><div class="grid pfg">
       <div class="card"><h3><span class="h">Products and feeds (live)</span></h3><div class="kpis" id="pfdK"></div><h4 id="secT" style="margin-top:18px"></h4><p class="note" id="secD" style="margin-top:0"></p><div id="secU" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div></div>
-      <div class="card"><h3><span class="h">Stream table</span><input class="search" id="stq" placeholder="Filter streams…" style="max-width:220px;padding:7px 10px;font-size:15px"></h3><div class="tbl" style="max-height:420px;overflow:auto"><table id="sttab"></table></div><p class="note">T and P of the design point (Chapter 2); flows follow the current set point of the twin.</p></div>
-    </div>
+      <div class="card"><h3><span class="h">Stream table</span><input class="search" id="stq" placeholder="Filter streams…" style="max-width:220px;padding:7px 10px;font-size:15px"></h3><div class="tbl" style="max-height:min(470px,52vh);overflow:auto"><table id="sttab"></table></div><p class="note">T and P of the design point (Chapter 2); flows follow the current set point of the twin.</p></div>
+    </div></div>
   </div></div>
 </section>
 <!-- =========================================================== OPERATIONS -->
@@ -522,15 +622,15 @@ footer.ft .cr{margin-top:16px;font-size:13.5px;color:var(--graphite);line-height
       <button class="btn pri" id="toDesign" style="width:100%">Return to the design point</button>
       <p class="note" id="ainote">Design point of Chapter 2.</p>
     </aside>
-    <div style="min-width:0">
+    <div class="cq">
       <div class="kpis" id="opK"></div>
-      <div class="grid g2" style="margin-top:18px">
+      <div class="grid opg" style="margin-top:18px">
         <div class="card"><h3><span class="h">Equipment load</span><span class="mini">design load = 100 %</span></h3><div id="bars"></div>
           <div class="lg"><span><i class="sw" style="background:var(--blue)"></i>Normal</span><span><i class="sw" style="background:var(--gold)"></i>Within 2 % of the limit</span><span><i class="sw" style="background:var(--red)"></i>Limit exceeded</span><span><i class="sw ln" style="background:var(--ink)"></i>Design load</span><span><i class="sw ln" style="background:var(--red)"></i>Allowed limit</span></div></div>
         <div class="card"><h3><span class="h">Cumulative discounted cash flow</span><span class="mini">million US$</span></h3><svg id="opCF" class="chart" viewBox="0 0 520 300"></svg>
           <div class="lg"><span><i class="sw ln" style="background:var(--navy)"></i>Current set point and market</span><span><i class="sw dash" style="border-color:var(--c-lb)"></i>Design point, same market</span></div></div>
+        <div class="card wide"><h3><span class="h">Key streams at the current set point</span><button class="btn sm" data-go="process">Open on the flowsheet</button></h3><div class="tbl"><table id="opStreams"></table></div></div>
       </div>
-      <div class="card" style="margin-top:18px"><h3><span class="h">Key streams at the current set point</span><button class="btn sm" data-go="process">Open on the flowsheet</button></h3><div class="tbl"><table id="opStreams"></table></div></div>
     </div>
   </div></div></div>
 </section>
@@ -551,7 +651,7 @@ footer.ft .cr{margin-top:16px;font-size:13.5px;color:var(--graphite);line-height
         <p class="note">550 $/m² is the bare-module cost per square metre of E-101 (Table 8.7). The design uses ΔTmin = 10 °C.</p>
         <div class="box or" id="hiBox" style="margin-top:12px"></div>
       </aside>
-      <div style="min-width:0">
+      <div class="cq">
         <div class="kpis" id="hiK"></div>
         <div class="grid g2" style="margin-top:18px">
           <div class="card"><h3><span class="h">Composite curves</span><span class="mini" id="ccNote"></span></h3><svg id="ccChart" class="chart" viewBox="0 0 520 330"></svg>
@@ -561,19 +661,21 @@ footer.ft .cr{margin-top:16px;font-size:13.5px;color:var(--graphite);line-height
         </div>
       </div>
     </div>
+    <div class="cq">
     <div class="section" style="padding-bottom:0"><div class="kicker">Effect on every part of the plant</div><h2 class="t">What heat integration changes</h2><p class="sub">Every figure follows the two controls above and the market selected on the market page.</p>
       <div class="impact" id="impact"></div></div>
-    <div class="grid g2" style="margin-top:18px">
+    <div class="grid hig" style="margin-top:18px">
       <div class="card"><h3><span class="h">Choosing ΔTmin: energy against area</span><span class="mini">annual cost, million US$/y</span></h3><svg id="stChart" class="chart" viewBox="0 0 520 320"></svg>
         <div class="lg"><span><i class="sw ln" style="background:var(--c-or)"></i>Energy (fired heat, CW, chilled water)</span><span><i class="sw ln" style="background:var(--c-bl)"></i>Annualised exchanger area</span><span><i class="sw ln" style="background:var(--navy)"></i>Total</span><span><i class="sw dot" style="background:var(--c-gr)"></i>Optimum</span></div><p class="note" id="stNote"></p></div>
       <div class="card"><h3><span class="h">NPV of the plant against ΔTmin</span><span class="mini">million US$</span></h3><svg id="npvDt" class="chart" viewBox="0 0 520 320"></svg>
         <div class="lg"><span><i class="sw ln" style="background:var(--navy)"></i>Heat-integrated plant</span><span><i class="sw dash" style="border-color:var(--c-rd)"></i>Without heat integration</span><span><i class="sw dot" style="background:var(--c-or)"></i>Selected ΔTmin</span></div></div>
-    </div>
-    <div class="card" style="margin-top:18px"><h3><span class="h">Heat exchanger network (grid diagram, Section 4.2)</span><span class="mini">16 matches · 14 services · 2 new exchangers</span></h3><div style="overflow-x:auto"><svg id="hen" class="chart hen" viewBox="0 0 1180 560" style="min-width:860px"></svg></div>
-      <div class="lg"><span><i class="sw ln" style="background:var(--c-rd)"></i>Hot stream</span><span><i class="sw ln" style="background:var(--c-bl)"></i>Cold stream</span><span><i class="sw dot" style="background:var(--c-or)"></i>Process exchanger</span><span><i class="sw dot" style="background:var(--c-go)"></i>Fired heater</span><span><i class="sw dot" style="background:var(--c-lb)"></i>Cooling / chilled water</span><span><i class="sw dash" style="border-color:var(--ink2)"></i>Pinch 109.22 / 99.22 °C</span></div></div>
-    <div class="grid g2" style="margin-top:18px">
       <div class="card"><h3><span class="h">Utilities before and after (Table 8.31)</span></h3><div class="tbl"><table id="utilT"></table></div></div>
+    </div>
+    <div class="grid heng" style="margin-top:18px">
+    <div class="card"><h3><span class="h">Heat exchanger network (grid diagram, Section 4.2)</span><span class="mini">16 matches · 14 services · 2 new exchangers</span></h3><div style="overflow-x:auto"><svg id="hen" class="chart hen" viewBox="0 0 1180 560" style="min-width:760px"></svg></div>
+      <div class="lg"><span><i class="sw ln" style="background:var(--c-rd)"></i>Hot stream</span><span><i class="sw ln" style="background:var(--c-bl)"></i>Cold stream</span><span><i class="sw dot" style="background:var(--c-or)"></i>Process exchanger</span><span><i class="sw dot" style="background:var(--c-go)"></i>Fired heater</span><span><i class="sw dot" style="background:var(--c-lb)"></i>Cooling / chilled water</span><span><i class="sw dash" style="border-color:var(--ink2)"></i>Pinch 109.22 / 99.22 °C</span></div></div>
       <div class="card"><h3><span class="h">Hand calculation against Aspen Energy Analyzer (Section 4.4)</span></h3><div class="tbl"><table id="aeaT"></table></div><p class="note" id="aeaNote"></p></div>
+    </div>
     </div>
   </div></div>
 </section>
@@ -602,25 +704,29 @@ footer.ft .cr{margin-top:16px;font-size:13.5px;color:var(--graphite);line-height
         <button class="btn pri" id="pidPlay" style="width:100%">Play the response</button>
         <button class="btn ghost" id="loopReset" style="width:100%;margin-top:8px">Reset this loop</button>
       </aside>
-      <div style="min-width:0">
+      <div class="cq">
         <div class="kpis" id="pidK"></div>
-        <div class="grid g2" style="margin-top:18px">
+        <div class="grid ctg" style="margin-top:18px">
           <div class="card"><h3><span class="h" id="yT">Controlled variable</span><span class="mini" id="yU"></span></h3><svg id="pidT" class="chart" viewBox="0 0 520 300"></svg>
             <div class="lg" id="yLg"></div></div>
           <div class="card"><h3><span class="h">Controller output</span><span class="mini">mA, deviation</span></h3><svg id="pidU" class="chart" viewBox="0 0 520 300"></svg>
             <div class="lg"><span><i class="sw ln" style="background:var(--c-or)"></i><span id="uN">Signal to the valve</span></span></div></div>
+          <div class="card wide"><h3><span class="h" id="tabT">Stability and performance</span></h3><div class="tbl"><table id="pidTab"></table></div><p class="note" id="routhNote"></p></div>
         </div>
-        <div class="card" style="margin-top:18px"><h3><span class="h" id="tabT">Stability and performance</span></h3><div class="tbl"><table id="pidTab"></table></div><p class="note" id="routhNote"></p></div>
       </div>
     </div>
+    <div class="cq">
     <div class="card" style="margin-top:18px"><h3><span class="h">All loops at a glance</span><span class="mini">recommended tuning, standard test of each loop</span></h3><div class="tbl"><table id="loopSum"></table></div></div>
-    <div class="card" style="margin-top:18px"><h3><span class="h">Instrument loop index (Table 6.26)</span><span style="display:flex;gap:8px;flex-wrap:wrap"><input class="search" id="iq" placeholder="Search loops, units or streams…" style="width:260px;padding:7px 10px;font-size:15px"></span></h3>
+    <div class="grid two-up" style="margin-top:18px">
+    <div class="card"><h3><span class="h">Instrument loop index (Table 6.26)</span><span style="display:flex;gap:8px;flex-wrap:wrap"><input class="search" id="iq" placeholder="Search loops, units or streams…" style="width:260px;padding:7px 10px;font-size:15px"></span></h3>
       <div class="seg" id="iSeg" style="margin-bottom:10px"><button data-k="all" class="on">All</button><button data-k="T">Temperature</button><button data-k="P">Pressure</button><button data-k="L">Level</button><button data-k="F">Flow</button><button data-k="A">Analysis</button><button data-k="W">Weight</button><button data-k="HI">Heat-integrated only</button></div>
-      <div class="tbl" style="max-height:440px;overflow:auto"><table id="iTab"></table></div></div>
+      <div class="tbl" style="max-height:min(560px,62vh);overflow:auto"><table id="iTab"></table></div></div>
+    <div class="card"><h3><span class="h">How heat integration changes the control system (Table 6.27)</span></h3><div class="tbl"><table id="hicT"></table></div></div>
+    </div>
     <div class="card" style="margin-top:18px"><h3><span class="h">Piping and instrumentation diagrams (Figures 6.22 and 6.26)</span><span class="seg" id="pidSel"><button data-k="base" class="on">Base flowsheet</button><button data-k="hi">Heat-integrated</button></span></h3>
       <div class="pidview" id="pidv"><div class="zc"><button class="btn sm" id="zin">＋</button><button class="btn sm" id="zout">－</button><button class="btn sm" id="zfit">Fit</button></div><img id="pidimg" alt="P&ID" src="pid_base.webp" draggable="false"></div>
       <p class="note">Drag to move, scroll or use the buttons to zoom.</p></div>
-    <div class="card" style="margin-top:18px"><h3><span class="h">How heat integration changes the control system (Table 6.27)</span></h3><div class="tbl"><table id="hicT"></table></div></div>
+    </div>
   </div></div>
 </section>
 <!-- =========================================================== ECONOMICS -->
@@ -629,25 +735,34 @@ footer.ft .cr{margin-top:16px;font-size:13.5px;color:var(--graphite);line-height
     <p class="lead">The cash-flow model of Appendix G runs live with the market of the market page and the heat-integration choice of the heat-integration page.</p>
     <div class="pagebar"><span class="chip" id="ecChip"><i></i>Base case</span><button class="btn sm ghost" data-reset="economics">Reset this page</button></div></div>
     <dl class="tblock"><div><dt>Drawing</dt><dd class="no">MPW-ECO-06</dd></div><div><dt>Sheet</dt><dd class="no">06 / 10</dd></div><div class="w"><dt>Source</dt><dd>Chapter 8, economic analysis</dd></div><div class="w"><dt>Drawn by</dt><dd>Meshari A. Almuhaysin, Mohammed F. Alotaibi</dd></div><div><dt>Issued</dt><dd>November 2026</dd></div><div><dt>Units</dt><dd>SI, US$</dd></div></dl></div></div>
-  <div class="section"><div class="wrap">
-    <div class="kpis" id="ecK"></div>
-    <div class="grid g2" style="margin-top:18px">
-      <div class="card"><h3><span class="h">Cash flow over the project life</span><span class="mini">million US$</span></h3><svg id="ecCF" class="chart" viewBox="0 0 520 320"></svg>
-        <div class="lg"><span><i class="sw" style="background:var(--c-lb)"></i>Annual cash flow</span><span><i class="sw ln" style="background:var(--navy)"></i>Cumulative discounted</span><span><i class="sw dash" style="border-color:var(--c-or)"></i>Cumulative, not discounted</span></div></div>
-      <div class="card"><h3><span class="h">NPV against the interest rate</span><span class="mini">million US$</span></h3><svg id="ecIR" class="chart" viewBox="0 0 520 320"></svg>
-        <div class="lg"><span><i class="sw ln" style="background:var(--navy)"></i>NPV</span><span><i class="sw dot" style="background:var(--c-or)"></i>Selected rate</span><span><i class="sw dot" style="background:var(--c-gr)"></i>DCFROR (NPV = 0)</span></div></div>
+  <div class="section"><div class="wrap"><div class="grid side">
+    <aside class="card sticky ecin">
+      <h3><span class="h">Economic inputs</span><span class="mini">all pages follow</span></h3>
+      <div class="seg full" id="ecTab" style="grid-template-columns:repeat(4,1fr)"><button data-k="price" class="on">Prices</button><button data-k="cap">Capital</button><button data-k="time">Time</button><button data-k="fin">Finance</button></div>
+      <div class="ecg" data-g="price" id="ecPrice"></div>
+      <div class="ecg" data-g="cap" id="ecCap"></div>
+      <div class="ecg" data-g="time" id="ecTime"></div>
+      <div class="ecg" data-g="fin" id="ecFin"></div>
+      <div class="box" id="ecDiff"></div>
+    </aside>
+    <div class="cq">
+      <div class="kpis" id="ecK"></div>
+      <div class="grid ecgrid" style="margin-top:18px">
+        <div class="card"><h3><span class="h">Cash flow over the project life</span><span class="mini">million US$</span></h3><svg id="ecCF" class="chart" viewBox="0 0 520 320"></svg>
+          <div class="lg"><span><i class="sw" style="background:var(--c-lb)"></i>Annual cash flow</span><span><i class="sw ln" style="background:var(--navy)"></i>Cumulative discounted</span><span><i class="sw dash" style="border-color:var(--c-or)"></i>Cumulative</span></div></div>
+        <div class="card"><h3><span class="h">NPV against the interest rate</span><span class="mini">million US$</span></h3><svg id="ecIR" class="chart" viewBox="0 0 520 320"></svg>
+          <div class="lg"><span><i class="sw ln" style="background:var(--navy)"></i>NPV</span><span><i class="sw dot" style="background:var(--c-or)"></i>Selected rate</span><span><i class="sw dot" style="background:var(--c-gr)"></i>DCFROR (NPV = 0)</span></div></div>
+        <div class="card"><h3><span class="h">Effect of time on the NPV</span><span class="mini">million US$</span></h3><svg id="ecTimeC" class="chart" viewBox="0 0 520 320"></svg>
+          <div class="lg" id="ecTimeLg"></div></div>
+        <div class="card"><h3><span class="h">Bare-module cost by unit (Table 8.7)</span><span class="mini" id="cbmTot">∑CBM = $298.18 M</span></h3><div id="cbm"></div></div>
+        <div class="card"><h3><span class="h">Cost of manufacturing</span><span class="mini" id="comTot"></span></h3><svg id="comD" class="chart" viewBox="0 0 520 300"></svg><div class="lg" id="comLg"></div></div>
+        <div class="card"><h3><span class="h">Sensitivity of the NPV (±20 %)</span><span class="mini">million US$</span></h3><svg id="torn" class="chart" viewBox="0 0 520 330"></svg>
+          <div class="lg"><span><i class="sw" style="background:var(--c-gr)"></i>Favourable change</span><span><i class="sw" style="background:var(--c-rd)"></i>Unfavourable change</span></div></div>
+        <div class="card"><h3><span class="h">Monte Carlo simulation (Table 8.30)</span><button class="btn sm pri" id="mcRun">New random sample</button></h3><svg id="mcH" class="chart" viewBox="0 0 520 300"></svg><div class="kpis" id="mcK" style="margin-top:12px"></div></div>
+        <div class="card wide2"><h3><span class="h">Summary of the economic analysis (live, Table 8.33)</span></h3><div class="tbl"><table id="ecSum"></table></div></div>
+      </div>
     </div>
-    <div class="grid g2" style="margin-top:18px">
-      <div class="card"><h3><span class="h">Bare-module cost by unit (Table 8.7)</span><span class="mini">∑CBM = $298.18 M</span></h3><div id="cbm"></div></div>
-      <div class="card"><h3><span class="h">Cost of manufacturing</span><span class="mini" id="comTot"></span></h3><svg id="comD" class="chart" viewBox="0 0 520 300"></svg><div class="lg" id="comLg"></div></div>
-    </div>
-    <div class="grid g2" style="margin-top:18px">
-      <div class="card"><h3><span class="h">Sensitivity of the NPV (±20 %)</span><span class="mini">million US$</span></h3><svg id="torn" class="chart" viewBox="0 0 520 330"></svg>
-        <div class="lg"><span><i class="sw" style="background:var(--c-gr)"></i>Favourable change</span><span><i class="sw" style="background:var(--c-rd)"></i>Unfavourable change</span></div></div>
-      <div class="card"><h3><span class="h">Monte Carlo simulation (Table 8.30)</span><button class="btn sm pri" id="mcRun">New random sample</button></h3><svg id="mcH" class="chart" viewBox="0 0 520 300"></svg><div class="kpis" id="mcK" style="margin-top:10px"></div><p class="note">Triangular distributions of the methanol, hydrogen and MPW prices, the FCI, the electricity tariff, the natural-gas price and the availability. The first run uses the random sample of Appendix G (seed 2026), so in the base case it reproduces the report: mean 15.2 M$, P(NPV &gt; 0) = 54.5 %.</p></div>
-    </div>
-    <div class="card" style="margin-top:18px"><h3><span class="h">Summary of the economic analysis (live, Table 8.33)</span></h3><div class="tbl"><table id="ecSum"></table></div></div>
-  </div></div>
+  </div></div></div>
 </section>
 <!-- =========================================================== MARKET -->
 <section class="page" data-page="market">
@@ -655,30 +770,26 @@ footer.ft .cr{margin-top:16px;font-size:13.5px;color:var(--graphite);line-height
     <p class="lead">Product prices of 2025–2026, the crisis levels of Table 8.27 and fourteen scenarios — each one evaluated at the design point and at the AI set point.</p>
     <div class="pagebar"><span class="chip" id="mkChip2"><i></i>Base case</span><button class="btn sm ghost" data-reset="market">Reset this page</button></div></div>
     <dl class="tblock"><div><dt>Drawing</dt><dd class="no">MPW-MKT-07</dd></div><div><dt>Sheet</dt><dd class="no">07 / 10</dd></div><div class="w"><dt>Source</dt><dd>Chapter 8, market and risk</dd></div><div class="w"><dt>Drawn by</dt><dd>Meshari A. Almuhaysin, Mohammed F. Alotaibi</dd></div><div><dt>Issued</dt><dd>November 2026</dd></div><div><dt>Units</dt><dd>SI, US$</dd></div></dl></div></div>
-  <div class="section"><div class="wrap">
-    <div class="grid g2">
-      <div class="card"><h3><span class="h">Methanol and hydrogen prices (Table 8.16)</span><span class="mini">US$/t</span></h3><svg id="prChart" class="chart" viewBox="0 0 520 300"></svg>
-        <div class="lg"><span><i class="sw ln" style="background:var(--navy)"></i>Methanol (left axis)</span><span><i class="sw ln" style="background:var(--c-gr)"></i>Hydrogen (right axis)</span><span><i class="sw dash" style="border-color:var(--c-or)"></i>Selected market</span></div></div>
-      <div class="card"><h3><span class="h">Revenue of the selected market</span><span class="mini" id="revTot"></span></h3><svg id="revD" class="chart" viewBox="0 0 520 300"></svg><div class="lg" id="revLg"></div></div>
-    </div>
-    <div class="grid side" style="margin-top:18px">
+  <div class="section"><div class="wrap"><div class="grid side">
       <aside class="card sticky">
         <h3><span class="h">Market and project conditions</span></h3>
         <div id="mkSliders"></div>
         <p class="note">Moving a slider creates a custom scenario. All pages use the market selected here.</p>
       </aside>
-      <div style="min-width:0">
-        <div class="card"><h3><span class="h">Scenarios</span><span class="seg" id="scFilt"><button data-k="all" class="on">All</button><button data-k="base">Base</button><button data-k="market">Market</button><button data-k="crisis">Crisis</button><button data-k="policy">Policy</button></span></h3><div class="scards" id="cards"></div></div>
-        <div class="grid g2" style="margin-top:18px">
-          <div class="card"><h3><span class="h">Selected scenario</span></h3><div id="scenres"></div>
+      <div class="cq">
+        <div class="grid mkg">
+          <div class="card mk-sc"><h3><span class="h">Scenarios</span><span class="seg" id="scFilt"><button data-k="all" class="on">All</button><button data-k="base">Base</button><button data-k="market">Market</button><button data-k="crisis">Crisis</button><button data-k="policy">Policy</button></span></h3><div class="scards" id="cards"></div></div>
+          <div class="card mk-res" id="mkRes"><h3><span class="h">Selected scenario</span></h3><div id="scenres"></div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn pri" id="scai">AI set point for this scenario</button><button class="btn" id="allai">AI set point for every scenario</button></div><p class="note" id="scnote"></p></div>
-          <div class="card"><h3><span class="h">NPV of every scenario</span><span class="mini">million US$</span></h3><svg id="scchart" class="chart" viewBox="0 0 520 470"></svg>
+          <div class="card mk-npv"><h3><span class="h">NPV of every scenario</span><span class="mini">million US$</span></h3><svg id="scchart" class="chart" viewBox="0 0 520 470"></svg>
             <div class="lg"><span><i class="sw" style="background:var(--c-lb)"></i>Design point</span><span><i class="sw" style="background:var(--navy)"></i>AI set point</span></div></div>
+          <div class="card mk-pr"><h3><span class="h">Methanol and hydrogen prices (Table 8.16)</span><span class="mini">US$/t</span></h3><svg id="prChart" class="chart" viewBox="0 0 520 300"></svg>
+        <div class="lg"><span><i class="sw ln" style="background:var(--navy)"></i>Methanol (left axis)</span><span><i class="sw ln" style="background:var(--c-gr)"></i>Hydrogen (right axis)</span><span><i class="sw dash" style="border-color:var(--c-or)"></i>Selected market</span></div></div>
+          <div class="card mk-rev"><h3><span class="h">Revenue of the selected market</span><span class="mini" id="revTot"></span></h3><svg id="revD" class="chart" viewBox="0 0 520 300"></svg><div class="lg" id="revLg"></div></div>
         </div>
+        <div class="card" style="margin-top:18px"><h3><span class="h">Risk levels of the 2026 Gulf and Red Sea crisis (Table 8.27)</span></h3><div class="tbl"><table id="riskT"></table></div></div>
       </div>
-    </div>
-    <div class="card" style="margin-top:18px"><h3><span class="h">Risk levels of the 2026 Gulf and Red Sea crisis (Table 8.27)</span></h3><div class="tbl"><table id="riskT"></table></div></div>
-  </div></div>
+  </div></div></div>
 </section>
 <!-- =========================================================== MONITORING -->
 <section class="page" data-page="safety">
@@ -693,16 +804,16 @@ footer.ft .cr{margin-top:16px;font-size:13.5px;color:var(--graphite);line-height
       <button class="btn pri" id="play" style="width:100%">Play the fault from the start</button>
       <div id="falarm" class="alarm ok"></div><div id="finfo"></div>
     </aside>
-    <div style="min-width:0">
-      <div class="grid g2">
-        <div class="card"><h3><span class="h">Hotelling’s T²</span></h3><svg id="cT" class="chart" viewBox="0 0 520 290"></svg><div class="lg"><span><i class="sw ln" style="background:var(--navy)"></i>T²</span><span><i class="sw dash" style="border-color:var(--c-rd)"></i><span id="t2l"></span></span><span><i class="sw ln" style="background:var(--c-gy)"></i>Start of the fault</span></div></div>
-        <div class="card"><h3><span class="h">Squared prediction error Q</span></h3><svg id="cQ" class="chart" viewBox="0 0 520 290"></svg><div class="lg"><span><i class="sw ln" style="background:var(--navy)"></i>Q</span><span><i class="sw dash" style="border-color:var(--c-rd)"></i><span id="ql"></span></span><span><i class="sw ln" style="background:var(--c-gy)"></i>Start of the fault</span></div></div>
-      </div>
-      <div class="grid g2" style="margin-top:18px">
-        <div class="card"><h3><span class="h">Contribution of each signal to Q</span><span class="mini">%</span></h3><svg id="cC" class="chart" viewBox="0 0 520 290"></svg></div>
+    <div class="cq">
+      <div class="grid fdg">
+        <div class="card"><h3><span class="h">Hotelling’s T²</span><span class="mini">log scale</span></h3><svg id="cT" class="chart" viewBox="0 0 520 300"></svg><div class="lg"><span><i class="sw ln" style="background:var(--navy)"></i>T²</span><span><i class="sw dash" style="border-color:var(--c-rd)"></i><span id="t2l"></span></span><span><i class="sw ln" style="background:var(--c-gy)"></i>Start of the fault</span></div></div>
+        <div class="card"><h3><span class="h">Squared prediction error Q</span><span class="mini">log scale</span></h3><svg id="cQ" class="chart" viewBox="0 0 520 300"></svg><div class="lg"><span><i class="sw ln" style="background:var(--navy)"></i>Q</span><span><i class="sw dash" style="border-color:var(--c-rd)"></i><span id="ql"></span></span><span><i class="sw ln" style="background:var(--c-gy)"></i>Start of the fault</span></div></div>
+        <div class="card"><h3><span class="h">Contribution of each signal to Q</span><span class="mini">%</span></h3><svg id="cC" class="chart" viewBox="0 0 520 300"></svg><div class="lg"><span><i class="sw" style="background:var(--c-or)"></i>Largest contribution</span><span><i class="sw" style="background:var(--c-bl)"></i>Other signals</span></div></div>
         <div class="card"><h3><span class="h">Diagnosis and operator action</span></h3><div id="fact"></div></div>
+        <div class="card wide2"><h3><span class="h">The five faults of the HAZOP study (Table 10.6)</span><span class="mini">select a row to replay it</span></h3><div class="tbl"><table id="ftab" class="pick"></table></div>
+          <p class="note">An alarm needs three consecutive samples above a limit, which removes false alarms caused by noise.</p></div>
+        <div class="card"><h3><span class="h">Monitoring model</span><span class="mini">PCA, 8 signals</span></h3><div class="tbl"><table id="fmod"></table></div></div>
       </div>
-      <p class="note">An alarm needs three consecutive samples above a limit, which removes false alarms caused by noise.</p>
     </div>
   </div></div></div>
 </section>
@@ -722,11 +833,14 @@ footer.ft .cr{margin-top:16px;font-size:13.5px;color:var(--graphite);line-height
       <div class="seg full" id="etech"><button data-k="today" class="on">Today</button><button data-k="2050">2050</button></div>
       <p class="note">Today: 1,000 $/kW and 55 kWh/kg. 2050: 200 $/kW and 45 kWh/kg (IRENA, 2020). The electricity price is set separately.</p>
     </aside>
-    <div style="min-width:0">
+    <div class="cq">
       <div class="kpis" id="ekpis"></div>
-      <div class="grid g2" style="margin-top:18px">
+      <div class="grid emg" style="margin-top:18px">
         <div class="card"><h3><span class="h">Production cost of the e-methanol</span><span class="mini">US$/t</span></h3><svg id="eC" class="chart" viewBox="0 0 520 300"></svg><div class="lg" id="eleg"></div><p class="verdict" id="everd"></p></div>
         <div class="card"><h3><span class="h">Cost against the electricity price</span><span class="mini">US$/t</span></h3><svg id="eL" class="chart" viewBox="0 0 520 300"></svg><div class="lg" id="eleg2"></div><p class="verdict ok" id="ebe"></p></div>
+        <div class="card"><h3><span class="h">Where the carbon of the plastic goes</span><span class="mini">% of the carbon fed</span></h3><svg id="eCarb" class="chart" viewBox="0 0 520 300"></svg><div class="lg" id="eleg3"></div></div>
+        <div class="card wide2"><h3><span class="h">Phases of the extension (Table 10.7)</span><span class="mini">live, with the electricity and technology selected</span></h3><div class="tbl"><table id="ephase" class="pick"></table></div></div>
+        <div class="card"><h3><span class="h">Extension at the selected share</span></h3><div class="tbl"><table id="eside"></table></div></div>
       </div>
     </div>
   </div></div></div>
@@ -737,7 +851,7 @@ footer.ft .cr{margin-top:16px;font-size:13.5px;color:var(--graphite);line-height
     <p class="lead">Every model of the site is checked against the values of the report.</p></div>
     <dl class="tblock"><div><dt>Drawing</dt><dd class="no">MPW-VAL-10</dd></div><div><dt>Sheet</dt><dd class="no">10 / 10</dd></div><div class="w"><dt>Source</dt><dd>Models of all chapters against the report</dd></div><div class="w"><dt>Drawn by</dt><dd>Meshari A. Almuhaysin, Mohammed F. Alotaibi</dd></div><div><dt>Issued</dt><dd>November 2026</dd></div><div><dt>Units</dt><dd>SI, US$</dd></div></dl></div></div>
   <div class="section"><div class="wrap">
-    <div class="grid g3" id="howCards"></div>
+    <div class="cq"><div class="grid howg" id="howCards"></div></div>
     <div class="grid g2" style="margin-top:18px">
       <div class="card"><h3><span class="h">Plant and economic model</span></h3><div class="tbl"><table id="valtab"></table></div></div>
       <div class="card"><h3><span class="h">Heat integration and control</span></h3><div class="tbl"><table id="valtab2"></table></div></div>
@@ -799,11 +913,19 @@ const P_BASE = {meoh_kgh: 33701.38806641478, h2_kgh: 7806.985623098963, mpw_kgh:
   p_elec: 0.23 / 3.75, p_ng: 2.5, p_water: 8.04 / 3.75, p_ww: 3.64 / 3.75, p_sw: 69.16 / 3.75 / 1000, eta_f: 0.85,
   cat_cost: (71198 + 17752) * 80.0 / 4.0, mem_cost: 6040 * 5000.0 * 840.9 / 797.9 * 0.8 / 5.0, COL: 78 * 132222 / 3.75, land: 0.0,
   Q_R101: 145.67, bfw: 72.9, proc_water: 98.58747, ww: 8.538 + 28.58746, wc: 0.1, salvage: 0.05, tax: 0.025, i: 0.1,
-  fci_mult: 1.0, op_factor: 1.0, logi: 0, Q_heat: 25.92758, hi: true, com_mult: 1.0, elec_mult: 1.0};
+  fci_mult: 1.0, op_factor: 1.0, logi: 0, Q_heat: 25.92758, hi: true, com_mult: 1.0, elec_mult: 1.0,
+  // economic inputs of the economics page (defaults = Chapter 8): construction years, operating years, depreciation,
+  // cost index, price and cost escalation, change of the bare-module cost, purchased land
+  build: 2, life: 20, dep: 'macrs5', cepci: 840.9, esc_p: 0, esc_c: 0, cbm_add: 0, land_buy: 0};
 const HI_X = 10429187, FCI_NOHI = 477231118.72, HI_DHEAT = 10139338.72, HI_DCW = 884645.81, HI_DSTEAM = 1813346.49, PSW0 = 69.16 / 3.75 / 1000;
 const FCI = 478400128.68, WCIRC = 823.07, C102W = 28551.90, WCH = 810.59, QR102 = 14.22877;
 const UT_CAL = -2.65, COM_CAL = -0.0578;
 const HRS = 7920.0, GJ_MW = 3.6 * HRS, MACRS5 = [20, 32, 19.2, 11.52, 11.52, 5.76];
+// depreciation schedules (% of FCI per operating year, Turton Table 10.4); straight line over 10 years on FCI − salvage
+const DEP = {macrs5: MACRS5, macrs7: [14.29, 24.49, 17.49, 12.49, 8.93, 8.92, 8.93, 4.46], macrs10: [10, 18, 14.4, 11.52, 9.22, 7.37, 6.55, 6.55, 6.56, 6.55, 3.28], sl10: null};
+const CEPCI0 = 840.9, SUM_CBM = 298183405.96, FCI_PER_CBM = 478400128.68 / SUM_CBM;   // FCI per US$ of bare-module cost (Chapter 8)
+function fciOf(p) { return (((p.hi ? FCI : FCI_NOHI) * p.fci_mult) + FCI_PER_CBM * (p.cbm_add || 0)) * (p.cepci || CEPCI0) / CEPCI0 + (p.fci_add || 0); }
+function depOf(p, k, F, S) { const t = DEP[p.dep || 'macrs5']; return t ? (k < t.length ? t[k] / 100 * F : 0) : (k < 10 ? (F - S) / 10 : 0); }
 const BASE_R = plant(0.40, 0.10, 0.90, 1);
 function econParams(r, mk) {
   const b = BASE_R, p = Object.assign({}, P_BASE, mk || {});
@@ -829,26 +951,26 @@ function comD(p, F, f) {
   const CWT = p.ww * HRS * f * p.p_ww, coef = (0.146 - 0.032 + 0.010) / 0.81;
   return [rev, p.com_mult * (coef * F + 2.73 * p.COL + 1.23 * (CRM + CUT + CWT) + COM_CAL * f) + p.land, {CRM, CUT, CWT, COL: p.COL, F, coefF: coef * F}];
 }
-function cashflow(p) {
-  const F = (p.hi ? FCI : FCI_NOHI) * p.fci_mult + (p.fci_add || 0), WC = p.wc * F, S = p.salvage * F; let carry = 0; const cf = [];
-  for (let y = 0; y < 23; y++) {
-    let c = 0; if (y === 1 || y === 2) c -= 0.5 * F; if (y === 2) c -= WC; const k = y - 3;
-    if (k >= 0) {
-      const f = k < 2 ? [0.75, 0.90][k] : 1.0; const [R, C] = comD(p, F, f * p.op_factor);
-      const d = k < 6 ? MACRS5[k] / 100 * F : 0; const ti = R - C - d; let taxable;
-      if (ti < 0) { carry -= ti; taxable = 0; } else { const use = Math.min(carry, ti); carry -= use; taxable = ti - use; }
-      c += ti - p.tax * taxable + d;
-    }
-    if (y === 22) c += WC + S; cf.push(c);
+function cashflow(p) { return econRows(p).rows.map(r => r.cf); }
+// yearly cash flows: land in year 0, FCI spread evenly over the construction years, WC at the end of construction,
+// operation at 75 % and 90 % in the first two years, losses carried forward, WC + salvage + land recovered in the last year
+function econRows(p) {
+  const F = fciOf(p), WC = p.wc * F, S = p.salvage * F, B = Math.max(1, Math.round(p.build || 2)), L = Math.max(1, Math.round(p.life || 20)), N = B + L, LB = p.land_buy || 0;
+  const ep = p.esc_p || 0, ec = p.esc_c || 0; let carry = 0; const rows = [];
+  for (let y = 0; y <= N; y++) {
+    let inv = 0; if (y === 0) inv -= LB; if (y >= 1 && y <= B) inv -= F / B; if (y === B) inv -= WC; const k = y - B - 1; let R = 0, C = 0, d = 0, np = 0, parts = null;
+    if (k >= 0) { const f = k < 2 ? [0.75, 0.90][k] : 1.0; const res = comD(p, F, f * p.op_factor); R = res[0] * Math.pow(1 + ep, y); C = res[1] * Math.pow(1 + ec, y); parts = res[2];
+      d = depOf(p, k, F, S); const ti = R - C - d; let taxable; if (ti < 0) { carry -= ti; taxable = 0; } else { const use = Math.min(carry, ti); carry -= use; taxable = ti - use; } np = ti - p.tax * taxable; }
+    let cf = inv + (k >= 0 ? np + d : 0); if (y === N) cf += WC + S + LB; rows.push({y, inv, R, C, d, np, cf, parts});
   }
-  return cf;
+  return {rows, F, WC, S, B, L, N};
 }
 const npvAt = (cf, i) => cf.reduce((a, c, y) => a + c / Math.pow(1 + i, y), 0);
-function indicators(cf, i) {
-  let lo = -0.3, hi = 0.6, irr = null;
+function indicators(cf, i, B) {
+  B = B || 2; let lo = -0.3, hi = 0.6, irr = null;
   if (npvAt(cf, lo) > 0 && npvAt(cf, hi) < 0) { for (let k = 0; k < 80; k++) { const m = (lo + hi) / 2; if (npvAt(cf, m) > 0) lo = m; else hi = m; } irr = (lo + hi) / 2; }
   let dc = 0, dpb = null, prev = 0;
-  for (let y = 0; y < cf.length; y++) { prev = dc; dc += cf[y] / Math.pow(1 + i, y); if (dpb === null && y > 2 && dc >= 0) dpb = y - 1 + (-prev) / (dc - prev) - 2; }
+  for (let y = 0; y < cf.length; y++) { prev = dc; dc += cf[y] / Math.pow(1 + i, y); if (dpb === null && y > B && dc >= 0) dpb = y - 1 + (-prev) / (dc - prev) - B; }
   return {npv: npvAt(cf, i) / 1e6, irr, dpb};
 }
 // ===== Design limits and operating modes =====
@@ -862,7 +984,7 @@ function evaluate(x, mk, L) {
   const r = plant(x[0], x[1], x[2], x[3] === undefined ? 1 : x[3]); const p = econParams(r, mk); const cf = cashflow(p);
   let worst = r.A / (A_INST * L.A), lim = 'ME-101 area';
   for (const k in LIMITS_MAX) { const v = r[k] / (L[k] * (k === 'feed' ? 1 : BASE_R[k])); if (v > worst) { worst = v; lim = k; } }
-  const ind = indicators(cf, p.i);
+  const ind = indicators(cf, p.i, p.build);
   return {r, p, cf, npv: ind.npv, irr: ind.irr, dpb: ind.dpb, worst, limiting: lim, ok: worst <= 1 + 1e-6};
 }
 // differential evolution (seeded, so every search gives the same answer for the same inputs)
@@ -904,17 +1026,10 @@ function emethanol(f, c_el, capex_kw, e_spec) {
 }
 // detailed yearly results (Table 8.21)
 function econDetail(p) {
-  const F = (p.hi ? FCI : FCI_NOHI) * p.fci_mult + (p.fci_add || 0), WC = p.wc * F, S = p.salvage * F; let carry = 0; const rows = [];
-  for (let y = 0; y < 23; y++) {
-    let inv = 0; if (y === 1 || y === 2) inv -= 0.5 * F; if (y === 2) inv -= WC; const k = y - 3; let R = 0, C = 0, d = 0, np = 0, parts = null;
-    if (k >= 0) { const f = k < 2 ? [0.75, 0.90][k] : 1.0; const res = comD(p, F, f * p.op_factor); R = res[0]; C = res[1]; parts = res[2];
-      d = k < 6 ? MACRS5[k] / 100 * F : 0; const ti = R - C - d; let taxable; if (ti < 0) { carry -= ti; taxable = 0; } else { const use = Math.min(carry, ti); carry -= use; taxable = ti - use; } np = ti - p.tax * taxable; }
-    let cf = inv + (k >= 0 ? np + d : 0); if (y === 22) cf += WC + S; rows.push({y, inv, R, C, d, np, cf, parts});
-  }
-  const op = rows.filter(r => r.y >= 3), npavg = op.reduce((a, r) => a + r.np, 0) / op.length;
-  return {rows, F, WC, npavg, roroi: npavg / (F + WC), pbp: F / (npavg + F / op.length), full: rows[5]};
+  const E = econRows(p), op = E.rows.filter(r => r.y > E.B), npavg = op.reduce((a, r) => a + r.np, 0) / op.length;
+  return {rows: E.rows, F: E.F, WC: E.WC, B: E.B, L: E.L, N: E.N, npavg, roroi: npavg / (E.F + E.WC), pbp: E.F / (npavg + E.F / op.length), full: E.rows[Math.min(E.N, E.B + 3)]};
 }
-if (typeof module !== 'undefined') module.exports = {plant, evaluate, optimise, limitsFor, BASE_R, emethanol, cashflow, econParams, indicators, P_BASE, econDetail};
+if (typeof module !== 'undefined') module.exports = {plant, evaluate, optimise, limitsFor, BASE_R, emethanol, cashflow, econParams, indicators, P_BASE, econDetail, econRows, fciOf, CEPCI0, FCI_PER_CBM};
 
 // ===== Pinch analysis (Chapter 4, problem table algorithm) =====
 const HI_STREAMS = [
@@ -1376,10 +1491,18 @@ document.addEventListener('input', e => { if (e.target.type === 'range') fillRan
 // ===================================================================== state
 const DEF = {X: [0.40, 0.10, 0.90, 1.0], MODE: 'design', margin: 2, MK: {}, SCID: 'base', HI: true, dT: 10, cpm: 550,
   loop: 'TC-310', FK: '1', ft: 598, em: {f: 100, c: 1.04, tech: 'today'},
-  pfdHI: false, pfdFlow: true, sec: 'all', scf: 'all', iSeg: 'all', iq: '', stq: '', pidSel: 'base'};
+  pfdHI: false, pfdFlow: true, sec: 'all', scf: 'all', iSeg: 'all', iq: '', stq: '', pidSel: 'base', ecTab: 'price',
+  EC: {lease: 0, buy: 0, build: 2, life: 20, dep: 'macrs5', cepci: 840.9, escp: 0, escc: 0, wc: 10, sal: 5, eq: {'R-101 (×5)': 0, 'C-101': 0, 'C-102': 0, 'ME-101': 0, '*': 0}}};
 DEF.pids = initPids();
 let ST = clone(DEF), PAGE = 'overview', AIRES = {}, MC = null, MCKEY = '';
-const MKX = () => Object.assign({}, ST.MK, {hi: ST.HI});
+// economic inputs of the economics page, turned into model parameters (defaults reproduce Chapter 8)
+const PLOT_M2 = 126000, SAR = 3.75;
+const EQX = [['R-101 (×5)', 'Gasifiers R-101 (×5)'], ['C-101', 'Syngas compressor C-101'], ['C-102', 'Hydrogen compressor C-102'], ['ME-101', 'Hydrogen membrane ME-101'], ['*', 'All other equipment']];
+const cbmOf = k => k === '*' ? CBM.filter(c => !EQX.some(e => e[0] === c[0])).reduce((a, c) => a + c[2], 0) : CBM.find(c => c[0] === k)[2];
+function ecMK() { const c = ST.EC; let add = 0; EQX.forEach(([k]) => { add += cbmOf(k) * (c.eq[k] || 0) / 100; });
+  return {land: c.lease * PLOT_M2 / SAR, land_buy: c.buy * PLOT_M2 / SAR, build: c.build, life: c.life, dep: c.dep, cepci: c.cepci, esc_p: c.escp / 100, esc_c: c.escc / 100, wc: c.wc / 100, salvage: c.sal / 100, cbm_add: add}; }
+const MKX = () => Object.assign(ecMK(), ST.MK, {hi: ST.HI});
+const SCMK = mk => Object.assign(ecMK(), mk, {hi: ST.HI});   // a scenario of the market page with the economic inputs of the economics page
 const lims = () => ST.MODE === 'safe' ? limitsFor('safe', ST.margin / 100) : limitsFor('max', 0);
 let E, E0, DES = evaluate([0.40, 0.10, 0.90, 1], {});
 function compute() { const L = lims(); E = evaluate(ST.X, MKX(), L); E0 = evaluate([0.40, 0.10, 0.90, 1], MKX(), L); }
@@ -1465,7 +1588,7 @@ function resetPage(p, quiet) {
   if (p === 'process' || p === 'all') { ST.pfdHI = false; ST.pfdFlow = true; ST.sec = 'all'; ST.stq = ''; closeDrawer(); }
   if (p === 'heat' || p === 'all') { ST.HI = true; ST.dT = 10; ST.cpm = 550; }
   if (p === 'control' || p === 'all') { ST.loop = 'TC-310'; ST.pids = initPids(); ST.iSeg = 'all'; ST.iq = ''; ST.pidSel = 'base'; pidZoom = null; }
-  if (p === 'economics' || p === 'all') { MC = null; }
+  if (p === 'economics' || p === 'all') { MC = null; ST.EC = D.EC; ST.MK = {}; ST.SCID = 'base'; AIRES = {}; HICACHE = {}; }
   if (p === 'market' || p === 'all') { ST.MK = {}; ST.SCID = 'base'; ST.scf = 'all'; AIRES = {}; }
   if (p === 'safety' || p === 'all') { ST.FK = '1'; ST.ft = 598; stopPlay(); }
   if (p === 'emethanol' || p === 'all') { ST.em = D.em; }
@@ -1481,7 +1604,7 @@ function syncInputs() {
   $$('#lpick .lp').forEach(b => b.classList.toggle('on', b.dataset.l === ST.loop)); syncLoopInputs();
   $$('#iSeg button').forEach(b => b.classList.toggle('on', b.dataset.k === ST.iSeg)); $('iq').value = ST.iq; $$('#pidSel button').forEach(b => b.classList.toggle('on', b.dataset.k === ST.pidSel));
   MS.forEach(([id, k, dflt, , inv]) => set(id, inv(k in ST.MK ? ST.MK[k] : dflt))); $$('#scFilt button').forEach(b => b.classList.toggle('on', b.dataset.k === ST.scf));
-  set('ft', ST.ft); set('ef', ST.em.f); set('ec', ST.em.c); $$('#etech button').forEach(b => b.classList.toggle('on', b.dataset.k === ST.em.tech));
+  syncEcon(); set('ft', ST.ft); set('ef', ST.em.f); set('ec', ST.em.c); $$('#etech button').forEach(b => b.classList.toggle('on', b.dataset.k === ST.em.tech));
   $$('input[type=range]').forEach(fillRange);
 }
 // ===================================================================== global render
@@ -1531,14 +1654,14 @@ function buildOverview() {
     <div class="no">${n}</div>
     <div class="tx"><h3>${h}</h3><p>${p}</p><dl>${dl.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl><span class="open">Open on the flowsheet</span></div>
     <div class="art" style="${art.length > 1 ? 'display:grid;grid-template-columns:1fr 1fr;gap:10px' : ''}">${art.map(a => `<div class="plot"><img src="art/${a}.webp" width="${ART[a][0]}" height="${ART[a][1]}" alt="Line drawing of ${h.toLowerCase()} equipment" loading="lazy" decoding="async"></div>`).join('')}</div>
-    <div class="link">${out.map(([sn, t]) => `${sdia(sn, c)}<span>Stream ${sn}, ${t}</span>`).join('')}</div></li>`).join('');
+    <div class="link">${out.map(([sn, t]) => `<span class="lk">${sdia(sn, c)}<span>Stream ${sn}, ${t}</span></span>`).join('')}</div></li>`).join('');
   $$('#chain li').forEach(s => { const open = () => { ST.sec = s.dataset.sec; syncInputs(); go('process'); }; s.addEventListener('click', open); s.addEventListener('keydown', e => { if (e.key === 'Enter') open(); }); });
   // the drawing register: every sheet of the twin
   const F = [['02', 'process', 'Process flow diagram', 'Every unit with its symbol, live flows and a data sheet; the stream table follows the set point.', 'Figures 3.79, 4.18'],
    ['03', 'operations', 'Operations and AI set points', 'Differential evolution finds the most profitable, the safest or the largest operation inside the equipment limits.', 'Section 10.2'],
    ['04', 'heat', 'Heat integration', 'Composite curves, the ΔTmin trade-off and the effect of the network on energy, cost and control.', 'Chapter 4'],
    ['05', 'control', 'Process control', 'Tune four loops with five methods, follow the response and browse 34 loops and both P&IDs.', 'Chapter 6'],
-   ['06', 'economics', 'Economics', 'Cash flow, cost structure, tornado sensitivity and a 4,000-trial Monte Carlo of the NPV.', 'Chapter 8'],
+   ['06', 'economics', 'Economics', 'Every price, equipment cost, land, time and finance input can be changed; cash flow, tornado and a 4,000-trial Monte Carlo follow.', 'Chapter 8'],
    ['07', 'market', 'Market and scenarios', 'Prices of 2025–2026 and fourteen scenarios, from the base case to the 2026 Gulf and Red Sea crisis.', 'Table 8.27'],
    ['08', 'safety', 'Process monitoring', 'PCA monitoring of eight signals with T², Q and a k-NN diagnosis of five faults.', 'Section 10.4'],
    ['09', 'emethanol', 'Solar e-methanol', 'The purge carbon becomes extra methanol with electrolytic hydrogen and Saudi solar power.', 'Section 10.5'],
@@ -1580,6 +1703,8 @@ function heroCanvas() {
   const size = () => { const r = cv.getBoundingClientRect(); if (!r.width) return; dpr = Math.min(1.75, devicePixelRatio || 1); w = cv.width = Math.round(r.width * dpr); h = cv.height = Math.round(r.height * dpr); Z = zone();
     const n = Math.round(Math.min(300, Math.max(110, r.width * r.height / 4600))); S = Array.from({length: n}, () => shard(Z, true)); M = []; heat = []; };
   size(); addEventListener('resize', () => { clearTimeout(size.t); size.t = setTimeout(size, 150); }); if (document.fonts) document.fonts.ready.then(size);
+  // the hero may first be shown after another sheet: size the canvas as soon as it has a size of its own
+  if ('ResizeObserver' in window) new ResizeObserver(() => { clearTimeout(size.t); size.t = setTimeout(size, 60); }).observe(cv);
   hero.addEventListener('pointermove', e => { const r = cv.getBoundingClientRect(); mouse.x = (e.clientX - r.left) * dpr; mouse.y = (e.clientY - r.top) * dpr; });
   hero.addEventListener('pointerleave', () => { mouse.x = mouse.y = -1e4; });
   if ('IntersectionObserver' in window) new IntersectionObserver(es => { vis = es[0].isIntersecting; }).observe(cv);
@@ -1619,7 +1744,7 @@ function heroCanvas() {
         ctx.fillStyle = dk ? '#eaf1f8' : '#f6f7f4'; ctx.beginPath(); ctx.arc(x + 9.5 * dpr, y - 2.5 * dpr, 2 * dpr, 0, 6.283); ctx.fill(); ctx.stroke(); }
       ctx.globalAlpha = 1; }
   };
-  const tick = t => { heroAnim = requestAnimationFrame(tick); if (PAGE !== 'overview' || !vis || document.hidden || !w) return; if (still.matches) { if (!tick.once) { tick.once = 1; draw(t); } return; } draw(t); };
+  const tick = t => { heroAnim = requestAnimationFrame(tick); if (PAGE !== 'overview' || !vis || document.hidden) return; if (!w) { size(); if (!w) return; } if (still.matches) { if (!tick.once) { tick.once = 1; draw(t); } return; } draw(t); };
   requestAnimationFrame(tick);
 }
 // ===================================================================== PROCESS
@@ -1680,6 +1805,8 @@ function openUnit(id) {
 function closeDrawer() { $('drawer').classList.remove('open'); $('drawer').setAttribute('aria-hidden', 'true'); $$('#pfd .u').forEach(g => g.classList.remove('sel')); }
 $('dclose').addEventListener('click', closeDrawer);
 $('pfdHI').addEventListener('change', e => { ST.pfdHI = e.target.checked; rProcess(); });
+$('pfdFull').addEventListener('click', () => { const c = $('pfd').closest('.card'); if (document.fullscreenElement) document.exitFullscreen(); else if (c.requestFullscreen) c.requestFullscreen().catch(() => {}); });
+document.addEventListener('fullscreenchange', () => { $('pfdFull').textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen'; });
 $('pfdFlow').addEventListener('change', e => { ST.pfdFlow = e.target.checked; rProcess(); });
 $$('#secSeg button').forEach(b => b.addEventListener('click', () => { ST.sec = b.dataset.s; $$('#secSeg button').forEach(x => x.classList.toggle('on', x === b)); rProcess(); }));
 $('stq').addEventListener('input', e => { ST.stq = e.target.value; rProcess(); });
@@ -1703,7 +1830,7 @@ function rOps() {
   const sc = v => Math.max(0, Math.min(100, (v - 0.75) / 0.37 * 100));
   $('bars').innerHTML = rows.map(([n, v, l]) => { const c = v > l * (1 + 1e-6) ? 'bad' : v > l * 0.98 ? 'warn' : ''; return `<div class="bar"><span>${n}</span><div class="track"><i class="${c}" style="width:${sc(v)}%"></i><b style="left:${sc(1)}%"></b><s style="left:${sc(l)}%"></s></div><span>${fmt(v * 100, 1)} %</span></div>`; }).join('');
   const cum = (cf, i) => { let d = 0; return cf.map((c, y) => [y, (d += c / Math.pow(1 + i, y)) / 1e6]); }; const a = cum(E.cf, E.p.i), bb = cum(E0.cf, E0.p.i);
-  const ys = a.concat(bb).map(p => p[1]); plot('opCF', {x: [0, 22], y: [Math.min(-500, ...ys) - 20, Math.max(200, ...ys) + 30], xt: 2, xl: 'Year from the start of construction', series: [{d: bb, c: 'var(--c-lb)', dash: '6 4'}, {d: a, c: cssv('--navy'), w: 2.8}],
+  const ys = a.concat(bb).map(p => p[1]); plot('opCF', {x: [0, E.cf.length - 1], y: [Math.min(-500, ...ys) - 20, Math.max(200, ...ys) + 30], xt: 2, xl: 'Year from the start of construction', series: [{d: bb, c: 'var(--c-lb)', dash: '6 4'}, {d: a, c: cssv('--navy'), w: 2.8}],
     tip: x => { const y = Math.round(x); return `<b>Year ${y}</b><br>Current: ${fmt(interp(a, y), 1)} M$<br>Design point: ${fmt(interp(bb, y), 1)} M$`; }});
   const ks = [11, 12, 15, 16, 17, 18, 20, 23, 24, 25, 26, 29];
   $('opStreams').innerHTML = '<thead><tr><th>Stream</th><th>Description</th><th>Design (kmol/h)</th><th>Now (kmol/h)</th><th>Change</th></tr></thead><tbody>' + ks.map(n => { const v = liveFlow(n, E.r), b = liveFlow(n, DES.r), x = (v / b - 1) * 100;
@@ -1766,7 +1893,7 @@ function rHeat() {
   $('impact').innerHTML = IMP.map(([k, big, li]) => `<div class="imp"><div class="k">${k}</div><div class="big">${big}</div><ul>${li.map(l => `<li>${l}</li>`).join('')}</ul></div>`).join('');
   $('hiBox').innerHTML = ST.HI ? `The heat-integrated design is selected. Its NPV is <b>${money(eNo.npv === undefined ? 0 : evaluate([0.4, 0.1, 0.9, 1], Object.assign(MKX(), {hi: true})).npv)} M</b> in the selected market.` : `The base flowsheet without heat integration is selected: NPV <b>${money(eNo.npv)} M</b>. All other pages now use this plant.`;
   // ΔTmin trade-off
-  const key = ST.cpm + '|' + JSON.stringify(ST.MK); if (HICACHE.key !== key) { const rows = []; for (let d = 5; d <= 40.001; d += 1) { const Pd = pinchAnalysis(d), Ad = areaTarget(Pd), en = HEATC * Pd.QH + CWC * Pd.CW + CHWC * Pd.CHW, cap = Ad * cpm * FCIF * CRF; rows.push([d, en / 1e6, cap / 1e6, (en + cap) / 1e6, econDT(d, cpm).npv]); } HICACHE = {key, rows}; }
+  const key = ST.cpm + '|' + JSON.stringify(MKX()); if (HICACHE.key !== key) { const rows = []; for (let d = 5; d <= 40.001; d += 1) { const Pd = pinchAnalysis(d), Ad = areaTarget(Pd), en = HEATC * Pd.QH + CWC * Pd.CW + CHWC * Pd.CHW, cap = Ad * cpm * FCIF * CRF; rows.push([d, en / 1e6, cap / 1e6, (en + cap) / 1e6, econDT(d, cpm).npv]); } HICACHE = {key, rows}; }
   const R = HICACHE.rows; const opt = R.reduce((a, b) => b[3] < a[3] ? b : a); const best = R.reduce((a, b) => b[4] > a[4] ? b : a);
   const en0 = HEATC * P.QH + CWC * P.CW + CHWC * P.CHW, cap0 = A * cpm * FCIF * CRF;
   plot('stChart', {x: [5, 40], y: [0, Math.ceil(Math.max(...R.map(r => r[3])) / 2) * 2], xt: 5, xl: 'ΔTmin (°C)', series: [{d: R.map(r => [r[0], r[1]]), c: 'var(--c-or)'}, {d: R.map(r => [r[0], r[2]]), c: 'var(--c-bl)'}, {d: R.map(r => [r[0], r[3]]), c: cssv('--navy'), w: 3}],
@@ -1945,25 +2072,83 @@ $('zin').addEventListener('click', () => { const r = pv.getBoundingClientRect();
 $('zout').addEventListener('click', () => { const r = pv.getBoundingClientRect(); zoomAt(1 / 1.35, r.width / 2, r.height / 2); });
 $('zfit').addEventListener('click', fitPid);
 // ===================================================================== ECONOMICS
+// ===================================================================== ECONOMICS
+const DEPS = [['macrs5', 'MACRS 5'], ['macrs7', 'MACRS 7'], ['macrs10', 'MACRS 10'], ['sl10', 'SL 10 y']];
+const ES = {
+  eq: EQX.map(([k, l], j) => ['eq' + j, 'eq.' + k, l, -50, 100, 1, v => (v > 0 ? '+' : '') + fmt(v) + ' %', null]),
+  cap: [['lease', 'lease', 'Land lease (SAR/m² per year)', 0, 20, 0.5, v => fmt(v, 1), '0 = plot provided free (Chapter 8); RCJY lease 4.5 SAR/m²'],
+    ['buy', 'buy', 'Land purchase (SAR/m²)', 0, 1500, 10, v => fmt(v), '12.6 ha plot, paid in year 0 and recovered at the end'],
+    ['wc', 'wc', 'Working capital (% of FCI)', 5, 25, 1, v => fmt(v) + ' %', 'Chapter 8: 10 %'], ['sal', 'sal', 'Salvage value (% of FCI)', 0, 15, 1, v => fmt(v) + ' %', 'Chapter 8: 5 %']],
+  time: [['build', 'build', 'Construction period', 1, 4, 1, v => fmt(v) + (+v === 1 ? ' year' : ' years'), 'Fixed capital spread evenly; Chapter 8: 2 years (50 % / 50 %)'],
+    ['life', 'life', 'Operating life', 10, 30, 1, v => fmt(v) + ' years', 'Chapter 8: 20 years of operation'],
+    ['cepci', 'cepci', 'Cost index (CEPCI) of the purchase', 700, 1000, 0.1, v => fmt(v, 1), 'Chapter 8: 840.9; scales the cost of every unit'],
+    ['escp', 'escp', 'Escalation of the product prices (%/year)', -3, 5, 0.25, v => (v > 0 ? '+' : '') + fmt(v, 2) + ' %', 'Chapter 8: constant prices'],
+    ['escc', 'escc', 'Escalation of the operating costs (%/year)', -3, 5, 0.25, v => (v > 0 ? '+' : '') + fmt(v, 2) + ' %', 'Chapter 8: constant costs']]};
+const ESALL = () => ES.eq.concat(ES.cap, ES.time);
+const ecGet = k => k.startsWith('eq.') ? ST.EC.eq[k.slice(3)] : ST.EC[k];
+const ecSet = (k, v) => { if (k.startsWith('eq.')) ST.EC.eq[k.slice(3)] = v; else ST.EC[k] = v; };
+const EC_MS = {price: ['pm', 'ph', 'pw', 'pe', 'ng', 'lg'], cap: ['fc'], fin: ['ir', 'tx', 'av']};
+function buildEcon() {
+  const msCtl = id => { const [, , dflt, , inv, l, mn, mx, st] = MS.find(z => z[0] === id); return `<div class="ctl"><label for="e${id}">${l} <output id="o-e${id}"></output></label><input id="e${id}" type="range" min="${mn}" max="${mx}" step="${st}" value="${inv(dflt)}"></div>`; };
+  const ecCtl = ([id, k, l, mn, mx, st, , ref]) => `<div class="ctl"><label for="x${id}">${l} <output id="o-x${id}"></output></label><input id="x${id}" type="range" min="${mn}" max="${mx}" step="${st}" value="${ecGet(k)}">${ref ? `<span class="ref">${ref}</span>` : ''}</div>`;
+  $('ecPrice').innerHTML = EC_MS.price.map(msCtl).join('') + '<p class="note">The same prices are used by the market page and by the AI search.</p>';
+  $('ecCap').innerHTML = '<h4>Equipment, change of the bare-module cost</h4>' + ES.eq.map(ecCtl).join('') + msCtl('fc') + '<h4>Land and capital</h4>' + ES.cap.map(ecCtl).join('');
+  $('ecTime').innerHTML = ES.time.map(ecCtl).join('') + '<p class="note">Escalation is counted from year 0; the interest rate stays as set on the Finance tab.</p>';
+  $('ecFin').innerHTML = EC_MS.fin.map(msCtl).join('') + '<h4>Depreciation</h4><div class="seg full" id="xdep" style="grid-template-columns:repeat(2,1fr)">' + DEPS.map(([k, l]) => `<button data-k="${k}">${l}</button>`).join('') + '</div><p class="note">Chapter 8 compares six methods; the 5-year MACRS gives the highest NPV and is the design basis.</p>';
+  EC_MS.price.concat(EC_MS.cap, EC_MS.fin).forEach(id => { const [, k, , fwd] = MS.find(z => z[0] === id); $('e' + id).addEventListener('input', e => { ST.MK[k] = fwd(+e.target.value); ST.SCID = 'custom'; HICACHE = {}; render(); }); });
+  ESALL().forEach(([id, k]) => $('x' + id).addEventListener('input', e => { ecSet(k, +e.target.value); HICACHE = {}; AIRES = {}; render(); }));
+  $$('#xdep button').forEach(b => b.addEventListener('click', () => { ST.EC.dep = b.dataset.k; HICACHE = {}; AIRES = {}; syncEcon(); render(); }));
+  $$('#ecTab button').forEach(b => b.addEventListener('click', () => { ST.ecTab = b.dataset.k; syncEcon(); }));
+}
+function syncEcon() {
+  if (!$('ecPrice')) return; const set = (id, v) => { const el = $(id); if (el) { el.value = v; fillRange(el); } };
+  EC_MS.price.concat(EC_MS.cap, EC_MS.fin).forEach(id => { const [, k, dflt, , inv] = MS.find(z => z[0] === id); set('e' + id, inv(k in ST.MK ? ST.MK[k] : dflt)); });
+  ESALL().forEach(([id, k]) => set('x' + id, ecGet(k)));
+  $$('#xdep button').forEach(b => b.classList.toggle('on', b.dataset.k === ST.EC.dep));
+  $$('#ecTab button').forEach(b => b.classList.toggle('on', b.dataset.k === ST.ecTab)); $$('.ecin .ecg').forEach(g => g.classList.toggle('on', g.dataset.g === ST.ecTab));
+}
+// inputs that differ from Chapter 8, listed with the value of the report
+function ecChanges() {
+  const out = []; MS.forEach(([id, k, dflt, , inv, l, , , , f]) => { if (k in ST.MK && Math.abs(ST.MK[k] - dflt) > 1e-9) out.push([l.replace(/ \(.*\)$/, ''), f(inv(ST.MK[k])), f(inv(dflt))]); });
+  const D = DEF.EC; ESALL().forEach(([id, k, l, , , , f]) => { const v = ecGet(k), d = k.startsWith('eq.') ? 0 : D[k]; if (Math.abs(v - d) > 1e-9) out.push([l.replace(/ \(.*\)$/, ''), f(v), f(d)]); });
+  if (ST.EC.dep !== D.dep) out.push(['Depreciation', DEPS.find(d => d[0] === ST.EC.dep)[1], 'MACRS 5']);
+  if (!ST.HI) out.push(['Heat integration', 'OFF', 'ON']); return out;
+}
 function rEcon() {
-  const p = E0.p, D = econDetail(p), ind = indicators(E0.cf, p.i), full = D.full;
-  const K = [['Fixed-capital investment', money(D.F / 1e6) + ' M', 'var(--navy)', ST.HI ? 'Turton module method, CEPCI 840.9' : 'without heat integration'], ['Annual revenue', money(full.R / 1e6) + ' M', 'var(--green)', 'full capacity'],
-   ['Cost of manufacturing', money(full.C / 1e6) + ' M/y', 'var(--orange)', 'COMd, Turton correlation'], ['Net present value', money(ind.npv) + ' M', 'var(--blue)', 'at ' + fmt(p.i * 100, 1) + ' %, 20 years'],
-   ['DCFROR', ind.irr === null ? '—' : fmt(ind.irr * 100, 2) + ' %', 'var(--gold)', 'discounted payback ' + (ind.dpb === null ? '—' : fmt(ind.dpb, 2) + ' years')], ['ROROI / payback', fmt(D.roroi * 100, 2) + ' % · ' + fmt(D.pbp, 2) + ' y', 'var(--grey)', 'non-discounted']];
+  const p = E0.p, D = econDetail(p), ind = indicators(E0.cf, p.i, D.B), full = D.full, cep = p.cepci || 840.9;
+  // input read-outs and the list of changes
+  EC_MS.price.concat(EC_MS.cap, EC_MS.fin).forEach(id => { const m = MS.find(z => z[0] === id); $('o-e' + id).value = m[9](+$('e' + id).value); });
+  ESALL().forEach(([id, k, , , , , f]) => { $('o-x' + id).value = f(ecGet(k)); });
+  const ch = ecChanges(); $('ecDiff').className = 'box' + (ch.length ? ' or' : '');
+  $('ecDiff').innerHTML = ch.length ? `<b>Changed from Chapter 8</b><ul>${ch.map(([l, v, d]) => `<li>${l}: <b>${v}</b> <span style="color:var(--graphite)">(report ${d})</span></li>`).join('')}</ul><p style="margin:8px 0 0">NPV ${money(ind.npv)} M against ${money(DES.npv)} M in the report (${ind.npv - DES.npv >= 0 ? '+' : '−'}${fmt(Math.abs(ind.npv - DES.npv), 2)} M$).</p>`
+    : `Every input is at its value in Chapter 8: NPV ${money(DES.npv)} M, DCFROR ${fmt(DES.irr * 100, 2)} %.`;
+  const K = [['Fixed-capital investment', money(D.F / 1e6) + ' M', 'var(--navy)', (ST.HI ? 'Turton module method' : 'without heat integration') + ', CEPCI ' + fmt(cep, 1)], ['Annual revenue', money(full.R / 1e6) + ' M', 'var(--green)', 'full capacity, year ' + full.y],
+   ['Cost of manufacturing', money(full.C / 1e6) + ' M/y', 'var(--orange)', 'COMd, Turton correlation'], ['Net present value', money(ind.npv) + ' M', 'var(--blue)', 'at ' + fmt(p.i * 100, 1) + ' %, ' + D.L + ' years of operation'],
+   ['DCFROR', ind.irr === null ? '—' : fmt(ind.irr * 100, 2) + ' %', 'var(--gold)', 'discounted payback ' + (ind.dpb === null ? 'beyond the life' : fmt(ind.dpb, 2) + ' years')], ['ROROI / payback', fmt(D.roroi * 100, 2) + ' % · ' + fmt(D.pbp, 2) + ' y', 'var(--grey)', 'non-discounted']];
   $('ecK').innerHTML = K.map(([l, v, c, d]) => `<div class="kpi" style="--c:${c}"><div class="l">${l}</div><div class="v" style="font-size:24px">${v}</div><div class="d">${d}</div></div>`).join('');
   let cu = 0, cd = 0; const cum = [], cdis = []; D.rows.forEach(r => { cu += r.cf; cd += r.cf / Math.pow(1 + p.i, r.y); cum.push([r.y, cu / 1e6]); cdis.push([r.y, cd / 1e6]); });
   const all = D.rows.map(r => r.cf / 1e6).concat(cum.map(c => c[1]), cdis.map(c => c[1]));
-  plot('ecCF', {x: [-0.6, 22.6], y: [Math.floor(Math.min(...all) / 100) * 100, Math.ceil(Math.max(...all) / 100) * 100], xt: 2, xl: 'Year', bars: D.rows.map(r => ({x: r.y, y: r.cf / 1e6, w: 13, c: r.cf < 0 ? 'var(--c-rs)' : 'var(--c-lb)'})),
-    series: [{d: cum, c: 'var(--c-or)', dash: '6 4'}, {d: cdis, c: cssv('--navy'), w: 2.8}], tip: x => { const y = Math.max(0, Math.min(22, Math.round(x))), r = D.rows[y]; return `<b>Year ${y}</b><br>Cash flow ${fmt(r.cf / 1e6, 2)} M$${r.R ? `<br>Revenue ${fmt(r.R / 1e6, 1)} · COMd ${fmt(r.C / 1e6, 1)}` : ''}<br>Cumulative ${fmt(cum[y][1], 1)} · discounted ${fmt(cdis[y][1], 1)}`; }});
+  plot('ecCF', {x: [-0.6, D.N + 0.6], y: [Math.floor(Math.min(...all) / 100) * 100, Math.ceil(Math.max(...all) / 100) * 100], xt: D.N > 26 ? 4 : 2, xl: 'Year', bars: D.rows.map(r => ({x: r.y, y: r.cf / 1e6, w: Math.max(5, 13 * 22 / D.N), c: r.cf < 0 ? 'var(--c-rs)' : 'var(--c-lb)'})),
+    series: [{d: cum, c: 'var(--c-or)', dash: '6 4'}, {d: cdis, c: cssv('--navy'), w: 2.8}], tip: x => { const y = Math.max(0, Math.min(D.N, Math.round(x))), r = D.rows[y]; return `<b>Year ${y}</b><br>Cash flow ${fmt(r.cf / 1e6, 2)} M$${r.R ? `<br>Revenue ${fmt(r.R / 1e6, 1)} · COMd ${fmt(r.C / 1e6, 1)}` : ''}<br>Cumulative ${fmt(cum[y][1], 1)} · discounted ${fmt(cdis[y][1], 1)} M$`; }});
   const ir = []; for (let i = 0; i <= 0.2001; i += 0.005) ir.push([i * 100, npvAt(E0.cf, i) / 1e6]);
   plot('ecIR', {x: [0, 20], y: [Math.floor(Math.min(...ir.map(v => v[1])) / 200) * 200, Math.ceil(Math.max(...ir.map(v => v[1])) / 200) * 200], xt: 2, xl: 'Interest rate (%)', series: [{d: ir, c: cssv('--navy'), w: 2.8}],
     pts: [{x: p.i * 100, y: ind.npv, c: 'var(--c-or)'}].concat(ind.irr !== null ? [{x: ind.irr * 100, y: 0, c: 'var(--c-gr)'}] : []), tip: x => `<b>i = ${fmt(x, 1)} %</b><br>NPV ${fmt(interp(ir, x), 1)} M$`});
-  const tot = CBM.reduce((a, c) => a + c[2], 0), SC = {gas: 'var(--sec-gas)', syn: 'var(--sec-syn)', wgs: 'var(--sec-wgs)', pur: 'var(--sec-pur)', feed: 'var(--sec-feed)', hi: 'var(--red)'};
-  $('cbm').innerHTML = CBM.slice(0, 14).map(([n, d, v, s]) => `<div class="bar" style="grid-template-columns:132px minmax(0,1fr) 86px" title="${d}"><span>${n}</span><div class="track"><i style="width:${v / CBM[0][2] * 100}%;background:${SC[s]}"></i></div><span>${fmt(v / 1e6, 2)} M$</span></div>`).join('') +
-    `<div class="bar" style="grid-template-columns:132px minmax(0,1fr) 86px"><span>Others (${CBM.length - 14})</span><div class="track"><i style="width:${CBM.slice(14).reduce((a, c) => a + c[2], 0) / CBM[0][2] * 100}%;background:var(--grey)"></i></div><span>${fmt(CBM.slice(14).reduce((a, c) => a + c[2], 0) / 1e6, 2)} M$</span></div>
-    <div class="lg"><span><i class="sw" style="background:var(--sec-gas)"></i>Gasification</span><span><i class="sw" style="background:var(--sec-wgs)"></i>Shift and H₂</span><span><i class="sw" style="background:var(--sec-syn)"></i>Synthesis</span><span><i class="sw" style="background:var(--sec-pur)"></i>Purification</span><span><i class="sw" style="background:var(--sec-feed)"></i>Feed</span><span class="mini">Total ${money(tot / 1e6)} M</span></div>`;
-  const pr = full.parts, com = full.C; const parts = [['Raw materials (1.23 CRM)', 1.23 * pr.CRM * p.com_mult, 'var(--c-gr)'], ['Utilities (1.23 CUT)', 1.23 * pr.CUT * p.com_mult, 'var(--c-or)'], ['FCI-related (0.153 FCI)', pr.coefF * p.com_mult, cssv('--navy')], ['Operating labour (2.73 COL)', 2.73 * pr.COL * p.com_mult, 'var(--c-go)'], ['Waste treatment (1.23 CWT)', 1.23 * pr.CWT * p.com_mult, 'var(--c-gy)']];
-  donut('comD', parts, [money(com / 1e6, 1) + ' M', 'COMd per year']); $('comTot').textContent = 'year 5, full capacity'; $('comLg').innerHTML = parts.map(([n, v, c]) => `<span><i class="sw" style="background:${c}"></i>${n}: ${fmt(v / 1e6, 2)} M$</span>`).join('');
+  // effect of time: NPV against the operating life for each construction period
+  const TC = ['var(--c-gr)', cssv('--navy'), 'var(--c-or)', 'var(--c-rd)'], lines = [1, 2, 3, 4].map(b => { const d = []; for (let L = 10; L <= 30; L++) d.push([L, npvAt(cashflow(Object.assign({}, p, {build: b, life: L})), p.i) / 1e6]); return d; });
+  const tv = lines.flat().map(q => q[1]);
+  plot('ecTimeC', {x: [10, 30], y: [Math.floor(Math.min(...tv, 0) / 50) * 50, Math.ceil(Math.max(...tv) / 50) * 50], xt: 2, xl: 'Operating life (years)', series: lines.map((d, k) => ({d, c: TC[k], w: k + 1 === D.B ? 3 : 1.6, dash: k + 1 === D.B ? '' : '5 4'})),
+    pts: [{x: D.L, y: ind.npv, c: 'var(--c-gr)'}], tip: x => { const L = Math.round(x); return `<b>${L} years of operation</b><br>` + lines.map((d, k) => `${k + 1}-year construction: ${fmt(interp(d, L), 1)} M$`).join('<br>'); }});
+  $('ecTimeLg').innerHTML = [1, 2, 3, 4].map((b, k) => `<span><i class="sw ${b === D.B ? 'ln' : 'dash'}" style="${b === D.B ? 'background' : 'border-color'}:${TC[k]}"></i>${b}-year construction${b === 2 ? ' (report)' : ''}</span>`).join('') + '<span><i class="sw dot" style="background:var(--c-gr)"></i>Selected</span>';
+  // bare-module costs as changed on the Capital tab and by the cost index
+  const SC = {gas: 'var(--sec-gas)', syn: 'var(--sec-syn)', wgs: 'var(--sec-wgs)', pur: 'var(--sec-pur)', feed: 'var(--sec-feed)', hi: 'var(--red)'}, kx = cep / 840.9;
+  const cb = CBM.map(([n, d, v, sec]) => { const k = EQX.some(e => e[0] === n) ? n : '*', m = 1 + (ST.EC.eq[k] || 0) / 100; return [n, d, v * m * kx, sec, m * kx]; }), top = Math.max(...cb.map(c => c[2])), tot = cb.reduce((a, c) => a + c[2], 0);
+  const rest = cb.slice(13), rv = rest.reduce((a, c) => a + c[2], 0), tag = m => Math.abs(m - 1) > 1e-6 ? ` <small style="color:var(--hot)">${m > 1 ? '+' : '−'}${fmt(Math.abs(m - 1) * 100, 0)} %</small>` : '';
+  $('cbm').innerHTML = cb.slice(0, 13).map(([n, d, v, sc, m]) => `<div class="bar" style="grid-template-columns:132px minmax(0,1fr) 104px" title="${d}"><span>${n}</span><div class="track"><i style="width:${v / top * 100}%;background:${SC[sc]}"></i></div><span>${fmt(v / 1e6, 2)} M$${tag(m)}</span></div>`).join('') +
+    `<div class="bar" style="grid-template-columns:132px minmax(0,1fr) 104px"><span>Others (${rest.length})</span><div class="track"><i style="width:${rv / top * 100}%;background:var(--grey)"></i></div><span>${fmt(rv / 1e6, 2)} M$${tag(rest[0][4])}</span></div>
+    <div class="lg"><span><i class="sw" style="background:var(--sec-gas)"></i>Gasification</span><span><i class="sw" style="background:var(--sec-wgs)"></i>Shift and H₂</span><span><i class="sw" style="background:var(--sec-syn)"></i>Synthesis</span><span><i class="sw" style="background:var(--sec-pur)"></i>Purification</span><span><i class="sw" style="background:var(--sec-feed)"></i>Feed</span></div>`;
+  $('cbmTot').textContent = '∑CBM = ' + money(tot / 1e6) + ' M';
+  const pr = full.parts, com = full.C; const parts = [['Raw materials (1.23 CRM)', 1.23 * pr.CRM * p.com_mult, 'var(--c-gr)'], ['Utilities (1.23 CUT)', 1.23 * pr.CUT * p.com_mult, 'var(--c-or)'], ['FCI-related (0.153 FCI)', pr.coefF * p.com_mult, cssv('--navy')], ['Operating labour (2.73 COL)', 2.73 * pr.COL * p.com_mult, 'var(--c-go)'], ['Waste treatment (1.23 CWT)', 1.23 * pr.CWT * p.com_mult, 'var(--c-gy)']].concat(p.land ? [['Land lease', p.land, 'var(--c-rs)']] : []);
+  donut('comD', parts, [money(com / 1e6, 1) + ' M', 'COMd per year']); $('comTot').textContent = 'year ' + full.y + ', full capacity'; $('comLg').innerHTML = parts.map(([n, v, c]) => `<span><i class="sw" style="background:${c}"></i>${n}: ${fmt(v / 1e6, 2)} M$</span>`).join('');
   const base = ind.npv; const ev = mk => evaluate([0.4, 0.1, 0.9, 1], Object.assign(MKX(), mk)).npv; const m0 = MKX(); const pm = m0.p_meoh || 393, ph = m0.p_h2 || 2473, pw = m0.p_mpw ?? 80, ii = m0.i || 0.1;
   const T = [['Product prices', ev({p_meoh: pm * 1.2, p_h2: ph * 1.2}), ev({p_meoh: pm * 0.8, p_h2: ph * 0.8})], ['Cost of manufacturing', ev({com_mult: 0.8}), ev({com_mult: 1.2})], ['Fixed capital (FCI)', ev({fci_mult: (m0.fci_mult || 1) * 0.8}), ev({fci_mult: (m0.fci_mult || 1) * 1.2})],
  ['Interest rate', ev({i: ii * 0.8}), ev({i: ii * 1.2})], ['MPW price', ev({p_mpw: pw * (pw >= 0 ? 0.8 : 1.2)}), ev({p_mpw: pw * (pw >= 0 ? 1.2 : 0.8)})],
@@ -1974,8 +2159,8 @@ function rEcon() {
   g += `<line x1="${X(base)}" x2="${X(base)}" y1="4" y2="${10 + rh * T.length}" stroke="var(--ink)" stroke-width="2"/><text x="${X(base)}" y="${44 + rh * T.length}" text-anchor="middle" style="font-size:13px;fill:var(--ink);font-weight:700">Base NPV ${fmt(base, 1)} M$</text>`;
   svg.innerHTML = g; bindTips(svg, '.tb');
   drawMC();
-  const S = [['Fixed-capital investment', money(D.F, 2), 'Turton module method, CEPCI = 840.9'], ['Total capital investment', money(D.F + D.WC, 2), 'WC = 10 % of FCI'], ['Annual revenue', money(full.R, 2) + '/yr', `MeOH $${fmt(m0.p_meoh || 393, 2)}/t, H₂ $${fmt(m0.p_h2 || 2473, 2)}/t`],
-   ['Cost of manufacturing', money(full.C, 2) + '/yr', 'Turton correlation (KSA)'], ['Gross margin', money(full.R - full.C, 2) + '/yr', 'Before depreciation and tax'], ['Average net profit', money(D.npavg, 2) + '/yr', 'After depreciation and zakat'],
+  const S = [['Fixed-capital investment', money(D.F, 2), 'Turton module method, CEPCI = ' + fmt(cep, 1)], ['Total capital investment', money(D.F + D.WC, 2), 'WC = ' + fmt(ST.EC.wc) + ' % of FCI'], ['Annual revenue', money(full.R, 2) + '/yr', `MeOH $${fmt(m0.p_meoh || 393, 2)}/t, H₂ $${fmt(m0.p_h2 || 2473, 2)}/t`],
+   ['Cost of manufacturing', money(full.C, 2) + '/yr', 'Turton correlation (KSA)'], ['Gross margin', money(full.R - full.C, 2) + '/yr', 'Before depreciation and tax'], ['Average net profit', money(D.npavg, 2) + '/yr', 'After depreciation (' + DEPS.find(d => d[0] === ST.EC.dep)[1] + ') and ' + (p.tax === 0.025 ? 'zakat' : 'tax of ' + fmt(p.tax * 100, 1) + ' %')],
    ['Net present value', money(ind.npv * 1e6, 2), ind.npv > 0 ? 'NPV > 0 ✓' : 'NPV < 0'], ['DCFROR', ind.irr === null ? '—' : fmt(ind.irr * 100, 2) + ' %', ind.irr > p.i ? 'DCFROR > i ✓' : 'DCFROR < i'], ['Rate of return on investment', fmt(D.roroi * 100, 2) + ' %', D.roroi > p.i ? 'ROROI > i ✓' : 'ROROI < i'],
    ['Payback period', fmt(D.pbp, 2) + ' years', 'Non-discounted'], ['Discounted payback', ind.dpb === null ? 'beyond the life' : fmt(ind.dpb, 2) + ' years', 'From the start of operation']];
   $('ecSum').innerHTML = '<thead><tr><th>Item</th><th>Result</th><th>Method / criterion</th></tr></thead><tbody>' + S.map(r => `<tr><td>${r[0]}</td><td><b>${r[1]}</b></td><td>${r[2]}</td></tr>`).join('') + '</tbody>';
@@ -1990,6 +2175,9 @@ function drawMC() {
   $('mcK').innerHTML = [['Mean NPV', fmt(MC.mean, 1) + ' M$', 'var(--navy)'], ['P(NPV > 0)', fmt(MC.p0 * 100, 1) + ' %', 'var(--green)'], ['P10 / P50 / P90', fmt(MC.p10, 0) + ' / ' + fmt(MC.p50m, 0) + ' / ' + fmt(MC.p90, 0) + ' M$', 'var(--orange)']].map(([l, v, c]) => `<div class="kpi" style="--c:${c}"><div class="l">${l}</div><div class="v" style="font-size:20px">${v}</div></div>`).join('');
 }
 $('mcRun').addEventListener('click', () => { const b = $('mcRun'); b.disabled = true; b.innerHTML = '<span class="spin"></span> Running…'; setTimeout(() => { MC = monteCarlo(4000, MKX(), 20261 + Math.floor(Math.random() * 1e6)); MCKEY = JSON.stringify(MKX()); b.disabled = false; b.textContent = 'New random sample'; drawMC(); toast('Monte Carlo finished: 4,000 new random trials.'); }, 40); });
+// the result of a scenario is shown where the eye already is: flash it, and bring it into view when it sits below the cards
+function showResult() { const r = $('mkRes'); if (!r) return; r.classList.remove('flash'); void r.offsetWidth; r.classList.add('flash');
+  const b = r.getBoundingClientRect(), top = innerWidth <= 1180 ? 76 : 12; if (b.top < top || b.top > innerHeight * 0.55) window.scrollTo({top: scrollY + b.top - top, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'}); }
 // ===================================================================== MARKET
 const H2SC = 2473 * 1.03;
 const SCEN = [
@@ -2030,16 +2218,16 @@ function rMarket() {
   const p = E0.p; const mt = p.meoh_kgh * 7.92 * (ST.MK.op_factor || 1), ht = p.h2_kgh * 7.92 * (ST.MK.op_factor || 1); const rm = mt * (pm - (ST.MK.logi || 0)), rh = ht * ph;
   donut('revD', [['Methanol (net of logistics)', rm, cssv('--navy')], ['Hydrogen', rh, 'var(--c-gr)']], [money((rm + rh) / 1e6, 1) + ' M', 'revenue per year']); $('revTot').textContent = scenName();
   $('revLg').innerHTML = `<span><i class="sw" style="background:var(--navy)"></i>Methanol: ${fmt(mt, 0)} t/y × $${fmt(pm - (ST.MK.logi || 0), 2)}/t = ${fmt(rm / 1e6, 2)} M$</span><span><i class="sw" style="background:var(--c-gr)"></i>Hydrogen: ${fmt(ht, 0)} t/y × $${fmt(ph, 2)}/t = ${fmt(rh / 1e6, 2)} M$</span>`;
-  $('cards').innerHTML = SCEN.filter(s => ST.scf === 'all' || s.c === ST.scf).map(s => { const n = evaluate([0.40, 0.10, 0.90, 1], Object.assign({}, s.mk, {hi: ST.HI})).npv; const a = AIRES[s.id];
+  $('cards').innerHTML = SCEN.filter(s => ST.scf === 'all' || s.c === ST.scf).map(s => { const n = evaluate([0.40, 0.10, 0.90, 1], SCMK(s.mk)).npv; const a = AIRES[s.id];
     return `<button class="sc${s.id === ST.SCID ? ' on' : ''}" style="--c:${SCC[s.c]}" data-id="${s.id}"><b>${s.name}</b><span class="src">${s.src}</span><div>${s.d}</div><div class="n">NPV, design point: <b style="display:inline">${money(n)} M</b>${a ? `<br>NPV, AI set point: <b style="display:inline">${money(a.e.npv)} M</b>` : ''}</div></button>`; }).join('');
-  $$('#cards .sc').forEach(c => c.addEventListener('click', () => { const s = SCEN.find(z => z.id === c.dataset.id); ST.SCID = s.id; ST.MK = clone(s.mk); HICACHE = {}; syncInputs(); render(); }));
+  $$('#cards .sc').forEach(c => c.addEventListener('click', () => { const s = SCEN.find(z => z.id === c.dataset.id); ST.SCID = s.id; ST.MK = clone(s.mk); HICACHE = {}; syncInputs(); render(); showResult(); }));
   const s = SCEN.find(z => z.id === ST.SCID), e = E0, a = AIRES[ST.SCID];
   let h = `<p style="margin:0 0 8px"><b>${s ? s.name : 'Custom scenario'}</b>${s ? ' – ' + s.src : ''}</p><div class="tbl"><table><thead><tr><th>Indicator</th><th>Design point</th><th>AI set point</th></tr></thead><tbody>
    <tr><td>NPV at ${fmt((ST.MK.i || 0.10) * 100, 1)} % (million US$)</td><td>${fmt(e.npv, 2)}</td><td>${a ? fmt(a.e.npv, 2) : '—'}</td></tr><tr><td>DCFROR (%)</td><td>${e.irr === null ? '—' : fmt(e.irr * 100, 2)}</td><td>${a && a.e.irr !== null ? fmt(a.e.irr * 100, 2) : '—'}</td></tr>
    <tr><td>Discounted payback (years)</td><td>${e.dpb === null ? 'beyond life' : fmt(e.dpb, 2)}</td><td>${a ? (a.e.dpb === null ? 'beyond life' : fmt(a.e.dpb, 2)) : '—'}</td></tr><tr><td>Methanol (t/y)</td><td>${fmt(e.p.meoh_kgh * 7.92 * (ST.MK.op_factor || 1), 0)}</td><td>${a ? fmt(a.e.p.meoh_kgh * 7.92 * (ST.MK.op_factor || 1), 0) : '—'}</td></tr>`;
   if (s && s.rep !== undefined && ST.HI) h += `<tr><td>NPV in the report (million US$)</td><td colspan="2" class="okc">${fmt(s.rep, Math.abs(s.rep) >= 100 && Number.isInteger(s.rep) ? 0 : 2)}</td></tr>`;
   $('scenres').innerHTML = h + '</tbody></table></div>'; $('scnote').textContent = a ? 'AI set point: β = ' + a.x[0].toFixed(4) + ', φ = ' + a.x[1].toFixed(4) + ', ρ = ' + a.x[2].toFixed(4) + '.' : '';
-  const svg = $('scchart'), W = 520, ml = 190, mr = 14, mT = 8, rh2 = 31; const vals = SCEN.map(z => [evaluate([0.40, 0.10, 0.90, 1], Object.assign({}, z.mk, {hi: ST.HI})).npv, AIRES[z.id] ? AIRES[z.id].e.npv : null]);
+  const svg = $('scchart'), W = 520, ml = 190, mr = 14, mT = 8, rh2 = 31; const vals = SCEN.map(z => [evaluate([0.40, 0.10, 0.90, 1], SCMK(z.mk)).npv, AIRES[z.id] ? AIRES[z.id].e.npv : null]);
   const all = vals.flat().filter(v => v !== null); const lo = Math.min(-250, ...all), hi = Math.max(500, ...all); const X = v => ml + (v - lo) / (hi - lo) * (W - ml - mr);
   let g = ''; for (let v = Math.ceil(lo / 100) * 100; v <= hi; v += 100) g += `<line x1="${X(v)}" x2="${X(v)}" y1="${mT}" y2="${mT + rh2 * SCEN.length}" stroke="${v === 0 ? 'var(--muted)' : 'var(--grid)'}"/><text class="ax" x="${X(v)}" y="${mT + rh2 * SCEN.length + 16}" text-anchor="middle">${v}</text>`;
   SCEN.forEach((z, k) => { const y = mT + k * rh2; const [n, aa] = vals[k]; g += `<text x="${ml - 7}" y="${y + 19}" text-anchor="end" style="font-size:14.5px;fill:var(--ink);font-weight:${z.id === ST.SCID ? 700 : 400}">${z.sh || z.name}</text>`;
@@ -2049,7 +2237,7 @@ function rMarket() {
 }
 $('scai').addEventListener('click', () => { const b = $('scai'); b.disabled = true; b.innerHTML = '<span class="spin"></span> Searching…'; setTimeout(() => { const o = optimise(MKX(), {feed: 1}); AIRES[ST.SCID] = o; ST.X = o.x.slice(); ST.MODE = 'npv'; syncInputs(); b.disabled = false; b.textContent = 'AI set point for this scenario'; render(); toast('AI set point applied to the plant.'); }, 40); });
 $('allai').addEventListener('click', () => { const b = $('allai'); b.disabled = true; let k = 0; const step = () => { if (k >= SCEN.length) { b.disabled = false; b.textContent = 'AI set point for every scenario'; rMarket(); toast('AI set points found for all 14 scenarios.'); return; }
-  const z = SCEN[k]; AIRES[z.id] = optimise(Object.assign({}, z.mk, {hi: ST.HI}), {feed: 1}); k++; b.innerHTML = `<span class="spin"></span> ${k} / ${SCEN.length}`; setTimeout(step, 10); }; setTimeout(step, 10); });
+  const z = SCEN[k]; AIRES[z.id] = optimise(SCMK(z.mk), {feed: 1}); k++; b.innerHTML = `<span class="spin"></span> ${k} / ${SCEN.length}`; setTimeout(step, 10); }; setTimeout(step, 10); });
 // ===================================================================== MONITORING
 const SIG = ['T19', 'TT-310', 'Steam flow', 'TC-310 output', 'Methanol', 'Recycle', 'Purge', 'F-101 level'];
 const ACT = {1: 'Follow the opening of TV-310 on the trend display; plan the cleaning of E-104 at the next planned stop.', 2: 'Check the valve on site and call the instrument technician; keep the outlet temperature within its limits by adjusting the steam supply by hand.',
@@ -2079,7 +2267,17 @@ function rFault() {
     g += SIG[j].split(' ').map((w, q) => `<text class="ax" x="${x + bw / 2}" y="${H - mb + 17 + q * 14}" text-anchor="middle">${w}</text>`).join(''); });
   $('cC').innerHTML = g + (show ? '' : `<text x="${(W + ml) / 2}" y="${H / 2 - 10}" text-anchor="middle" style="font-size:15px;fill:var(--muted)">Shown after the alarm</text>`);
   const top = f.c.indexOf(Math.max(...f.c));
+  faultTables();
   $('fact').innerHTML = show ? `<p><b>Diagnosis (k-NN):</b> F${ST.FK} – ${f.name}. Correct for ${fmt(f.acc, 1)} % of the test samples of this fault (overall ${fmt(FDD.acc, 1)} %).</p><p><b>Largest contribution:</b> ${SIG[top]} (${fmt(f.c[top], 0)} %).</p><div class="box or"><b>Operator action:</b> ${ACT[ST.FK]}</div>` : '<p>No alarm yet: the monitor checks the eight signals every minute.</p>';
+}
+const ACT_S = {1: 'Plan the cleaning of E-104', 2: 'Check the valve; control the steam by hand', 3: 'Recalibrate TT-310', 4: 'Check for poisons; plan the catalyst change', 5: 'Repair the purge valve; repeat the AI search'};
+function faultTables() {
+  $('ftab').innerHTML = '<thead><tr><th>Fault</th><th>T² delay</th><th>Q delay</th><th>First alarm</th><th>Main signal</th><th>Correct diagnosis</th><th>Action of the operators</th></tr></thead><tbody>' +
+    Object.entries(FDD.faults).map(([k, f]) => { const m = f.c.indexOf(Math.max(...f.c)), first = Math.min(f.dT === null ? 1e9 : f.dT, f.dQ === null ? 1e9 : f.dQ);
+      return `<tr data-k="${k}" class="${k === ST.FK ? 'on' : ''}"><td><b>F${k}</b> ${f.name}</td><td>${f.dT === null ? '—' : f.dT + ' min'}</td><td>${f.dQ === null ? '—' : f.dQ + ' min'}</td><td><b>${first} min</b></td><td>${SIG[m]} (${fmt(f.c[m])} %)</td><td>${fmt(f.acc, 1)} %</td><td>${ACT_S[k]}</td></tr>`; }).join('') + '</tbody>';
+  $$('#ftab tbody tr').forEach(r => r.addEventListener('click', () => { stopPlay(); ST.FK = r.dataset.k; ST.ft = 598; $('ft').value = 598; fillRange($('ft')); rFault(); }));
+  if (!$('fmod').innerHTML) $('fmod').innerHTML = '<tbody>' + [['Signals', SIG.join(', ')], ['Principal components', '4, explaining 92.7 % of the normal variation'], ['T² limit (99 %)', fmt(FDD.T2lim, 2)], ['Q limit (99 %)', fmt(FDD.Qlim, 2)],
+    ['Sample time', '2 min; the fault starts at 100 min'], ['Alarm rule', 'three samples in a row above a limit'], ['Diagnosis', 'k-nearest neighbours, ' + fmt(FDD.acc, 1) + ' % correct'], ['False alarms', 'none in normal operation']].map(([a, b]) => `<tr><td>${a}</td><td><b>${b}</b></td></tr>`).join('') + '</tbody>';
 }
 // ===================================================================== E-METHANOL
 function buildEM() {
@@ -2106,6 +2304,25 @@ function rEM() {
   $('eleg2').innerHTML = `<span><i class="sw ln" style="background:var(--navy)"></i>Today’s electrolyser</span><span><i class="sw ln" style="background:var(--c-gr)"></i>2050 electrolyser</span><span><i class="sw dash" style="border-color:var(--c-rd)"></i>Methanol market price</span><span><i class="sw dot" style="background:var(--c-or)"></i>Current case</span>`;
   const be = (cp, e) => { if (emethanol(ff, 0, cp, e).total > pm) return null; let lo = 0, hi = 0.3; for (let k = 0; k < 50; k++) { const m = (lo + hi) / 2; if (emethanol(ff, m, cp, e).total > pm) hi = m; else lo = m; } return lo * 100; };
   const b1 = be(1000, 55), b2 = be(200, 45); $('ebe').textContent = 'Break-even electricity price at $' + fmt(pm, 0) + '/t of methanol: ' + (b1 === null ? 'none' : fmt(b1, 2) + ' US¢/kWh') + ' today and ' + (b2 === null ? 'none' : fmt(b2, 2) + ' US¢/kWh') + ' with the 2050 electrolyser.';
+  // where the carbon of the plastic goes, today and with the extension
+  const Cp = EM.CO + EM.CO2, Ce = EM.X * f * Cp, CM = 1049.12, Co = EM.C_in - CM - Cp, pc = v => v / EM.C_in * 100;
+  const rowsC = [['Plant of Chapter 2', [[CM, 'Methanol (Stream 29)', cssv('--navy')], [0, 'e-Methanol', 'var(--c-gr)'], [Cp, 'Purge gas, CO + CO₂', 'var(--c-or)'], [Co, 'Other carbon', 'var(--c-gy)']]],
+    ['With the extension (' + fmt(f * 100) + ' % of the purge)', [[CM, 'Methanol (Stream 29)', cssv('--navy')], [Ce, 'e-Methanol', 'var(--c-gr)'], [Cp - Ce, 'Purge gas, CO + CO₂', 'var(--c-or)'], [Co, 'Other carbon', 'var(--c-gy)']]]];
+  { const W = 520, ml = 10, mr = 10, X = v => ml + v / 100 * (W - ml - mr); let g = ''; [0, 20, 40, 60, 80, 100].forEach(v => g += `<line class="gl" x1="${X(v)}" x2="${X(v)}" y1="30" y2="250"/><text class="ax" x="${X(v)}" y="268" text-anchor="${v === 0 ? 'start' : v === 100 ? 'end' : 'middle'}">${v} %</text>`);
+    rowsC.forEach(([lab, seg], k) => { const y = 44 + k * 110; let x0 = 0; g += `<text x="${ml}" y="${y - 10}" style="font-size:14px;font-weight:600;fill:var(--ink)">${lab}</text>`;
+      seg.forEach(([v, n, col]) => { const w = pc(v); if (w <= 0) return; g += `<rect class="tb" data-t="<b>${n}</b>: ${fmt(v, 1)} kmol/h of C, ${fmt(w, 2)} %" x="${X(x0)}" y="${y}" width="${X(x0 + w) - X(x0)}" height="54" fill="${col}"/>`;
+        if (w > 7) g += `<text x="${X(x0 + w / 2)}" y="${y + 33}" text-anchor="middle" style="font-size:14px;font-weight:700;fill:#fff;pointer-events:none">${fmt(w, 1)} %</text>`; x0 += w; });
+      g += `<text x="${W - mr}" y="${y + 80}" text-anchor="end" style="font-size:13.5px;fill:var(--ink2)">Carbon to product: <tspan style="font-weight:700;fill:var(--ink)">${fmt(pc(CM + (k ? Ce : 0)), 2)} %</tspan></text>`; });
+    $('eCarb').innerHTML = g; bindTips($('eCarb'), '.tb'); }
+  $('eleg3').innerHTML = [['Methanol (Stream 29)', cssv('--navy')], ['e-Methanol', 'var(--c-gr)'], ['Purge gas, CO + CO₂', 'var(--c-or)'], ['Other carbon (CH₄, char)', 'var(--c-gy)']].map(([n, col]) => `<span><i class="sw" style="background:${col}"></i>${n}</span>`).join('');
+  // phases of the extension and the extension at the selected share
+  const sh = [10, 25, 50, 100]; if (!sh.includes(Math.round(f * 100)) && f > 0) sh.push(Math.round(f * 100)); sh.sort((a, b) => a - b);
+  $('ephase').innerHTML = '<thead><tr><th>Share of the purge</th><th>e-Methanol (t/y)</th><th>Electrolyser (MW)</th><th>Net CO₂ avoided (t/y)</th><th>Carbon to product</th><th>Cost (US$/t)</th></tr></thead><tbody>' +
+    sh.map(v => { const q = emethanol(v / 100, c, cap, es); return `<tr data-f="${v}" class="${v === Math.round(f * 100) ? 'on' : ''}"><td><b>${v} %</b></td><td>${fmt(q.meoh_t)}</td><td>${fmt(q.P_el_spec, 1)}</td><td>${fmt(q.co2_net)}</td><td>${fmt(q.eta_C, 2)} %</td><td>${fmt(q.total, 0)}</td></tr>`; }).join('') + '</tbody>';
+  $$('#ephase tbody tr').forEach(r => r.addEventListener('click', () => { ST.em.f = +r.dataset.f; $('ef').value = ST.em.f; fillRange($('ef')); rEM(); }));
+  $('eside').innerHTML = '<tbody>' + [['Hydrogen from the electrolyser', fmt(o.h2_t) + ' t/y'], ['Electrolyser power', fmt(o.P_el_spec, 1) + ' MW'], ['CO + CO₂ converted', fmt(EM.X * f * Cp, 1) + ' kmol/h'], ['Water, net', fmt((o.water_t - o.water_made_t) / 7920, 1) + ' m³/h'],
+    ['Oxygen by-product', fmt(o.o2_t) + ' t/y'], ['Natural gas to replace the purge fuel', fmt(o.ng_MW, 1) + ' MW'], ['Cost: synthesis / electrolyser', f > 0 ? fmt(o.syn, 0) + ' / ' + fmt(o.elz, 0) + ' $/t' : '—'], ['Cost: electricity / gas', f > 0 ? fmt(o.elec, 0) + ' / ' + fmt(o.ng, 0) + ' $/t' : '—'],
+    ['Methanol market price', '$' + fmt(pm, 0) + '/t']].map(([a, b]) => `<tr><td>${a}</td><td><b>${b}</b></td></tr>`).join('') + '</tbody>';
 }
 // ===================================================================== VALIDATION
 let AIVAL = null;
@@ -2135,7 +2352,7 @@ function rVal() {
 }
 // ===================================================================== command palette
 const PKW = {overview: 'home plant mass balance schedule', process: 'pfd flowsheet streams units data sheet', operations: 'ai optimiser set points beta phi rho feed profit safe', heat: 'pinch hen composite curves dtmin exchangers utility',
-  control: 'loops pid tuning p&id isa response', economics: 'npv irr dcfror cash flow capital cost tornado monte carlo payback', market: 'prices scenarios crisis methanol hydrogen', safety: 'pca fault diagnosis t2 q knn monitoring',
+  control: 'loops pid tuning p&id isa response', economics: 'npv irr dcfror cash flow capital cost tornado monte carlo payback land equipment cepci life construction escalation depreciation salvage working capital', market: 'prices scenarios crisis methanol hydrogen', safety: 'pca fault diagnosis t2 q knn monitoring',
   emethanol: 'solar electrolysis co2 purge e-methanol', validation: 'report check chapters values'};
 const CMDS = () => PAGES.map(p => ({t: TITLES[p], kw: PKW[p], k: 'page', f: () => go(p)})).concat([{t: 'Reset every page to the design point', k: 'action', f: () => resetPage('all')}, {t: 'Toggle heat integration', k: 'action', f: () => { ST.HI = !ST.HI; syncInputs(); HICACHE = {}; render(); toast('Heat integration ' + (ST.HI ? 'ON' : 'OFF')); }},
   {t: 'AI: maximum profit', k: 'action', f: () => { go('operations'); setTimeout(() => runMode('npv'), 300); }}, {t: 'AI: safe operation', k: 'action', f: () => { go('operations'); setTimeout(() => runMode('safe'), 300); }},
@@ -2152,9 +2369,22 @@ document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.ke
   if (!$('palette').classList.contains('open')) { if (e.key === 'Escape') closeDrawer(); return; }
   if (e.key === 'Escape') closePal(); if (e.key === 'ArrowDown') { palSel++; renderPal(); e.preventDefault(); } if (e.key === 'ArrowUp') { palSel = Math.max(0, palSel - 1); renderPal(); e.preventDefault(); }
   if (e.key === 'Enter') { const L = $('pres')._L; if (L && L[palSel]) { closePal(); L[palSel].f(); } } });
+// ===================================================================== return from the 3D presentation
+// The state of the twin is kept for this tab when the presentation is opened, and restored when the viewer comes back.
+function saveReturn() { try { sessionStorage.setItem('mpw-twin-return', JSON.stringify({ST, page: PAGE, y: scrollY, t: Date.now()})); } catch (e) {} }
+document.addEventListener('click', e => { if (e.target.closest('a[href^="presentation"]')) saveReturn(); }, true);
+addEventListener('pagehide', saveReturn);
+function restoreReturn() {
+  let r = null; try { r = JSON.parse(sessionStorage.getItem('mpw-twin-return') || 'null'); } catch (e) {}
+  const nav = ((performance.getEntriesByType && performance.getEntriesByType('navigation')[0]) || {}).type, back = /[?&]back=1/.test(location.search);
+  if (back) history.replaceState(null, '', location.pathname + (r && r.page ? '#/' + r.page : location.hash));
+  if (!r || !(back || nav === 'back_forward')) return null;
+  const D = clone(DEF), R = r.ST || {}; ST = Object.assign(D, R, {EC: Object.assign(D.EC, R.EC || {}, {eq: Object.assign(D.EC.eq, (R.EC || {}).eq || {})}), em: Object.assign(D.em, R.em || {})}); return r;
+}
+const RET = restoreReturn();
 // ===================================================================== start
-buildOverview(); buildPFD(); buildMarket(); buildFault(); buildEM(); buildLoopPick(); syncInputs();
-show(location.hash.replace('#/', '') || 'overview');
+buildOverview(); buildPFD(); buildMarket(); buildEcon(); buildFault(); buildEM(); buildLoopPick(); syncInputs();
+show(RET ? RET.page : (location.hash.replace('#/', '') || 'overview')); if (RET) setTimeout(() => window.scrollTo(0, RET.y || 0), 120);
 
 </script>
 </body>
