@@ -27,8 +27,14 @@ The site runs entirely in the browser. It needs no installation and no server. O
 
 * `index.html` – the published site (a single file built from `site/`).
 * `pid_base.webp`, `pid_hi.webp` – the P&IDs of Figures 6.22 and 6.26.
+* `art/` – line drawings of the plant and its units, rendered from the project's 3D model.
+* `fonts/` – IBM Plex Sans and Big Shoulders Display, used under the SIL Open Font License (licence texts included).
 * `site/` – source files of the site; `python3 build.py` rebuilds `index.html`.
 * `code/` – the Python scripts of Appendices G and H (NumPy, SciPy and scikit-learn). Run `plant_model.py` first; each script prints its results and saves them to a small JSON file.
+
+## Design
+
+The site is laid out as the plant's own drawing set: every page is a numbered sheet with its title block (drawing number, source chapter, authors and issue date), the overview opens with the live mass balance of the complex, and the drawings come straight from the 3D model. Light theme: whiteprint; dark theme: blueprint.
 
 ## Copyright
 

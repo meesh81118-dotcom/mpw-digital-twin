@@ -74,7 +74,8 @@ function show(p) {
   if (!PAGES.includes(p)) p = 'overview'; PAGE = p;
   let done = false;
   const doit = () => { if (done || PAGE !== p) return; done = true; $$('.page').forEach(s => s.classList.toggle('on', s.dataset.page === p)); $$('nav.main a').forEach(a => a.classList.toggle('on', a.dataset.go === p));
-    window.scrollTo(0, 0); render(); requestAnimationFrame(reveal); setTimeout(reveal, 60); document.title = TITLES[p] + ' – MPW Gasification Complex'; };
+    window.scrollTo(0, 0); render(); requestAnimationFrame(reveal); setTimeout(reveal, 60); document.title = TITLES[p] + ' – MPW Gasification Complex';
+    const cur = $('cur'); if (cur) cur.innerHTML = `<i>${String(PAGES.indexOf(p) + 1).padStart(2, '0')}</i><span>${TITLES[p]}</span>`; };
   // animated page change when the browser supports it; the first page and any delayed transition are shown directly
   if (document.startViewTransition && FIRST_SHOWN && !matchMedia('(prefers-reduced-motion: reduce)').matches) { try { document.startViewTransition(doit); } catch (e) { doit(); } setTimeout(doit, 400); } else doit();
   FIRST_SHOWN = true;
@@ -86,9 +87,9 @@ document.addEventListener('click', e => { const t = e.target.closest('[data-go]'
 $('menu').addEventListener('click', () => $('nav').classList.toggle('open'));
 window.addEventListener('scroll', () => { const h = document.documentElement; $('prog').style.width = (h.scrollTop / Math.max(1, h.scrollHeight - h.clientHeight) * 100) + '%'; }, {passive: true});
 const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); if (e.target._count) e.target._count(); } }), {threshold: 0, rootMargin: '0px 0px -6% 0px'});
-function reveal() { $$('.page.on .reveal:not(.in)').forEach(el => io.observe(el)); }
+function reveal() { $$('.page.on .reveal:not(.in), .page.on .plot:not(.in)').forEach(el => io.observe(el)); }
 // safety net: anything already inside the window is shown even if the observer has not reported yet
-function revealVisible() { const H = innerHeight; $$('.page.on .reveal:not(.in)').forEach(el => { const r = el.getBoundingClientRect(); if (r.bottom > 0 && r.top < H) { el.classList.add('in'); io.unobserve(el); if (el._count) el._count(); } }); }
+function revealVisible() { const H = innerHeight; $$('.page.on .reveal:not(.in), .page.on .plot:not(.in)').forEach(el => { const r = el.getBoundingClientRect(); if (r.bottom > 0 && r.top < H) { el.classList.add('in'); io.unobserve(el); if (el._count) el._count(); } }); }
 setInterval(revealVisible, 900);
 // theme
 function setTheme(t) { document.documentElement.dataset.theme = t; try { localStorage.setItem('mpw-theme', t); } catch (e) {} if (PAGE) render(); }
@@ -129,59 +130,134 @@ function scenName() { const s = SCEN.find(z => z.id === ST.SCID); return s ? (s.
 function headerChips() {
   const c = $('opChip'); if (!E.ok) { c.className = 'chip bad'; c.innerHTML = `<i></i>Limit exceeded: ${UNITNAME[E.limiting] || ''} at ${fmt(E.worst * 100, 1)} %`; }
   else if (E.worst > 0.98) { c.className = 'chip warn'; c.innerHTML = `<i></i>${UNITNAME[E.limiting] || ''} at ${fmt(E.worst * 100, 1)} % of its limit`; } else { c.className = 'chip'; c.innerHTML = '<i></i>All units within design limits'; }
-  ['mkChip', 'mkChip2', 'ecChip'].forEach(id => { const el = $(id); if (el) el.innerHTML = `<i style="background:#8fb8e6;box-shadow:none"></i>Market: ${scenName()}${ST.HI ? '' : ' · without heat integration'}`; });
+  ['mkChip', 'mkChip2', 'ecChip'].forEach(id => { const el = $(id); if (el) el.innerHTML = `<i style="background:var(--c-lb);box-shadow:none"></i>Market: ${scenName()}${ST.HI ? '' : ' · without heat integration'}`; });
   $('hiChip').className = 'chip' + (ST.HI ? '' : ' bad'); $('hiChip').innerHTML = `<i></i>Heat integration ${ST.HI ? 'ON' : 'OFF'} · ΔTmin = ${fmt(ST.dT, 1)} °C`;
 }
 // ===================================================================== OVERVIEW
-const HERO = [[300000, 0, ' t/y', 'mixed plastic waste'], [266915, 0, ' t/y', 'methanol, 99.5 mol%'], [61831, 0, ' t/y', 'hydrogen, 99.99 %'], [478.4, 1, ' M$', 'fixed capital', '$'], [105.04, 2, ' M$', 'NPV at 10 %', '$'], [81.7, 1, ' %', 'less hot utility', '−']];
+const HERO = [[478.4, 1, ' M$', 'fixed capital'], [105.04, 2, ' M$', 'NPV at 10 %'], [12.8, 2, ' %', 'DCFROR'], [81.7, 1, ' %', 'less hot utility', '−']];
 function countUp(el, v, d, pre, suf) { const t0 = performance.now(), dur = 1500; const step = t => { const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3); el.textContent = pre + fmt(v * e, d) + suf; if (k < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); }
+// stream number in the PFD diamond style
+const sdia = (n, c) => `<span class="sdia"><svg viewBox="0 0 30 30"><path d="M15 1 29 15 15 29 1 15z" fill="var(--sheet)" stroke="${c}" stroke-width="2"/><text x="15" y="19.5" text-anchor="middle" style="font:700 12px var(--f);fill:var(--ink)">${n}</text></svg></span>`;
+// callout balloons on the plant drawing: tag, x and y as fractions of the drawing, leader length
+const BALLOONS = [['R-101', .344, .5313, 40], ['CY-101', .3072, .5359, 74], ['E-101', .3572, .7667, 30], ['E-102', .4077, .7063, 46], ['D-101', .2405, .7817, 30], ['E-103', .522, .4975, 30], ['R-102', .5332, .3894, 34],
+  ['D-102', .6075, .4482, 30], ['ME-101', .6231, .6272, 34], ['C-102', .6432, .6879, 22], ['C-101', .7583, .6017, 30], ['E-104', .7202, .4347, 30], ['R-103', .7385, .2635, 30], ['E-105', .8203, .5069, 30], ['F-101', .8802, .4495, 30], ['T-101', .7886, .094, 24]];
+const UNIT_ART = {'E-101': 'steam', 'E-102': 'steam', 'D-101': 'steam', 'R-101': 'r101', 'CY-101': 'r101', 'D-102': 'r101', 'M-101': 'shift', 'E-103': 'shift', 'R-102': 'shift', 'ME-101': 'me101', 'C-102': 'me101',
+  'SC-1': 'c101', 'SC-2': 'c101', 'KO': 'c101', 'C-101': 'c101', 'M-102': 'r103', 'E-104': 'r103', 'R-103': 'r103', 'E-105': 'r103', 'F-101': 'r103', 'D-103': 'r103', 'V-101': 't101', 'T-101': 't101', 'REB': 't101'};
+const ART = {steam: [1600, 1184], r101: [1500, 1370], shift: [1700, 1196], me101: [1700, 1204], c101: [1700, 1147], r103: [1300, 1941], t101: [1300, 1848]};
+const SEC_OF = {'CR-101': 'feed', 'E-101': 'feed', 'E-102': 'feed', 'D-101': 'feed', 'R-101': 'gas', 'CY-101': 'gas', 'D-102': 'gas', 'M-101': 'wgs', 'E-103': 'wgs', 'R-102': 'wgs', 'ME-101': 'wgs', 'C-102': 'wgs', 'C-101': 'syn', 'E-104': 'syn', 'R-103': 'syn', 'E-105': 'syn', 'F-101': 'syn', 'T-101': 'pur'};
 function buildOverview() {
   $('heroStats').innerHTML = HERO.map(([v, d, s, l, p]) => `<div class="stat"><b data-v="${v}" data-d="${d}" data-s="${s}" data-p="${p || ''}">${p || ''}${fmt(v, d)}${s}</b><span>${l}</span></div>`).join('');
   const st = $('heroStats'); st._count = () => $$('b', st).forEach(b => countUp(b, +b.dataset.v, +b.dataset.d, b.dataset.p, b.dataset.s)); st.classList.add('reveal');
-  const IC = {feed: '<path d="M4 18h16M6 18l2-9h8l2 9M9 9V5h6v4"/>', gas: '<path d="M8 21h8M9 21V9a3 3 0 0 1 6 0v12M12 3v3"/>', wgs: '<circle cx="12" cy="12" r="7"/><path d="M12 5v14M5 12h14"/>', syn: '<path d="M4 8h16v8H4zM8 8v8M12 8v8M16 8v8"/>', pur: '<path d="M10 3h4v18h-4zM10 8h4M10 13h4M10 18h4"/>'};
-  const CH = [['feed', 'var(--sec-feed)', '01', 'Feed preparation', 'Two shredders and the steam train: 37,879 kg/h of MPW and 50,400 kg/h of steam at 600 °C.'],
-   ['gas', 'var(--sec-gas)', '02', 'Gasification', 'Five fluidised-bed gasifiers at 1,200 °C on olivine; 15 cyclones remove the char.'],
-   ['wgs', 'var(--sec-wgs)', '03', 'Shift and hydrogen', 'Six-bed shift reactor at 270 °C and a 6,040 m² Pd–Ag membrane give 99.99 % hydrogen.'],
-   ['syn', 'var(--sec-syn)', '04', 'Methanol synthesis', 'Five-stage compression to 50 bar and a 3,447-tube boiling-water reactor with recycle.'],
-   ['pur', 'var(--sec-pur)', '05', 'Purification', 'A 52-tray column delivers 99.5 mol% methanol; the purge can feed solar e-methanol.']];
-  $('chain').innerHTML = CH.map(([k, c, n, h, p]) => `<div class="st" style="--sc:${c}" data-sec="${k}"><div class="ic"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">${IC[k]}</svg></div><div class="n">${n}</div><h4>${h}</h4><p>${p}</p></div>`).join('');
-  $$('#chain .st').forEach(s => s.addEventListener('click', () => { ST.sec = s.dataset.sec; syncInputs(); go('process'); }));
-  const F = [['process', 'Live flowsheet', 'Every unit drawn with its real symbol, live flows and a data sheet for each piece of equipment.', '<path d="M3 6h6v5H3zM15 13h6v5h-6zM9 8h3v8h3"/>'],
-   ['operations', 'AI set points', 'Differential evolution finds the most profitable, safest or largest operation inside the equipment limits.', '<path d="M12 3v3M12 18v3M3 12h3M18 12h3M6 6l2 2M16 16l2 2M6 18l2-2M16 8l2-2"/><circle cx="12" cy="12" r="3"/>'],
-   ['heat', 'Heat integration', 'Composite curves, ΔTmin trade-off and the effect of the network on energy, cost and control.', '<path d="M12 2c3 4 5 6 5 10a5 5 0 0 1-10 0c0-2 1-4 2-5 0 2 1 3 3 3 0-3-2-5 0-8z"/>'],
-   ['control', 'Loop simulator', 'Tune the TC-310 loop with five methods, follow the response and browse 34 control loops and both P&IDs.', '<path d="M3 17l5-5 4 4 8-8"/><path d="M14 8h6v6"/>'],
-   ['economics', 'Economics', 'Cash flow, cost structure, tornado sensitivity and a 4,000-trial Monte Carlo of the NPV.', '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'],
-   ['market', 'Market and crises', 'Prices of 2025–2026 and fourteen scenarios, from the base case to the 2026 Gulf and Red Sea crisis.', '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>'],
-   ['safety', 'Fault monitoring', 'PCA monitoring of eight signals with T², Q and a k-NN diagnosis of five faults.', '<path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17v.5"/>'],
-   ['emethanol', 'Solar e-methanol', 'Turns the purge carbon into extra methanol with electrolytic hydrogen and Saudi solar power.', '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"/>']];
-  $('feats').innerHTML = F.map(([p, h, t, ic]) => `<div class="card lift feat reveal" data-go="${p}"><div class="ic"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">${ic}</svg></div><div><h4>${h}</h4><p>${t}</p></div></div>`).join('');
-  const GL = [['Carbon conversion in R-101', '97.16 %'], ['Raw syngas', '7,852 kmol/h'], ['Shift CO conversion', '90 %'], ['Membrane area', '6,040 m²'], ['C-101 power', '22.5 MW'], ['Methanol reactor', '3,447 tubes'],
-   ['Column T-101', '52 trays, 33.6 m'], ['Heat recovered', '115.6 MW'], ['Control loops', '34'], ['Site score (Jubail)', '860 / 1,000'], ['DCFROR', '12.80 %'], ['Payback (discounted)', '13.06 years']];
-  $('glance').innerHTML = GL.map(([l, v]) => `<div class="kpi" style="--c:var(--navy)"><div class="l">${l}</div><div class="v">${v}</div></div>`).join('');
+  // the plant drawing and its balloons
+  $('balloons').innerHTML = BALLOONS.map(([t, x, y, l]) => `<button class="bln" data-u="${t}" style="left:${x * 100}%;top:${y * 100}%;--l:${l}px" aria-label="${t} – ${UNITS[t] ? UNITS[t].n : ''}"><span>${t}</span></button>`).join('');
+  $$('#balloons .bln').forEach(b => { const u = UNITS[b.dataset.u];
+    b.addEventListener('mousemove', e => showTip(`<b>${b.dataset.u}</b> ${u ? u.n : ''}<br>${u ? u.s : ''}`, e)); b.addEventListener('mouseleave', hideTip);
+    b.addEventListener('click', () => { hideTip(); ST.sec = SEC_OF[b.dataset.u] || 'all'; syncInputs(); go('process'); setTimeout(() => openUnit(b.dataset.u), 450); }); });
+  // the five sections down the process spine
+  const CH = [['feed', 'var(--sec-feed)', '1', 'Feed preparation and steam', 'Two shredders reduce the mixed plastic waste; the process water is boiled in E-101 and superheated to 600 °C in E-102 before it fluidises the gasifiers.', ['steam'],
+     [['MPW feed', '37,879 kg/h'], ['Steam to the gasifiers', '50,400 kg/h'], ['Steam temperature', '600 °C']], [[2, 'shredded MPW'], [7, 'gasifying steam']]],
+   ['gas', 'var(--sec-gas)', '2', 'Gasification', 'Five allothermal fluidised-bed trains gasify the plastic with steam on olivine at 1,200 °C; fifteen Stairmand cyclones return the char to the combustors that heat the beds.', ['r101'],
+     [['Gasifier trains', '5'], ['Bed temperature', '1,200 °C'], ['Carbon conversion', '97.16 %'], ['Raw syngas', '7,852 kmol/h']], [[10, 'clean syngas']]],
+   ['wgs', 'var(--sec-wgs)', '3', 'Shift and hydrogen', 'A six-bed shift reactor converts the CO at 270 °C; the Pd–Ag membrane bank lets only hydrogen through, and C-102 sends it out at 30 bar.', ['shift', 'me101'],
+     [['Shift temperature', '270 °C'], ['CO conversion', '90 %'], ['Membrane area', '6,040 m²'], ['Hydrogen purity', '99.99 %']], [[16, 'hydrogen product'], [17, 'retentate to C-101']]],
+   ['syn', 'var(--sec-syn)', '4', 'Methanol synthesis', 'Five-stage compression to 50 bar, a feed–effluent exchanger and a 3,447-tube boiling-water reactor; the flash drum recycles the gas and purges the inerts.', ['c101', 'r103'],
+     [['C-101 power', '22.5 MW'], ['Loop pressure', '50 bar'], ['Reactor tubes', '3,447'], ['Steam raised in R-103', '24.6 MW']], [[26, 'crude methanol']]],
+   ['pur', 'var(--sec-pur)', '5', 'Purification', 'V-101 lets the crude methanol down to 1 bar and the 52-tray column T-101 separates 99.5 mol% methanol from the water at a reflux ratio of 0.8231.', ['t101'],
+     [['Trays', '52'], ['Column height', '33.6 m'], ['Methanol purity', '99.5 mol%'], ['Reflux ratio', '0.8231']], [[29, 'methanol product']]]];
+  $('chain').innerHTML = CH.map(([k, c, n, h, p, art, dl, out]) => `<li class="reveal" style="--sc:${c}" data-sec="${k}" tabindex="0" role="link" aria-label="Open ${h} on the flowsheet">
+    <div class="no">${n}</div>
+    <div class="tx"><h3>${h}</h3><p>${p}</p><dl>${dl.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl><span class="open">Open on the flowsheet</span></div>
+    <div class="art" style="${art.length > 1 ? 'display:grid;grid-template-columns:1fr 1fr;gap:10px' : ''}">${art.map(a => `<div class="plot"><img src="art/${a}.webp" width="${ART[a][0]}" height="${ART[a][1]}" alt="Line drawing of ${h.toLowerCase()} equipment" loading="lazy" decoding="async"></div>`).join('')}</div>
+    <div class="link">${out.map(([sn, t]) => `${sdia(sn, c)}<span>Stream ${sn}, ${t}</span>`).join('')}</div></li>`).join('');
+  $$('#chain li').forEach(s => { const open = () => { ST.sec = s.dataset.sec; syncInputs(); go('process'); }; s.addEventListener('click', open); s.addEventListener('keydown', e => { if (e.key === 'Enter') open(); }); });
+  // the drawing register: every sheet of the twin
+  const F = [['02', 'process', 'Process flow diagram', 'Every unit with its symbol, live flows and a data sheet; the stream table follows the set point.', 'Figures 3.79, 4.18'],
+   ['03', 'operations', 'Operations and AI set points', 'Differential evolution finds the most profitable, the safest or the largest operation inside the equipment limits.', 'Section 10.2'],
+   ['04', 'heat', 'Heat integration', 'Composite curves, the ΔTmin trade-off and the effect of the network on energy, cost and control.', 'Chapter 4'],
+   ['05', 'control', 'Process control', 'Tune four loops with five methods, follow the response and browse 34 loops and both P&IDs.', 'Chapter 6'],
+   ['06', 'economics', 'Economics', 'Cash flow, cost structure, tornado sensitivity and a 4,000-trial Monte Carlo of the NPV.', 'Chapter 8'],
+   ['07', 'market', 'Market and scenarios', 'Prices of 2025–2026 and fourteen scenarios, from the base case to the 2026 Gulf and Red Sea crisis.', 'Table 8.27'],
+   ['08', 'safety', 'Process monitoring', 'PCA monitoring of eight signals with T², Q and a k-NN diagnosis of five faults.', 'Section 10.4'],
+   ['09', 'emethanol', 'Solar e-methanol', 'The purge carbon becomes extra methanol with electrolytic hydrogen and Saudi solar power.', 'Section 10.5'],
+   ['10', 'validation', 'Validation', 'Every model of the twin checked against the values of the report.', 'All chapters']];
+  $('feats').innerHTML = F.map(([n, p, h, t, src]) => `<a class="reveal" data-go="${p}"><span class="n">${n}</span><h4>${h}</h4><p>${t}</p><span class="src">${src}</span></a>`).join('');
+  // equipment and project schedule
+  const EQ = [['R-101', 'Gasifiers, carbon conversion', '97.16 %'], ['R-101', 'Raw syngas', '7,852 kmol/h'], ['R-102', 'Shift, CO conversion', '90 %'], ['ME-101', 'Membrane area', '6,040 m²'], ['C-101', 'Compressor power', '22.5 MW'], ['R-103', 'Methanol reactor', '3,447 tubes'], ['T-101', 'Methanol column', '52 trays, 33.6 m']];
+  const PJ = [['HEN', 'Heat recovered', '115.6 MW'], ['ISA', 'Control loops', '34'], ['Site', 'Site score, Jubail', '860 / 1,000'], ['DCFROR', 'Discounted cash-flow rate of return', '12.80 %'], ['Payback', 'Discounted payback', '13.06 years']];
+  const tab = (h, rows) => `<div class="card"><h3><span class="h">${h}</span></h3><div class="tbl" style="border:0"><table class="sched"><thead><tr><th>Tag</th><th>Item</th><th>Value</th></tr></thead><tbody>${rows.map(([a, b, c]) => `<tr><td>${a}</td><td>${b}</td><td>${c}</td></tr>`).join('')}</tbody></table></div></div>`;
+  $('glance').innerHTML = tab('Equipment schedule', EQ) + tab('Project figures', PJ);
   heroCanvas();
 }
 function rOverview() {
-  const K = [['Methanol', fmt(E.p.meoh_kgh * 7.92, 0) + ' t/y', 'var(--navy)'], ['Hydrogen', fmt(E.p.h2_kgh * 7.92, 0) + ' t/y', 'var(--green)'], ['NPV (10 %)', money(E.npv) + ' M', 'var(--orange)'],
-   ['Market', scenName(), 'var(--blue)'], ['Heat integration', ST.HI ? 'ON <small style="font-size:13px;font-weight:600;color:var(--muted);display:block;margin-top:2px">ΔTmin = ' + fmt(ST.dT, 0) + ' °C</small>' : 'OFF', ST.HI ? 'var(--green)' : 'var(--red)'], ['Equipment', E.ok ? 'Within limits' : 'Limit exceeded', E.ok ? 'var(--green)' : 'var(--red)']];
-  $('snap').innerHTML = K.map(([l, v, c]) => `<div class="kpi" style="--c:${c}"><div class="l">${l}</div><div class="v" style="font-size:22px">${v}</div></div>`).join('');
+  const K = [['Methanol', fmt(E.p.meoh_kgh * 7.92, 0) + ' t/y', 'var(--s-meoh)'], ['Hydrogen', fmt(E.p.h2_kgh * 7.92, 0) + ' t/y', 'var(--s-h2)'], ['NPV (10 %)', money(E.npv) + ' M', 'var(--hot)'],
+   ['Market', scenName(), 'var(--pen)'], ['Heat integration', ST.HI ? 'ON <small style="font-size:13px;font-weight:500;color:var(--graphite);display:block;margin-top:2px">ΔTmin = ' + fmt(ST.dT, 0) + ' °C</small>' : 'OFF', ST.HI ? 'var(--ok)' : 'var(--bad)'], ['Equipment', E.ok ? 'Within limits' : 'Limit exceeded', E.ok ? 'var(--ok)' : 'var(--bad)']];
+  $('snap').innerHTML = K.map(([l, v, c]) => `<div class="kpi" style="--c:${c}"><div class="l">${l}</div><div class="v" style="font-size:26px">${v}</div></div>`).join('');
 }
+// ===================================================================== hero: the mass balance as a moving picture
+// Coloured plastic shards drift around the feed term; a steady share is drawn into the gasifier at 1,200 °C, glows and breaks up,
+// and leaves as ordered molecules: hydrogen (H₂) towards the hydrogen term and methanol (CH₃OH) towards the methanol term.
+// Molar ratio of the products: 61,831 t/y ÷ 2.016 = 30,670 and 266,915 t/y ÷ 32.04 = 8,331 (thousand kmol/y), so about 3.7 hydrogen molecules per methanol.
 let heroAnim = null;
 function heroCanvas() {
-  // light network animation: resolution capped at 1.25×, lines batched into 4 opacity groups (4 strokes per frame), paused when the hero is off-screen
-  const cv = $('heroCanvas'), ctx = cv.getContext('2d'), dpr = Math.min(1.25, devicePixelRatio || 1); let w, h, P = [], vis = true;
-  const size = () => { const r = cv.getBoundingClientRect(); if (!r.width) return; w = cv.width = Math.round(r.width * dpr); h = cv.height = Math.round(r.height * dpr);
-    P = Array.from({length: Math.round(Math.min(70, r.width / 18))}, () => ({x: Math.random() * w, y: Math.random() * h, vx: (Math.random() - .5) * .35 * dpr, vy: (Math.random() - .5) * .35 * dpr, r: (Math.random() * 1.8 + .8) * dpr})); };
-  size(); addEventListener('resize', size);
+  const cv = $('heroCanvas'), ctx = cv.getContext('2d'), hero = $('hero'); let dpr = Math.min(1.75, devicePixelRatio || 1), w = 0, h = 0, vis = true, Z = null;
+  const still = matchMedia('(prefers-reduced-motion: reduce)'), mouse = {x: -1e4, y: -1e4};
+  const PLASTIC = ['#7fb7e3', '#f4f3ee', '#e9cf5a', '#e8679f', '#e2553b', '#4f97d6', '#2c2f33', '#4fa56b', '#f29c38', '#9ad1c9'];
+  const R = (a, b) => a + Math.random() * (b - a);
+  let S = [], M = [], heat = [];
+  const zone = () => { const hr = hero.getBoundingClientRect(), q = e => { e = e.getBoundingClientRect(); return {x: (e.left - hr.left) * dpr, y: (e.top - hr.top) * dpr, w: e.width * dpr, h: e.height * dpr}; }, r = id => q($(id));
+    const I = r('tIn'), m = r('tM'), H = r('tH'), RR = r('tR'), F = r('heroFoot'), TP = r('heroTop'), narrow = matchMedia('(max-width:980px)').matches;
+    const rx = narrow ? RR.x + RR.w - 52 * dpr : RR.x + RR.w / 2, ry = RR.y + (narrow ? 58 : 26) * dpr;
+    const box = narrow ? {x0: 0, x1: rx - 64 * dpr, y0: I.y + I.h + 14 * dpr, y1: RR.y + RR.h + 4 * dpr} : {x0: 0, x1: rx - 70 * dpr, y0: TP.y + TP.h + 14 * dpr, y1: F.y - 16 * dpr};
+    const end = el => { const b = q(el.querySelector('.row')); return {x: b.x, y: b.y, w: b.w, h: b.h}; };
+    return {I, m: narrow ? end($('tM')) : m, H: narrow ? end($('tH')) : H, rx, ry, narrow, box}; };
+  const inText = (z, x, y) => { const I = z.I; return x > I.x - 8 && x < I.x + I.w + 8 && y > I.y - 4 && y < I.y + I.h + 6 && Math.random() > .15; };
+  const shard = (z, anywhere) => { const n = 4 + (Math.random() * 3 | 0), s = R(5, 14) * dpr, pts = []; for (let k = 0; k < n; k++) { const a = k / n * 6.283 + R(-.35, .35), rr = s * R(.55, 1); pts.push([Math.cos(a) * rr, Math.sin(a) * rr]); }
+    let cx, cy, g = 0; do { cx = R(z.box.x0, z.box.x1); cy = R(z.box.y0, z.box.y1); } while (inText(z, cx, cy) && ++g < 12);
+    return {x: anywhere ? cx : z.box.x0 - 30 * dpr, y: cy, vx: anywhere ? R(-.3, .3) * dpr : R(1.5, 3) * dpr, vy: R(-.3, .3) * dpr, a: R(0, 6.28), va: R(-.012, .012), pts, c: PLASTIC[Math.random() * PLASTIC.length | 0], hx: cx, hy: cy, st: 0, t: 0}; };
+  const size = () => { const r = cv.getBoundingClientRect(); if (!r.width) return; dpr = Math.min(1.75, devicePixelRatio || 1); w = cv.width = Math.round(r.width * dpr); h = cv.height = Math.round(r.height * dpr); Z = zone();
+    const n = Math.round(Math.min(300, Math.max(110, r.width * r.height / 4600))); S = Array.from({length: n}, () => shard(Z, true)); M = []; heat = []; };
+  size(); addEventListener('resize', () => { clearTimeout(size.t); size.t = setTimeout(size, 150); }); if (document.fonts) document.fonts.ready.then(size);
+  hero.addEventListener('pointermove', e => { const r = cv.getBoundingClientRect(); mouse.x = (e.clientX - r.left) * dpr; mouse.y = (e.clientY - r.top) * dpr; });
+  hero.addEventListener('pointerleave', () => { mouse.x = mouse.y = -1e4; });
   if ('IntersectionObserver' in window) new IntersectionObserver(es => { vis = es[0].isIntersecting; }).observe(cv);
-  const D = 140 * dpr, D2 = D * D, G = [[], [], [], []], still = matchMedia('(prefers-reduced-motion: reduce)');
-  const tick = () => { heroAnim = requestAnimationFrame(tick);
-    if (PAGE !== 'overview' || !vis || document.hidden || still.matches || !w) return;
-    ctx.clearRect(0, 0, w, h); G.forEach(g => g.length = 0);
-    for (const p of P) { p.x += p.vx; p.y += p.vy; if (p.x < 0 || p.x > w) p.vx *= -1; if (p.y < 0 || p.y > h) p.vy *= -1; }
-    for (let i = 0; i < P.length; i++) { const a = P[i]; for (let j = i + 1; j < P.length; j++) { const b = P[j], dx = a.x - b.x, dy = a.y - b.y, d2 = dx * dx + dy * dy; if (d2 < D2) G[Math.min(3, Math.floor(Math.sqrt(d2) / D * 4))].push(a, b); } }
-    ctx.lineWidth = dpr; G.forEach((g, k) => { if (!g.length) return; ctx.strokeStyle = `rgba(243,178,127,${(0.22 * (1 - (k + 0.5) / 4)).toFixed(3)})`; ctx.beginPath(); for (let q = 0; q < g.length; q += 2) { ctx.moveTo(g[q].x, g[q].y); ctx.lineTo(g[q + 1].x, g[q + 1].y); } ctx.stroke(); });
-    ctx.fillStyle = 'rgba(255,217,170,.55)'; ctx.beginPath(); for (const p of P) { ctx.moveTo(p.x + p.r, p.y); ctx.arc(p.x, p.y, p.r, 0, 6.2832); } ctx.fill(); };
-  tick();
+  const ink = () => cssv('--ink'), dark = () => document.documentElement.dataset.theme === 'dark';
+  let feedT = 0, tick0 = performance.now();
+  const draw = (t) => {
+    const dt = Math.min(50, t - tick0) / 16.7; tick0 = t; const z = Z; if (!z) return; ctx.clearRect(0, 0, w, h); const INK = ink(), dk = dark();
+    // gasifier glow
+    const gr = ctx.createRadialGradient(z.rx, z.ry, 0, z.rx, z.ry, 70 * dpr); gr.addColorStop(0, dk ? 'rgba(255,140,60,.55)' : 'rgba(224,74,27,.42)'); gr.addColorStop(1, 'rgba(224,74,27,0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(z.rx, z.ry, 70 * dpr, 0, 6.283); ctx.fill();
+    // feed: one shard enters the gasifier every few frames
+    feedT += dt; if (!still.matches && feedT > 5) { feedT = 0; const c = S.filter(s => s.st === 0); if (c.length > 40) { const s = c.reduce((a, b) => (b.x > a.x ? b : a)); s.st = 1; s.t = 0; s.x0 = s.x; s.y0 = s.y; } }
+    for (const s of S) {
+      if (s.st === 0) { // drift around a home position, stirred by the pointer
+        s.vx += (s.hx - s.x) * 0.0006 * dt + R(-.02, .02) * dpr; s.vy += (s.hy - s.y) * 0.0006 * dt + R(-.02, .02) * dpr;
+        const dx = s.x - mouse.x, dy = s.y - mouse.y, d2 = dx * dx + dy * dy, rr = 110 * dpr; if (d2 < rr * rr) { const f = (1 - Math.sqrt(d2) / rr) * 0.9 * dpr; const d = Math.sqrt(d2) || 1; s.vx += dx / d * f; s.vy += dy / d * f; s.va += R(-.01, .01); }
+        s.vx *= 0.96; s.vy *= 0.96; s.x += s.vx * dt; s.y += s.vy * dt; s.a += s.va * dt;
+      } else { // pulled into the gasifier along a curve
+        s.t += 0.012 * dt; const k = s.t * s.t * (3 - 2 * s.t), mx = (s.x0 + z.rx) / 2, my = Math.min(s.y0, z.ry) - 60 * dpr;
+        s.x = (1 - k) * (1 - k) * s.x0 + 2 * (1 - k) * k * mx + k * k * z.rx; s.y = (1 - k) * (1 - k) * s.y0 + 2 * (1 - k) * k * my + k * k * z.ry; s.a += 0.08 * dt;
+        if (s.t >= 1) { // gasified: a flash of heat, then the products leave
+          for (let q = 0; q < 5; q++) heat.push({x: z.rx + R(-8, 8) * dpr, y: z.ry + R(-8, 8) * dpr, vx: R(-1.2, 1.2) * dpr, vy: R(-1.2, 1.2) * dpr, life: 1});
+          const nH = Math.random() < 0.7 ? 1 : 0; // ≈ 3.7 H₂ per CH₃OH over time
+          if (Math.random() < 0.23) M.push({k: 'm', t: 0, sp: R(.0045, .0065)}); if (nH || Math.random() < .5) M.push({k: 'h', t: 0, sp: R(.005, .0075)});
+          Object.assign(s, shard(z, false), {st: 0}); }
+      }
+      const sx = s.st ? 1 - s.t * .5 : 1; ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.a); ctx.scale(sx, sx); ctx.beginPath(); s.pts.forEach(([x, y], k) => k ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath();
+      ctx.fillStyle = s.st && s.t > .6 ? '#ff8a4c' : s.c; ctx.globalAlpha = s.c === '#f4f3ee' && dk ? .85 : .92; ctx.fill(); ctx.globalAlpha = 1; ctx.lineWidth = 0.8 * dpr; ctx.strokeStyle = dk ? 'rgba(234,241,248,.55)' : 'rgba(21,25,28,.55)'; ctx.stroke(); ctx.restore();
+    }
+    for (let i = heat.length - 1; i >= 0; i--) { const p = heat[i]; p.x += p.vx * dt; p.y += p.vy * dt; p.life -= 0.03 * dt; if (p.life <= 0) { heat.splice(i, 1); continue; } ctx.fillStyle = `rgba(255,${120 + 100 * p.life | 0},40,${p.life})`; ctx.beginPath(); ctx.arc(p.x, p.y, 2.2 * dpr, 0, 6.283); ctx.fill(); }
+    // products: ordered lanes from the gasifier to the two terms
+    for (let i = M.length - 1; i >= 0; i--) { const m = M[i]; m.t += m.sp * dt; if (m.t >= 1) { M.splice(i, 1); continue; }
+      const T = m.k === 'm' ? z.m : z.H, tx = z.narrow ? T.x + T.w + 14 * dpr : T.x - 14 * dpr, ty = T.y + T.h * (z.narrow ? .5 : .34) + (m.o || (m.o = R(-14, 14) * dpr)), k = m.t;
+      const x = z.rx + (tx - z.rx) * (z.narrow ? 1 - (1 - k) * (1 - k) : k), y = z.ry + (ty - z.ry) * (z.narrow ? k * k : Math.min(1, k * 1.5 - k * k * .5)), al = m.t > .78 ? (1 - m.t) / .22 : Math.min(1, m.t * 8);
+      ctx.globalAlpha = al; ctx.lineWidth = 1.4 * dpr; ctx.strokeStyle = INK;
+      if (m.k === 'h') { const c = dk ? '#93b6ff' : '#2b44c9'; ctx.fillStyle = c; ctx.beginPath(); ctx.arc(x - 3.2 * dpr, y, 3.4 * dpr, 0, 6.283); ctx.arc(x + 3.2 * dpr, y, 3.4 * dpr, 0, 6.283); ctx.fill(); }
+      else { ctx.beginPath(); ctx.moveTo(x - 6 * dpr, y); ctx.lineTo(x + 6 * dpr, y); ctx.stroke(); ctx.fillStyle = dk ? '#dfe7ef' : '#3a4247'; ctx.beginPath(); ctx.arc(x - 6 * dpr, y, 4.6 * dpr, 0, 6.283); ctx.fill(); ctx.fillStyle = '#d9a400'; ctx.beginPath(); ctx.arc(x + 6 * dpr, y, 4 * dpr, 0, 6.283); ctx.fill();
+        ctx.fillStyle = dk ? '#eaf1f8' : '#f6f7f4'; ctx.beginPath(); ctx.arc(x + 9.5 * dpr, y - 2.5 * dpr, 2 * dpr, 0, 6.283); ctx.fill(); ctx.stroke(); }
+      ctx.globalAlpha = 1; }
+  };
+  const tick = t => { heroAnim = requestAnimationFrame(tick); if (PAGE !== 'overview' || !vis || document.hidden || !w) return; if (still.matches) { if (!tick.once) { tick.once = 1; draw(t); } return; } draw(t); };
+  requestAnimationFrame(tick);
 }
 // ===================================================================== PROCESS
 const SECBOX = {feed: [14, 16, 470, 420], gas: [490, 16, 960, 420], wgs: [980, 16, 1786, 420], syn: [14, 462, 1340, 978], pur: [1360, 462, 1786, 978]};
@@ -235,8 +311,8 @@ function openUnit(id) {
     if (typeof v === 'string' && v.startsWith('live')) v = 'ρ = ' + ST.X[2].toFixed(4) + v.slice(4); return `<dt>${k}</dt><dd>${v}</dd>`; }).join('');
   $('dbody').innerHTML = `<div class="sec" style="color:${u.c}">${u.s}</div><h3>${id}</h3><p style="margin:0 0 6px;color:var(--muted)">${u.n}</p>
     ${live ? `<div class="bar" style="grid-template-columns:120px minmax(0,1fr) 62px"><span>${live[0]}</span><div class="track"><i class="${live[1] > 1.0001 ? 'warn' : ''}" style="width:${Math.min(100, live[1] / 1.15 * 100)}%"></i><b style="left:${100 / 1.15}%"></b></div><span>${fmt(live[1] * 100, 1)} %</span></div>` : ''}
-    <dl>${rows}</dl><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm pri" data-go="operations">Change the set points →</button><button class="btn sm" data-go="economics">Costs →</button></div>`;
-  $('drawer').classList.add('open'); $('drawer').setAttribute('aria-hidden', 'false');
+    <dl>${rows}</dl><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm pri" data-go="operations">Change the set points</button><button class="btn sm" data-go="economics">Costs</button></div>${UNIT_ART[id] ? `<figure class="dart plot"><img src="art/${UNIT_ART[id]}.webp" width="${ART[UNIT_ART[id]][0]}" height="${ART[UNIT_ART[id]][1]}" alt="Line drawing of the ${u.s.toLowerCase()} area"><figcaption>${u.s} area, drawn from the 3D model of the plant</figcaption></figure>` : ''}`;
+  $('drawer').classList.add('open'); $('drawer').setAttribute('aria-hidden', 'false'); const da = $('dbody').querySelector('.dart'); if (da) setTimeout(() => da.classList.add('in'), 260);
 }
 function closeDrawer() { $('drawer').classList.remove('open'); $('drawer').setAttribute('aria-hidden', 'true'); $$('#pfd .u').forEach(g => g.classList.remove('sel')); }
 $('dclose').addEventListener('click', closeDrawer);
@@ -264,7 +340,7 @@ function rOps() {
   const sc = v => Math.max(0, Math.min(100, (v - 0.75) / 0.37 * 100));
   $('bars').innerHTML = rows.map(([n, v, l]) => { const c = v > l * (1 + 1e-6) ? 'bad' : v > l * 0.98 ? 'warn' : ''; return `<div class="bar"><span>${n}</span><div class="track"><i class="${c}" style="width:${sc(v)}%"></i><b style="left:${sc(1)}%"></b><s style="left:${sc(l)}%"></s></div><span>${fmt(v * 100, 1)} %</span></div>`; }).join('');
   const cum = (cf, i) => { let d = 0; return cf.map((c, y) => [y, (d += c / Math.pow(1 + i, y)) / 1e6]); }; const a = cum(E.cf, E.p.i), bb = cum(E0.cf, E0.p.i);
-  const ys = a.concat(bb).map(p => p[1]); plot('opCF', {x: [0, 22], y: [Math.min(-500, ...ys) - 20, Math.max(200, ...ys) + 30], xt: 2, xl: 'Year from the start of construction', series: [{d: bb, c: '#8FAADC', dash: '6 4'}, {d: a, c: cssv('--navy'), w: 2.8}],
+  const ys = a.concat(bb).map(p => p[1]); plot('opCF', {x: [0, 22], y: [Math.min(-500, ...ys) - 20, Math.max(200, ...ys) + 30], xt: 2, xl: 'Year from the start of construction', series: [{d: bb, c: 'var(--c-lb)', dash: '6 4'}, {d: a, c: cssv('--navy'), w: 2.8}],
     tip: x => { const y = Math.round(x); return `<b>Year ${y}</b><br>Current: ${fmt(interp(a, y), 1)} M$<br>Design point: ${fmt(interp(bb, y), 1)} M$`; }});
   const ks = [11, 12, 15, 16, 17, 18, 20, 23, 24, 25, 26, 29];
   $('opStreams').innerHTML = '<thead><tr><th>Stream</th><th>Description</th><th>Design (kmol/h)</th><th>Now (kmol/h)</th><th>Change</th></tr></thead><tbody>' + ks.map(n => { const v = liveFlow(n, E.r), b = liveFlow(n, DES.r), x = (v / b - 1) * 100;
@@ -304,16 +380,16 @@ function rHeat() {
   const lo = P.QC / 1000, hi = hot[hot.length - 1][0]; const xs = []; for (let k = 0; k <= 80; k++) xs.push(lo + (hi - lo) * k / 80);
   const poly = xs.map(x => [x, interp(hot, x)]).concat(xs.slice().reverse().map(x => [x, interp(cold, x)]));
   const pinH = (() => { let best = 1e9, bh = 0; xs.forEach(x => { const d = interp(hot, x) - interp(cold, x); if (d < best) { best = d; bh = x; } }); return bh; })();
-  plot('ccChart', {x: [0, Math.ceil(Hmax / 25) * 25], y: [0, 1000], xt: 25, yt: 200, xl: 'Enthalpy (MW)', yl: 'Temperature (°C)', polys: [{d: poly, c: 'rgba(84,130,53,.22)'}],
-    series: [{d: hot, c: '#C00000', w: 2.8}, {d: cold, c: '#2E75B6', w: 2.8}], pts: [{x: pinH, y: P.Thot, c: '#BF9000', r: 6}, {x: pinH, y: P.Tcold, c: '#BF9000', r: 6}],
-    texts: [{px: 500, py: 30, t: 'QH,min = ' + fmt(P.QH / 1000, 2) + ' MW', a: 'end', c: '#C55A11', b: 1}, {px: 70, py: 300 - 52, t: 'QC,min = ' + fmt(P.QC / 1000, 2) + ' MW', a: 'start', c: '#2E75B6', b: 1}],
+  plot('ccChart', {x: [0, Math.ceil(Hmax / 25) * 25], y: [0, 1000], xt: 25, yt: 200, xl: 'Enthalpy (MW)', yl: 'Temperature (°C)', polys: [{d: poly, c: 'color-mix(in srgb,var(--c-gr) 24%,transparent)'}],
+    series: [{d: hot, c: 'var(--c-rd)', w: 2.8}, {d: cold, c: 'var(--c-bl)', w: 2.8}], pts: [{x: pinH, y: P.Thot, c: 'var(--c-go)', r: 6}, {x: pinH, y: P.Tcold, c: 'var(--c-go)', r: 6}],
+    texts: [{px: 500, py: 30, t: 'QH,min = ' + fmt(P.QH / 1000, 2) + ' MW', a: 'end', c: 'var(--c-or)', b: 1}, {px: 70, py: 300 - 52, t: 'QC,min = ' + fmt(P.QC / 1000, 2) + ' MW', a: 'start', c: 'var(--c-bl)', b: 1}],
     tip: x => `<b>${fmt(x, 1)} MW</b><br>Hot: ${fmt(interp(hot, x), 1)} °C<br>Cold: ${x >= lo ? fmt(interp(cold, x), 1) + ' °C' : '—'}`});
   const g = P.casc.map(c => [c.R / 1000, c.T]).sort((a, b) => b[1] - a[1]); const gx = g.slice().sort((a, b) => a[1] - b[1]);
   const Tcw = 40 - dT / 2; const below = gx.filter(p => p[1] <= P.Tp + 1e-6); const cwPoly = [[0, Tcw]].concat(below.filter(p => p[1] >= Tcw).map(p => [p[0], p[1]])).concat([[0, P.Tp]]);
   const chwPoly = [[0, below[0][1]]].concat(below.filter(p => p[1] <= Tcw)).concat([[interp(gx.map(p => [p[1], p[0]]).sort((a, b) => a[0] - b[0]), Tcw) || 0, Tcw], [0, Tcw]]);
   plot('gccChart', {x: [0, Math.ceil(Math.max(...g.map(p => p[0])) / 20) * 20], y: [0, 1000], xt: 20, yt: 200, xl: 'Net heat flow (MW)', yl: 'Shifted temperature (°C)',
-    polys: [{d: [[0, 1000], [P.QH / 1000, 1000], [P.QH / 1000, g[0][1]], [0, g[0][1]]], c: 'rgba(197,90,17,.22)'}, {d: cwPoly, c: 'rgba(46,117,182,.22)'}, {d: chwPoly, c: 'rgba(106,76,147,.28)'}],
-    series: [{d: gx.map(p => [p[0], p[1]]), c: cssv('--navy'), w: 2.6}], pts: [{x: 0, y: P.Tp, c: '#BF9000', r: 6}], texts: [{px: 500, py: 34, t: 'Pinch at T* = ' + fmt(P.Tp, 2) + ' °C', a: 'end', c: cssv('--ink2'), b: 1}],
+    polys: [{d: [[0, 1000], [P.QH / 1000, 1000], [P.QH / 1000, g[0][1]], [0, g[0][1]]], c: 'color-mix(in srgb,var(--c-or) 24%,transparent)'}, {d: cwPoly, c: 'color-mix(in srgb,var(--c-bl) 24%,transparent)'}, {d: chwPoly, c: 'color-mix(in srgb,var(--c-pu) 30%,transparent)'}],
+    series: [{d: gx.map(p => [p[0], p[1]]), c: cssv('--navy'), w: 2.6}], pts: [{x: 0, y: P.Tp, c: 'var(--c-go)', r: 6}], texts: [{px: 500, py: 34, t: 'Pinch at T* = ' + fmt(P.Tp, 2) + ' °C', a: 'end', c: cssv('--ink2'), b: 1}],
     tip: x => { const pts = gx.filter(p => Math.abs(p[0] - x) < 2); return `<b>${fmt(x, 1)} MW</b>` + (pts.length ? '<br>T* = ' + pts.map(p => fmt(p[1], 1)).join(', ') + ' °C' : ''); }});
   // impacts
   const eHI = econDT(dT, cpm), eNo = evaluate([0.40, 0.10, 0.90, 1], Object.assign(MKX(), {hi: false}));
@@ -330,13 +406,13 @@ function rHeat() {
   const key = ST.cpm + '|' + JSON.stringify(ST.MK); if (HICACHE.key !== key) { const rows = []; for (let d = 5; d <= 40.001; d += 1) { const Pd = pinchAnalysis(d), Ad = areaTarget(Pd), en = HEATC * Pd.QH + CWC * Pd.CW + CHWC * Pd.CHW, cap = Ad * cpm * FCIF * CRF; rows.push([d, en / 1e6, cap / 1e6, (en + cap) / 1e6, econDT(d, cpm).npv]); } HICACHE = {key, rows}; }
   const R = HICACHE.rows; const opt = R.reduce((a, b) => b[3] < a[3] ? b : a); const best = R.reduce((a, b) => b[4] > a[4] ? b : a);
   const en0 = HEATC * P.QH + CWC * P.CW + CHWC * P.CHW, cap0 = A * cpm * FCIF * CRF;
-  plot('stChart', {x: [5, 40], y: [0, Math.ceil(Math.max(...R.map(r => r[3])) / 2) * 2], xt: 5, xl: 'ΔTmin (°C)', series: [{d: R.map(r => [r[0], r[1]]), c: '#C55A11'}, {d: R.map(r => [r[0], r[2]]), c: '#2E75B6'}, {d: R.map(r => [r[0], r[3]]), c: cssv('--navy'), w: 3}],
-    vl: [{x: dT, c: cssv('--muted'), dash: '4 4', w: 1.5}], pts: [{x: opt[0], y: opt[3], c: '#548235', r: 7}, {x: dT, y: (en0 + cap0) / 1e6, c: '#C55A11', r: 5}],
+  plot('stChart', {x: [5, 40], y: [0, Math.ceil(Math.max(...R.map(r => r[3])) / 2) * 2], xt: 5, xl: 'ΔTmin (°C)', series: [{d: R.map(r => [r[0], r[1]]), c: 'var(--c-or)'}, {d: R.map(r => [r[0], r[2]]), c: 'var(--c-bl)'}, {d: R.map(r => [r[0], r[3]]), c: cssv('--navy'), w: 3}],
+    vl: [{x: dT, c: cssv('--muted'), dash: '4 4', w: 1.5}], pts: [{x: opt[0], y: opt[3], c: 'var(--c-gr)', r: 7}, {x: dT, y: (en0 + cap0) / 1e6, c: 'var(--c-or)', r: 5}],
     tip: x => { const rr = R[Math.max(0, Math.min(R.length - 1, Math.round(x) - 5))]; return `<b>ΔTmin = ${rr[0]} °C</b><br>Energy ${fmt(rr[1], 2)} M$/y<br>Area ${fmt(rr[2], 2)} M$/y<br>Total ${fmt(rr[3], 2)} M$/y`; }});
   $('stNote').textContent = `Lowest total annual cost at ΔTmin ≈ ${opt[0]} °C (${fmt(opt[3], 2)} M$/y) with ${fmt(cpm)} $/m² and a capital recovery factor of ${fmt(CRF, 4)} (10 %, 20 years). The design value of 10 °C is ${Math.abs(opt[0] - 10) <= 3 ? 'close to this optimum' : 'a common industrial choice for gas–liquid services'}.`;
   const nNo = eNo.npv; const ny = R.map(r => r[4]).concat([nNo]);
   plot('npvDt', {x: [5, 40], y: [Math.floor(Math.min(...ny) / 20) * 20 - 10, Math.ceil(Math.max(...ny) / 20) * 20 + 10], xt: 5, xl: 'ΔTmin (°C)', series: [{d: R.map(r => [r[0], r[4]]), c: cssv('--navy'), w: 3}],
-    hl: [{y: nNo, c: '#C00000', dash: '7 5'}], pts: [{x: dT, y: eHI.npv, c: '#C55A11', r: 7}], tip: x => { const rr = R[Math.max(0, Math.min(R.length - 1, Math.round(x) - 5))]; return `<b>ΔTmin = ${rr[0]} °C</b><br>NPV ${fmt(rr[4], 2)} M$<br>Without HI ${fmt(nNo, 2)} M$`; }});
+    hl: [{y: nNo, c: 'var(--c-rd)', dash: '7 5'}], pts: [{x: dT, y: eHI.npv, c: 'var(--c-or)', r: 7}], tip: x => { const rr = R[Math.max(0, Math.min(R.length - 1, Math.round(x) - 5))]; return `<b>ΔTmin = ${rr[0]} °C</b><br>NPV ${fmt(rr[4], 2)} M$<br>Without HI ${fmt(nNo, 2)} M$`; }});
   drawHEN();
   $('utilT').innerHTML = '<thead><tr><th>Item</th><th>Before</th><th>After</th><th>Reduction (%)</th></tr></thead><tbody>' + UTILHI.map(([n, a, b, r]) => `<tr><td>${n}</td><td>${Math.abs(a) > 1000 ? money(a, 0) : fmt(a, 2)}</td><td>${Math.abs(b) > 1000 ? money(b, 0) : fmt(b, 2)}</td><td>${r}</td></tr>`).join('') + '</tbody>';
   $('aeaT').innerHTML = '<thead><tr><th>Quantity</th><th>Hand</th><th>Aspen EA</th><th>Twin</th></tr></thead><tbody>' + AEA.map(([n, a, b, e], k) => { const tw = [fmt(P10.QH, 2), fmt(P10.QC, 2), fmt(P10.CHW, 2), fmt(P10.CW, 2), fmt(P10.Thot, 2) + ' / ' + fmt(P10.Tcold, 2), fmt(P10.recovered, 2), '14', fmt(A10, 0)][k];
@@ -349,13 +425,13 @@ function drawHEN() {
   const cols = {}; [...HEN.m, ...HEN.u].forEach(m => { [m[1], m[2]].forEach(s => { if (!rows[s]) return; (cols[s] = cols[s] || []).push(m[4]); }); });
   let g = `<line x1="${pinchX}" x2="${pinchX}" y1="14" y2="${y - 10}" stroke="${cssv('--muted')}" stroke-width="1.6" stroke-dasharray="7 5"/><text class="halo" x="${pinchX - 8}" y="24" text-anchor="end" style="font-size:13px;fill:var(--muted)">above the pinch</text><text class="halo" x="${pinchX + 8}" y="24" style="font-size:13px;fill:var(--muted)">below the pinch</text>`;
   const ext = {H1: [1, 2], H2: [3, 12], H3: [5, 6], H4: [7, 11], H5: [13, 13], H6: [12, 12], H7: [14, 14], C1: [8, 10], C2: [2, 8], C3: [1, 1], C4: [6, 7], C5: [4, 9]};
-  HEN.hot.concat(HEN.cold).forEach(([id, ts, tt, nm]) => { const hot = id[0] === 'H', yy = rows[id], [ca, cb] = ext[id]; const xa = colX(ca) - 44, xb = colX(cb) + 44, c = hot ? '#C00000' : '#2E75B6';
+  HEN.hot.concat(HEN.cold).forEach(([id, ts, tt, nm]) => { const hot = id[0] === 'H', yy = rows[id], [ca, cb] = ext[id]; const xa = colX(ca) - 44, xb = colX(cb) + 44, c = hot ? 'var(--c-rd)' : 'var(--c-bl)';
     g += `<text class="halo" x="12" y="${yy + 5}" style="font-size:13.5px;font-weight:700;fill:${c}">${id}</text><text class="halo" x="40" y="${yy + 5}" style="font-size:12.5px;fill:var(--muted)">${nm}</text>`;
     g += hot ? `<line class="st" x1="${xa}" x2="${xb}" y1="${yy}" y2="${yy}" stroke="${c}"/><path d="M${xb},${yy - 6} l10,6 l-10,6z" fill="${c}"/><text class="halo" x="${xa - 6}" y="${yy + 4}" text-anchor="end" style="font-size:11.5px;fill:var(--muted)">${fmt(ts, 2)}</text><text class="halo" x="${xb + 14}" y="${yy + 4}" style="font-size:11.5px;fill:var(--muted)">${fmt(tt, 2)} °C</text>`
       : `<line class="st" x1="${xa}" x2="${xb}" y1="${yy}" y2="${yy}" stroke="${c}"/><path d="M${xa},${yy - 6} l-10,6 l10,6z" fill="${c}"/><text class="halo" x="${xb + 6}" y="${yy + 4}" style="font-size:11.5px;fill:var(--muted)">${fmt(ts, 2)}</text><text class="halo" x="${xa - 14}" y="${yy + 4}" text-anchor="end" style="font-size:11.5px;fill:var(--muted)">${fmt(tt, 2)} °C</text>`; });
-  HEN.m.forEach(([n, h, c, q, col]) => { const xx = colX(col), ya = rows[h], yb = rows[c]; g += `<g class="hx" data-t="<b>${n}</b>: ${h} – ${c}<br>Q = ${fmt(q, 2)} kW"><line x1="${xx}" x2="${xx}" y1="${ya}" y2="${yb}" stroke="${cssv('--ink2')}" stroke-width="1.6"/><circle cx="${xx}" cy="${ya}" r="11" fill="#C55A11" stroke="var(--panel)" stroke-width="2"/><circle cx="${xx}" cy="${yb}" r="11" fill="#C55A11" stroke="var(--panel)" stroke-width="2"/>
+  HEN.m.forEach(([n, h, c, q, col]) => { const xx = colX(col), ya = rows[h], yb = rows[c]; g += `<g class="hx" data-t="<b>${n}</b>: ${h} – ${c}<br>Q = ${fmt(q, 2)} kW"><line x1="${xx}" x2="${xx}" y1="${ya}" y2="${yb}" stroke="${cssv('--ink2')}" stroke-width="1.6"/><circle cx="${xx}" cy="${ya}" r="11" fill="var(--c-or)" stroke="var(--panel)" stroke-width="2"/><circle cx="${xx}" cy="${yb}" r="11" fill="var(--c-or)" stroke="var(--panel)" stroke-width="2"/>
     <text class="halo" x="${xx}" y="${yb + 28}" text-anchor="middle" style="font-size:11.5px;font-weight:700;fill:var(--ink)">${n}</text><text class="halo" x="${xx}" y="${yb + 42}" text-anchor="middle" style="font-size:11px;fill:var(--muted)">${fmt(q / 1000, 2)} MW</text></g>`; });
-  HEN.u.forEach(([n, h, c, q, col]) => { const xx = colX(col), s = h === 'HU' ? c : h, yy = rows[s], col2 = h === 'HU' ? '#BF9000' : '#5aa0e6', lab = h === 'HU' ? 'H' : c === 'CHW' ? 'CH' : 'C';
+  HEN.u.forEach(([n, h, c, q, col]) => { const xx = colX(col), s = h === 'HU' ? c : h, yy = rows[s], col2 = h === 'HU' ? 'var(--c-go)' : 'var(--c-lb)', lab = h === 'HU' ? 'H' : c === 'CHW' ? 'CH' : 'C';
     g += `<g class="hx" data-t="<b>${n}</b>: ${h === 'HU' ? 'fired heat' : c === 'CHW' ? 'chilled water' : 'cooling water'} on ${s}<br>Q = ${fmt(q, 2)} kW"><circle cx="${xx}" cy="${yy}" r="13" fill="${col2}" stroke="var(--panel)" stroke-width="2"/><text x="${xx}" y="${yy + 4}" text-anchor="middle" style="font-size:11px;font-weight:700;fill:#fff">${lab}</text>
     <text class="halo" x="${xx}" y="${yy + (h === 'HU' ? 30 : -18)}" text-anchor="middle" style="font-size:11.5px;font-weight:700;fill:var(--ink)">${n}${h === 'HU' ? '' : ' · ' + fmt(q / 1000, 2) + ' MW'}</text>${h === 'HU' ? `<text class="halo" x="${xx}" y="${yy + 44}" text-anchor="middle" style="font-size:11px;fill:var(--muted)">${fmt(q / 1000, 2)} MW</text>` : ''}</g>`; });
   svg.setAttribute('viewBox', `0 0 ${W} ${y + 30}`); svg.innerHTML = g; bindTips(svg, '.hx');
@@ -364,7 +440,7 @@ $('hiOn').addEventListener('change', e => { ST.HI = e.target.checked; HICACHE = 
 $('dtmin').addEventListener('input', e => { ST.dT = +e.target.value; render(); });
 $('cpm').addEventListener('input', e => { ST.cpm = +e.target.value; render(); });
 // ===================================================================== CONTROL
-const LCOL = {'TC-310': '#C55A11', 'LC-318': '#2E75B6', 'PC-319': '#548235', 'FC-106': '#6A4C93'};
+const LCOL = {'TC-310': 'var(--c-or)', 'LC-318': 'var(--c-bl)', 'PC-319': 'var(--c-gr)', 'FC-106': 'var(--c-pu)'};
 function loopDefaults(id) { const L = LOOPS[id], m = L.meth[L.def.meth], s = m[L.def.mode] || m.P || m.PI;
   return {mode: L.def.mode, meth: L.def.meth, Kc: s[0], ti: s[1] ?? L.refSet.ti, td: s[2] ?? 0, test: L.def.test || 'load', step: L.tests[L.def.test || 'load'].def}; }
 function initPids() { const o = {}; Object.keys(LOOPS).forEach(k => o[k] = loopDefaults(k)); return o; }
@@ -428,16 +504,16 @@ function rControl(anim) {
   $('pidChip').className = 'chip' + (unstable ? ' bad' : ''); $('pidChip').innerHTML = `<i></i>${L.tag}: ${unstable ? 'loop unstable' : 'loop stable'} · ${P.mode} Kc = ${fmt(P.Kc, 2)}`;
   const st = $('lst-' + ST.loop); if (st) { st.className = 'st' + (unstable ? ' bad' : ''); st.innerHTML = `<i></i>${unstable ? 'unstable' : 'stable'} · ${P.mode} Kc ${fmt(P.Kc, 2)}`; }
   $('yT').textContent = L.yN; $('yU').textContent = L.yU + ' (set point ' + fmtY(L, L.y0) + ' ' + L.yU + ')'; $('uN').textContent = L.uN;
-  $('yLg').innerHTML = `<span><i class="sw ln" style="background:var(--navy)"></i>Selected tuning</span><span><i class="sw dash" style="border-color:#8FAADC"></i>${L.refName}</span><span><i class="sw dash" style="border-color:#C55A11"></i>Set point</span><span><i class="sw" style="background:rgba(84,130,53,.25)"></i>±${fmtY(L, L.band)} ${L.yU} band</span>`;
+  $('yLg').innerHTML = `<span><i class="sw ln" style="background:var(--navy)"></i>Selected tuning</span><span><i class="sw dash" style="border-color:var(--c-lb)"></i>${L.refName}</span><span><i class="sw dash" style="border-color:var(--c-or)"></i>Set point</span><span><i class="sw" style="background:color-mix(in srgb,var(--c-gr) 30%,transparent)"></i>±${fmtY(L, L.band)} ${L.yU} band</span>`;
   const cl = v => Math.max(-1e7, Math.min(1e7, v)); const y0 = L.y0, tT = R.pts.map(p => [p[0], y0 + cl(p[1])]), tR = Rr.pts.map(p => [p[0], y0 + p[1]]), tS = R.pts.map(p => [p[0], y0 + p[3]]), tU = R.pts.map(p => [p[0], cl(p[2])]);
   const span = Math.max(...tR.map(p => Math.abs(p[1] - y0)), Math.abs(sp), L.band * 4) * 1.6;
   const ys = tT.concat(tR).map(p => p[1]).filter(v => Math.abs(v - y0) <= span * 3);
   const lim = [Math.min(...ys, y0 + sp) , Math.max(...ys, y0 + sp)]; const pad = (lim[1] - lim[0]) * 0.12 || 1; lim[0] -= pad; lim[1] += pad;
   const draw = n => { const k = Math.max(2, Math.round(tT.length * n));
-    plot('pidT', {x: [0, L.tEnd], y: lim, xl: 'Time (min)', bands: [{y0: y0 + sp - L.band, y1: y0 + sp + L.band, x0: R.tS, c: 'rgba(84,130,53,.22)'}], series: [{d: tS, c: '#C55A11', dash: '4 4', w: 1.6}, {d: tR.slice(0, k), c: '#8FAADC', dash: '6 4'}, {d: tT.slice(0, k), c: cssv('--navy'), w: 2.8}],
+    plot('pidT', {x: [0, L.tEnd], y: lim, xl: 'Time (min)', bands: [{y0: y0 + sp - L.band, y1: y0 + sp + L.band, x0: R.tS, c: 'color-mix(in srgb,var(--c-gr) 24%,transparent)'}], series: [{d: tS, c: 'var(--c-or)', dash: '4 4', w: 1.6}, {d: tR.slice(0, k), c: 'var(--c-lb)', dash: '6 4'}, {d: tT.slice(0, k), c: cssv('--navy'), w: 2.8}],
       tip: x => `<b>t = ${fmt(x, 2)} min</b><br>Selected: ${fmtY(L, interp(tT, x))} ${L.yU}<br>${L.refName.split(' (')[0]}: ${fmtY(L, interp(tR, x))} ${L.yU}`});
     const um = Math.max(1e-3, ...tU.map(p => Math.abs(p[1]))) * 1.15;
-    plot('pidU', {x: [0, L.tEnd], y: [-um, um], xl: 'Time (min)', series: [{d: tU.slice(0, k), c: '#C55A11', w: 2.6}], tip: x => `<b>t = ${fmt(x, 2)} min</b><br>u = ${fmt(interp(tU, x), 3)} mA`}); };
+    plot('pidU', {x: [0, L.tEnd], y: [-um, um], xl: 'Time (min)', series: [{d: tU.slice(0, k), c: 'var(--c-or)', w: 2.6}], tip: x => `<b>t = ${fmt(x, 2)} min</b><br>u = ${fmt(interp(tU, x), 3)} mA`}); };
   if (pidRun) cancelAnimationFrame(pidRun);
   if (anim) { const t0 = performance.now(); const stp = t => { const n = Math.min(1, (t - t0) / 1600); draw(n); if (n < 1) pidRun = requestAnimationFrame(stp); }; pidRun = requestAnimationFrame(stp); } else draw(1);
   loopTable(L, P); loopSummary();
@@ -514,16 +590,16 @@ function rEcon() {
   $('ecK').innerHTML = K.map(([l, v, c, d]) => `<div class="kpi" style="--c:${c}"><div class="l">${l}</div><div class="v" style="font-size:24px">${v}</div><div class="d">${d}</div></div>`).join('');
   let cu = 0, cd = 0; const cum = [], cdis = []; D.rows.forEach(r => { cu += r.cf; cd += r.cf / Math.pow(1 + p.i, r.y); cum.push([r.y, cu / 1e6]); cdis.push([r.y, cd / 1e6]); });
   const all = D.rows.map(r => r.cf / 1e6).concat(cum.map(c => c[1]), cdis.map(c => c[1]));
-  plot('ecCF', {x: [-0.6, 22.6], y: [Math.floor(Math.min(...all) / 100) * 100, Math.ceil(Math.max(...all) / 100) * 100], xt: 2, xl: 'Year', bars: D.rows.map(r => ({x: r.y, y: r.cf / 1e6, w: 13, c: r.cf < 0 ? '#C0504D' : '#8FAADC'})),
-    series: [{d: cum, c: '#C55A11', dash: '6 4'}, {d: cdis, c: cssv('--navy'), w: 2.8}], tip: x => { const y = Math.max(0, Math.min(22, Math.round(x))), r = D.rows[y]; return `<b>Year ${y}</b><br>Cash flow ${fmt(r.cf / 1e6, 2)} M$${r.R ? `<br>Revenue ${fmt(r.R / 1e6, 1)} · COMd ${fmt(r.C / 1e6, 1)}` : ''}<br>Cumulative ${fmt(cum[y][1], 1)} · discounted ${fmt(cdis[y][1], 1)}`; }});
+  plot('ecCF', {x: [-0.6, 22.6], y: [Math.floor(Math.min(...all) / 100) * 100, Math.ceil(Math.max(...all) / 100) * 100], xt: 2, xl: 'Year', bars: D.rows.map(r => ({x: r.y, y: r.cf / 1e6, w: 13, c: r.cf < 0 ? 'var(--c-rs)' : 'var(--c-lb)'})),
+    series: [{d: cum, c: 'var(--c-or)', dash: '6 4'}, {d: cdis, c: cssv('--navy'), w: 2.8}], tip: x => { const y = Math.max(0, Math.min(22, Math.round(x))), r = D.rows[y]; return `<b>Year ${y}</b><br>Cash flow ${fmt(r.cf / 1e6, 2)} M$${r.R ? `<br>Revenue ${fmt(r.R / 1e6, 1)} · COMd ${fmt(r.C / 1e6, 1)}` : ''}<br>Cumulative ${fmt(cum[y][1], 1)} · discounted ${fmt(cdis[y][1], 1)}`; }});
   const ir = []; for (let i = 0; i <= 0.2001; i += 0.005) ir.push([i * 100, npvAt(E0.cf, i) / 1e6]);
   plot('ecIR', {x: [0, 20], y: [Math.floor(Math.min(...ir.map(v => v[1])) / 200) * 200, Math.ceil(Math.max(...ir.map(v => v[1])) / 200) * 200], xt: 2, xl: 'Interest rate (%)', series: [{d: ir, c: cssv('--navy'), w: 2.8}],
-    pts: [{x: p.i * 100, y: ind.npv, c: '#C55A11'}].concat(ind.irr !== null ? [{x: ind.irr * 100, y: 0, c: '#548235'}] : []), tip: x => `<b>i = ${fmt(x, 1)} %</b><br>NPV ${fmt(interp(ir, x), 1)} M$`});
+    pts: [{x: p.i * 100, y: ind.npv, c: 'var(--c-or)'}].concat(ind.irr !== null ? [{x: ind.irr * 100, y: 0, c: 'var(--c-gr)'}] : []), tip: x => `<b>i = ${fmt(x, 1)} %</b><br>NPV ${fmt(interp(ir, x), 1)} M$`});
   const tot = CBM.reduce((a, c) => a + c[2], 0), SC = {gas: 'var(--sec-gas)', syn: 'var(--sec-syn)', wgs: 'var(--sec-wgs)', pur: 'var(--sec-pur)', feed: 'var(--sec-feed)', hi: 'var(--red)'};
   $('cbm').innerHTML = CBM.slice(0, 14).map(([n, d, v, s]) => `<div class="bar" style="grid-template-columns:132px minmax(0,1fr) 86px" title="${d}"><span>${n}</span><div class="track"><i style="width:${v / CBM[0][2] * 100}%;background:${SC[s]}"></i></div><span>${fmt(v / 1e6, 2)} M$</span></div>`).join('') +
     `<div class="bar" style="grid-template-columns:132px minmax(0,1fr) 86px"><span>Others (${CBM.length - 14})</span><div class="track"><i style="width:${CBM.slice(14).reduce((a, c) => a + c[2], 0) / CBM[0][2] * 100}%;background:var(--grey)"></i></div><span>${fmt(CBM.slice(14).reduce((a, c) => a + c[2], 0) / 1e6, 2)} M$</span></div>
     <div class="lg"><span><i class="sw" style="background:var(--sec-gas)"></i>Gasification</span><span><i class="sw" style="background:var(--sec-wgs)"></i>Shift and H₂</span><span><i class="sw" style="background:var(--sec-syn)"></i>Synthesis</span><span><i class="sw" style="background:var(--sec-pur)"></i>Purification</span><span><i class="sw" style="background:var(--sec-feed)"></i>Feed</span><span class="mini">Total ${money(tot / 1e6)} M</span></div>`;
-  const pr = full.parts, com = full.C; const parts = [['Raw materials (1.23 CRM)', 1.23 * pr.CRM * p.com_mult, '#548235'], ['Utilities (1.23 CUT)', 1.23 * pr.CUT * p.com_mult, '#C55A11'], ['FCI-related (0.153 FCI)', pr.coefF * p.com_mult, cssv('--navy')], ['Operating labour (2.73 COL)', 2.73 * pr.COL * p.com_mult, '#BF9000'], ['Waste treatment (1.23 CWT)', 1.23 * pr.CWT * p.com_mult, '#7F7F7F']];
+  const pr = full.parts, com = full.C; const parts = [['Raw materials (1.23 CRM)', 1.23 * pr.CRM * p.com_mult, 'var(--c-gr)'], ['Utilities (1.23 CUT)', 1.23 * pr.CUT * p.com_mult, 'var(--c-or)'], ['FCI-related (0.153 FCI)', pr.coefF * p.com_mult, cssv('--navy')], ['Operating labour (2.73 COL)', 2.73 * pr.COL * p.com_mult, 'var(--c-go)'], ['Waste treatment (1.23 CWT)', 1.23 * pr.CWT * p.com_mult, 'var(--c-gy)']];
   donut('comD', parts, [money(com / 1e6, 1) + ' M', 'COMd per year']); $('comTot').textContent = 'year 5, full capacity'; $('comLg').innerHTML = parts.map(([n, v, c]) => `<span><i class="sw" style="background:${c}"></i>${n}: ${fmt(v / 1e6, 2)} M$</span>`).join('');
   const base = ind.npv; const ev = mk => evaluate([0.4, 0.1, 0.9, 1], Object.assign(MKX(), mk)).npv; const m0 = MKX(); const pm = m0.p_meoh || 393, ph = m0.p_h2 || 2473, pw = m0.p_mpw ?? 80, ii = m0.i || 0.1;
   const T = [['Product prices', ev({p_meoh: pm * 1.2, p_h2: ph * 1.2}), ev({p_meoh: pm * 0.8, p_h2: ph * 0.8})], ['Cost of manufacturing', ev({com_mult: 0.8}), ev({com_mult: 1.2})], ['Fixed capital (FCI)', ev({fci_mult: (m0.fci_mult || 1) * 0.8}), ev({fci_mult: (m0.fci_mult || 1) * 1.2})],
@@ -531,7 +607,7 @@ function rEcon() {
    ['Electricity tariff', ev({elec_mult: 0.8}), ev({elec_mult: 1.2})], ['Natural-gas price', ev({p_ng: (m0.p_ng || 2.5) * 0.8}), ev({p_ng: (m0.p_ng || 2.5) * 1.2})]].sort((a, b) => Math.abs(b[1] - b[2]) - Math.abs(a[1] - a[2]));
   const lo = Math.min(...T.map(t => Math.min(t[1], t[2])), base), hi = Math.max(...T.map(t => Math.max(t[1], t[2])), base); const svg = $('torn'), W = 520, ml = 150, mr = 16, X = v => ml + (v - lo) / (hi - lo) * (W - ml - mr), rh = 34;
   let g = ''; ticks(lo, hi).forEach(v => g += `<line class="gl" x1="${X(v)}" x2="${X(v)}" y1="8" y2="${8 + rh * T.length}"/><text class="ax" x="${X(v)}" y="${26 + rh * T.length}" text-anchor="middle">${fmt(v)}</text>`);
-  T.forEach(([n, a, b], k) => { const y = 12 + k * rh; g += `<text x="${ml - 8}" y="${y + 17}" text-anchor="end" style="font-size:14px;fill:var(--ink)">${n}</text><rect class="tb" data-t="<b>${n}</b><br>−20 %: ${fmt(Math.min(a, b) === a ? a : b, 1)} M$<br>+20 %: ${fmt(Math.min(a, b) === a ? b : a, 1)} M$" x="${Math.min(X(base), X(a))}" y="${y + 2}" width="${Math.abs(X(a) - X(base))}" height="22" fill="#548235" rx="3"/><rect class="tb" data-t="<b>${n}</b>" x="${Math.min(X(base), X(b))}" y="${y + 2}" width="${Math.abs(X(b) - X(base))}" height="22" fill="#C00000" rx="3"/>`; });
+  T.forEach(([n, a, b], k) => { const y = 12 + k * rh; g += `<text x="${ml - 8}" y="${y + 17}" text-anchor="end" style="font-size:14px;fill:var(--ink)">${n}</text><rect class="tb" data-t="<b>${n}</b><br>−20 %: ${fmt(Math.min(a, b) === a ? a : b, 1)} M$<br>+20 %: ${fmt(Math.min(a, b) === a ? b : a, 1)} M$" x="${Math.min(X(base), X(a))}" y="${y + 2}" width="${Math.abs(X(a) - X(base))}" height="22" fill="var(--c-gr)" rx="3"/><rect class="tb" data-t="<b>${n}</b>" x="${Math.min(X(base), X(b))}" y="${y + 2}" width="${Math.abs(X(b) - X(base))}" height="22" fill="var(--c-rd)" rx="3"/>`; });
   g += `<line x1="${X(base)}" x2="${X(base)}" y1="4" y2="${10 + rh * T.length}" stroke="var(--ink)" stroke-width="2"/><text x="${X(base)}" y="${44 + rh * T.length}" text-anchor="middle" style="font-size:13px;fill:var(--ink);font-weight:700">Base NPV ${fmt(base, 1)} M$</text>`;
   svg.innerHTML = g; bindTips(svg, '.tb');
   drawMC();
@@ -546,7 +622,7 @@ function drawMC() {
   if (!MC && PAGE === 'economics') { setTimeout(() => { if (!MC) { MC = monteCarlo(4000, MKX(), 2026); MCKEY = JSON.stringify(MKX()); $('mcRun').textContent = 'New random sample'; drawMC(); } }, 120); }
   if (!MC) { $('mcH').innerHTML = `<text x="260" y="150" text-anchor="middle" style="font-size:16px;fill:var(--muted)">Running 4,000 trials…</text>`; $('mcK').innerHTML = ''; return; }
   const v = MC.v, lo = Math.floor(v[0] / 50) * 50, hi = Math.ceil(v[v.length - 1] / 50) * 50, nb = Math.round((hi - lo) / 25); const h = new Array(nb).fill(0); v.forEach(x => h[Math.min(nb - 1, Math.floor((x - lo) / 25))]++);
-  plot('mcH', {x: [lo, hi], y: [0, Math.ceil(Math.max(...h) / 50) * 50], xt: 100, xl: 'NPV (million US$)', yl: 'Trials', bars: h.map((n, k) => ({x: lo + 25 * k + 12.5, y: n, w: 400 / nb, c: lo + 25 * k + 12.5 < 0 ? '#C0504D' : '#548235'})),
+  plot('mcH', {x: [lo, hi], y: [0, Math.ceil(Math.max(...h) / 50) * 50], xt: 100, xl: 'NPV (million US$)', yl: 'Trials', bars: h.map((n, k) => ({x: lo + 25 * k + 12.5, y: n, w: 400 / nb, c: lo + 25 * k + 12.5 < 0 ? 'var(--c-rs)' : 'var(--c-gr)'})),
     vl: [{x: MC.mean, c: cssv('--navy'), w: 2.5}, {x: 0, c: cssv('--muted'), w: 1.2}], tip: x => { const k = Math.max(0, Math.min(nb - 1, Math.floor((x - lo) / 25))); return `<b>${fmt(lo + 25 * k)} to ${fmt(lo + 25 * k + 25)} M$</b><br>${h[k]} trials`; }});
   $('mcK').innerHTML = [['Mean NPV', fmt(MC.mean, 1) + ' M$', 'var(--navy)'], ['P(NPV > 0)', fmt(MC.p0 * 100, 1) + ' %', 'var(--green)'], ['P10 / P50 / P90', fmt(MC.p10, 0) + ' / ' + fmt(MC.p50m, 0) + ' / ' + fmt(MC.p90, 0) + ' M$', 'var(--orange)']].map(([l, v, c]) => `<div class="kpi" style="--c:${c}"><div class="l">${l}</div><div class="v" style="font-size:20px">${v}</div></div>`).join('');
 }
@@ -584,13 +660,13 @@ function rMarket() {
   MS.forEach(([id, , , , , , , , , f]) => { $('o-' + id).value = f(+$(id).value); });
   const pm = ST.MK.p_meoh || 393, ph = ST.MK.p_h2 || 2473; const xs = PRICES.map((p, k) => k);
   plot('prChart', {x: [-0.3, PRICES.length - 0.7], y: [300, 600], xt: xs, xf: v => PRICES[v] ? PRICES[v][0] : '', yt: 50, m: {l: 52, r: 56, t: 12, b: 40},
-    series: [{d: PRICES.filter(p => p[1]).map((p) => [PRICES.indexOf(p), p[1]]), c: cssv('--navy'), w: 2.8}, {d: PRICES.filter(p => p[2]).map(p => [PRICES.indexOf(p), 300 + (p[2] - 2000) / 1000 * 300]), c: '#548235', w: 2.8}],
-    hl: [{y: pm, c: '#C55A11', dash: '6 5', w: 1.8}], pts: PRICES.filter(p => p[1]).map(p => ({x: PRICES.indexOf(p), y: p[1], c: cssv('--navy'), r: 5})).concat(PRICES.filter(p => p[2]).map(p => ({x: PRICES.indexOf(p), y: 300 + (p[2] - 2000) / 1000 * 300, c: '#548235', r: 5}))),
+    series: [{d: PRICES.filter(p => p[1]).map((p) => [PRICES.indexOf(p), p[1]]), c: cssv('--navy'), w: 2.8}, {d: PRICES.filter(p => p[2]).map(p => [PRICES.indexOf(p), 300 + (p[2] - 2000) / 1000 * 300]), c: 'var(--c-gr)', w: 2.8}],
+    hl: [{y: pm, c: 'var(--c-or)', dash: '6 5', w: 1.8}], pts: PRICES.filter(p => p[1]).map(p => ({x: PRICES.indexOf(p), y: p[1], c: cssv('--navy'), r: 5})).concat(PRICES.filter(p => p[2]).map(p => ({x: PRICES.indexOf(p), y: 300 + (p[2] - 2000) / 1000 * 300, c: 'var(--c-gr)', r: 5}))),
     texts: [2000, 2250, 2500, 2750, 3000].map(v => ({px: 520 - 50, py: 12 + (600 - (300 + (v - 2000) * 0.3)) / 300 * (300 - 52) + 4, t: fmt(v), a: 'start', fs: 12.5, c: 'var(--muted)'})),
     tip: x => { const k = Math.max(0, Math.min(PRICES.length - 1, Math.round(x))), p = PRICES[k]; return `<b>${p[0]}</b><br>Methanol ${p[1] ? '$' + fmt(p[1], 2) + '/t' : '—'}<br>Hydrogen ${p[2] ? '$' + fmt(p[2]) + '/t' : '—'}`; }});
   const p = E0.p; const mt = p.meoh_kgh * 7.92 * (ST.MK.op_factor || 1), ht = p.h2_kgh * 7.92 * (ST.MK.op_factor || 1); const rm = mt * (pm - (ST.MK.logi || 0)), rh = ht * ph;
-  donut('revD', [['Methanol (net of logistics)', rm, cssv('--navy')], ['Hydrogen', rh, '#548235']], [money((rm + rh) / 1e6, 1) + ' M', 'revenue per year']); $('revTot').textContent = scenName();
-  $('revLg').innerHTML = `<span><i class="sw" style="background:var(--navy)"></i>Methanol: ${fmt(mt, 0)} t/y × $${fmt(pm - (ST.MK.logi || 0), 2)}/t = ${fmt(rm / 1e6, 2)} M$</span><span><i class="sw" style="background:#548235"></i>Hydrogen: ${fmt(ht, 0)} t/y × $${fmt(ph, 2)}/t = ${fmt(rh / 1e6, 2)} M$</span>`;
+  donut('revD', [['Methanol (net of logistics)', rm, cssv('--navy')], ['Hydrogen', rh, 'var(--c-gr)']], [money((rm + rh) / 1e6, 1) + ' M', 'revenue per year']); $('revTot').textContent = scenName();
+  $('revLg').innerHTML = `<span><i class="sw" style="background:var(--navy)"></i>Methanol: ${fmt(mt, 0)} t/y × $${fmt(pm - (ST.MK.logi || 0), 2)}/t = ${fmt(rm / 1e6, 2)} M$</span><span><i class="sw" style="background:var(--c-gr)"></i>Hydrogen: ${fmt(ht, 0)} t/y × $${fmt(ph, 2)}/t = ${fmt(rh / 1e6, 2)} M$</span>`;
   $('cards').innerHTML = SCEN.filter(s => ST.scf === 'all' || s.c === ST.scf).map(s => { const n = evaluate([0.40, 0.10, 0.90, 1], Object.assign({}, s.mk, {hi: ST.HI})).npv; const a = AIRES[s.id];
     return `<button class="sc${s.id === ST.SCID ? ' on' : ''}" style="--c:${SCC[s.c]}" data-id="${s.id}"><b>${s.name}</b><span class="src">${s.src}</span><div>${s.d}</div><div class="n">NPV, design point: <b style="display:inline">${money(n)} M</b>${a ? `<br>NPV, AI set point: <b style="display:inline">${money(a.e.npv)} M</b>` : ''}</div></button>`; }).join('');
   $$('#cards .sc').forEach(c => c.addEventListener('click', () => { const s = SCEN.find(z => z.id === c.dataset.id); ST.SCID = s.id; ST.MK = clone(s.mk); HICACHE = {}; syncInputs(); render(); }));
@@ -604,7 +680,7 @@ function rMarket() {
   const all = vals.flat().filter(v => v !== null); const lo = Math.min(-250, ...all), hi = Math.max(500, ...all); const X = v => ml + (v - lo) / (hi - lo) * (W - ml - mr);
   let g = ''; for (let v = Math.ceil(lo / 100) * 100; v <= hi; v += 100) g += `<line x1="${X(v)}" x2="${X(v)}" y1="${mT}" y2="${mT + rh2 * SCEN.length}" stroke="${v === 0 ? 'var(--muted)' : 'var(--grid)'}"/><text class="ax" x="${X(v)}" y="${mT + rh2 * SCEN.length + 16}" text-anchor="middle">${v}</text>`;
   SCEN.forEach((z, k) => { const y = mT + k * rh2; const [n, aa] = vals[k]; g += `<text x="${ml - 7}" y="${y + 19}" text-anchor="end" style="font-size:14.5px;fill:var(--ink);font-weight:${z.id === ST.SCID ? 700 : 400}">${z.sh || z.name}</text>`;
-    g += `<rect class="tb" data-t="<b>${z.sh || z.name}</b><br>Design point: ${fmt(n, 1)} M$${aa !== null ? '<br>AI set point: ' + fmt(aa, 1) + ' M$' : ''}" x="${Math.min(X(0), X(n))}" y="${y + 5}" width="${Math.abs(X(n) - X(0))}" height="${aa === null ? 21 : 10}" fill="#8FAADC" rx="2"/>`;
+    g += `<rect class="tb" data-t="<b>${z.sh || z.name}</b><br>Design point: ${fmt(n, 1)} M$${aa !== null ? '<br>AI set point: ' + fmt(aa, 1) + ' M$' : ''}" x="${Math.min(X(0), X(n))}" y="${y + 5}" width="${Math.abs(X(n) - X(0))}" height="${aa === null ? 21 : 10}" fill="var(--c-lb)" rx="2"/>`;
     if (aa !== null) g += `<rect x="${Math.min(X(0), X(aa))}" y="${y + 16}" width="${Math.abs(X(aa) - X(0))}" height="10" fill="${cssv('--navy')}" rx="2"/>`; });
   svg.innerHTML = g; bindTips(svg, '.tb');
 }
@@ -628,15 +704,15 @@ function rFault() {
   $$('#fbtns button').forEach(b => b.classList.toggle('on', b.dataset.k === ST.FK));
   const f = FDD.faults[ST.FK], t = ST.ft; $('o-ft').value = fmt(t);
   const pts = arr => arr.slice(0, Math.floor(t / 2) + 1).map((v, i) => [i * 2, v]);
-  plot('cT', {x: [0, 600], y: [0.1, 1000], logy: true, xt: 100, xl: 'Time (min)', yf: v => v >= 1 ? fmt(v) : v, hl: [{y: FDD.T2lim, c: '#C00000', dash: '7 4'}], vl: [{x: 100, c: '#999', w: 1.5}], series: [{d: pts(f.T2), c: cssv('--navy'), w: 1.8}], tip: x => `<b>${fmt(x)} min</b><br>T² = ${fmt(f.T2[Math.min(f.T2.length - 1, Math.round(x / 2))], 2)}`});
-  plot('cQ', {x: [0, 600], y: [0.01, 10000], logy: true, xt: 100, xl: 'Time (min)', yf: v => v >= 1 ? fmt(v) : v, hl: [{y: FDD.Qlim, c: '#C00000', dash: '7 4'}], vl: [{x: 100, c: '#999', w: 1.5}], series: [{d: pts(f.Q), c: cssv('--navy'), w: 1.8}], tip: x => `<b>${fmt(x)} min</b><br>Q = ${fmt(f.Q[Math.min(f.Q.length - 1, Math.round(x / 2))], 3)}`});
+  plot('cT', {x: [0, 600], y: [0.1, 1000], logy: true, xt: 100, xl: 'Time (min)', yf: v => v >= 1 ? fmt(v) : v, hl: [{y: FDD.T2lim, c: 'var(--c-rd)', dash: '7 4'}], vl: [{x: 100, c: '#999', w: 1.5}], series: [{d: pts(f.T2), c: cssv('--navy'), w: 1.8}], tip: x => `<b>${fmt(x)} min</b><br>T² = ${fmt(f.T2[Math.min(f.T2.length - 1, Math.round(x / 2))], 2)}`});
+  plot('cQ', {x: [0, 600], y: [0.01, 10000], logy: true, xt: 100, xl: 'Time (min)', yf: v => v >= 1 ? fmt(v) : v, hl: [{y: FDD.Qlim, c: 'var(--c-rd)', dash: '7 4'}], vl: [{x: 100, c: '#999', w: 1.5}], series: [{d: pts(f.Q), c: cssv('--navy'), w: 1.8}], tip: x => `<b>${fmt(x)} min</b><br>Q = ${fmt(f.Q[Math.min(f.Q.length - 1, Math.round(x / 2))], 3)}`});
   const first = 100 + Math.min(f.dT === null ? 1e9 : f.dT, f.dQ === null ? 1e9 : f.dQ); const al = $('falarm');
   if (t >= first) { al.className = 'alarm bad'; al.textContent = 'ALARM at ' + fmt(first) + ' min (' + fmt(first - 100) + ' min after the start of the fault)'; } else { al.className = 'alarm ok'; al.textContent = t < 100 ? 'Normal operation' : 'Fault developing – no alarm yet'; }
   $('fdChip').className = 'chip' + (t >= first ? ' bad' : t >= 100 ? ' warn' : ''); $('fdChip').innerHTML = `<i></i>${t >= first ? 'Alarm: F' + ST.FK + ' ' + f.name : t >= 100 ? 'Fault developing' : 'Normal operation'}`;
   $('finfo').innerHTML = `<div class="tbl"><table><thead><tr><th>Statistic</th><th>Detection delay</th></tr></thead><tbody><tr><td>T²</td><td>${f.dT === null ? '—' : f.dT + ' min'}</td></tr><tr><td>Q</td><td>${f.dQ === null ? '—' : f.dQ + ' min'}</td></tr></tbody></table></div>`;
   const show = t >= first; const W = 520, H = 290, ml = 40, mb = 50, mt = 10, mr = 8, bw = (W - ml - mr) / 8; const Y = v => mt + (80 - v) / 80 * (H - mt - mb);
   let g = ''; for (let v = 0; v <= 80; v += 20) g += `<line class="gl" x1="${ml}" x2="${W - mr}" y1="${Y(v)}" y2="${Y(v)}"/><text class="ax" x="${ml - 5}" y="${Y(v) + 4}" text-anchor="end">${v}</text>`;
-  f.c.forEach((c, j) => { const x = ml + j * bw; const cc = show ? c : 0; g += `<rect x="${x + 7}" y="${Y(cc)}" width="${bw - 14}" height="${Y(0) - Y(cc)}" fill="${c === Math.max(...f.c) ? '#C55A11' : '#2E75B6'}" rx="3" style="transition:all .4s"/>`;
+  f.c.forEach((c, j) => { const x = ml + j * bw; const cc = show ? c : 0; g += `<rect x="${x + 7}" y="${Y(cc)}" width="${bw - 14}" height="${Y(0) - Y(cc)}" fill="${c === Math.max(...f.c) ? 'var(--c-or)' : 'var(--c-bl)'}" rx="3" style="transition:all .4s"/>`;
     g += SIG[j].split(' ').map((w, q) => `<text class="ax" x="${x + bw / 2}" y="${H - mb + 17 + q * 14}" text-anchor="middle">${w}</text>`).join(''); });
   $('cC').innerHTML = g + (show ? '' : `<text x="${(W + ml) / 2}" y="${H / 2 - 10}" text-anchor="middle" style="font-size:15px;fill:var(--muted)">Shown after the alarm</text>`);
   const top = f.c.indexOf(Math.max(...f.c));
@@ -653,18 +729,18 @@ function rEM() {
   const K = [['e-methanol', fmt(o.meoh_t) + ' t/y', 'var(--green)'], ['Electrolyser', fmt(o.P_el_spec, 1) + ' MW', 'var(--blue)'], ['Net CO₂ avoided', fmt(o.co2_net) + ' t/y', 'var(--green)'], ['Carbon to product', fmt(o.eta_C, 2) + ' %', 'var(--navy)'],
    ['Water (net) / O₂', fmt((o.water_t - o.water_made_t) / 7920, 1) + ' m³/h · ' + fmt(o.o2_t / 1000, 0) + ' kt/y', 'var(--grey)'], ['Cost of e-methanol', f > 0 ? '$' + fmt(o.total, 0) + '/t' : '—', 'var(--orange)']];
   $('ekpis').innerHTML = K.map(([l, v, col]) => `<div class="kpi" style="--c:${col}"><div class="l">${l}</div><div class="v" style="font-size:21px">${v}</div></div>`).join('');
-  const parts = [['Synthesis section', o.syn, cssv('--navy')], ['Electrolyser', o.elz, '#2E75B6'], ['Electricity', o.elec, '#8FAADC'], ['Natural gas', o.ng, '#7F7F7F']]; const ymax = Math.max(900, Math.ceil((Math.max(o.total || 0, pm) + 50) / 100) * 100);
+  const parts = [['Synthesis section', o.syn, cssv('--navy')], ['Electrolyser', o.elz, 'var(--c-bl)'], ['Electricity', o.elec, 'var(--c-lb)'], ['Natural gas', o.ng, 'var(--c-gy)']]; const ymax = Math.max(900, Math.ceil((Math.max(o.total || 0, pm) + 50) / 100) * 100);
   let y0 = 0; const bars = []; const svg = $('eC'), W = 520, H = 300, ml = 56, mb = 30, mt = 12, mr = 14, Y = v => mt + (ymax - v) / ymax * (H - mt - mb); let g = '';
   ticks(0, ymax, 100).forEach(v => g += `<line class="gl" x1="${ml}" x2="${W - mr}" y1="${Y(v)}" y2="${Y(v)}"/><text class="ax" x="${ml - 7}" y="${Y(v) + 4}" text-anchor="end">${v}</text>`);
   const bw = 140, bx = ml + (W - ml - mr - bw) / 2; if (f > 0) parts.forEach(([n, v, col]) => { g += `<rect class="tb" data-t="<b>${n}</b>: ${fmt(v, 0)} $/t" x="${bx}" y="${Y(y0 + v)}" width="${bw}" height="${Y(y0) - Y(y0 + v)}" fill="${col}"/>`; y0 += v; });
-  g += `<line x1="${ml}" x2="${W - mr}" y1="${Y(pm)}" y2="${Y(pm)}" stroke="#C00000" stroke-width="2" stroke-dasharray="7 4"/><text class="ax" x="${bx + bw / 2}" y="${H - 9}" text-anchor="middle">Selected case</text>`; svg.innerHTML = g; bindTips(svg, '.tb');
-  $('eleg').innerHTML = parts.map(([n, v, col]) => `<span><i class="sw" style="background:${col}"></i>${n}: ${fmt(f > 0 ? v : 0, 0)} $/t</span>`).join('') + `<span><i class="sw dash" style="border-color:#C00000"></i>Methanol price: $${fmt(pm, 0)}/t</span>`;
+  g += `<line x1="${ml}" x2="${W - mr}" y1="${Y(pm)}" y2="${Y(pm)}" stroke="var(--c-rd)" stroke-width="2" stroke-dasharray="7 4"/><text class="ax" x="${bx + bw / 2}" y="${H - 9}" text-anchor="middle">Selected case</text>`; svg.innerHTML = g; bindTips(svg, '.tb');
+  $('eleg').innerHTML = parts.map(([n, v, col]) => `<span><i class="sw" style="background:${col}"></i>${n}: ${fmt(f > 0 ? v : 0, 0)} $/t</span>`).join('') + `<span><i class="sw dash" style="border-color:var(--c-rd)"></i>Methanol price: $${fmt(pm, 0)}/t</span>`;
   const ev = $('everd'); if (f <= 0) { ev.className = 'verdict'; ev.textContent = 'Move the first slider to size the extension.'; } else if (o.total <= pm) { ev.className = 'verdict ok'; ev.textContent = 'The e-methanol costs $' + fmt(o.total, 0) + '/t, $' + fmt(pm - o.total, 0) + '/t below the market price.'; }
   else { ev.className = 'verdict bad'; ev.textContent = 'The e-methanol costs $' + fmt(o.total, 0) + '/t, $' + fmt(o.total - pm, 0) + '/t above the market price at this electricity price.'; }
   const xs = []; for (let x = 0.5; x <= 7.001; x += 0.25) xs.push(x); const ff = Math.max(f, 0.05); const c1 = xs.map(x => [x, Math.min(900, emethanol(ff, x / 100, 1000, 55).total)]), c2 = xs.map(x => [x, Math.min(900, emethanol(ff, x / 100, 200, 45).total)]);
-  plot('eL', {x: [0, 7], y: [0, 900], xt: 1, yt: 100, xl: 'Electricity price (US¢/kWh)', hl: [{y: pm, c: '#C00000', dash: '7 4'}], series: [{d: c1, c: cssv('--navy'), w: 2.8}, {d: c2, c: '#548235', w: 2.8}], pts: f > 0 ? [{x: c * 100, y: Math.min(900, o.total), c: '#C55A11', r: 7}] : [],
+  plot('eL', {x: [0, 7], y: [0, 900], xt: 1, yt: 100, xl: 'Electricity price (US¢/kWh)', hl: [{y: pm, c: 'var(--c-rd)', dash: '7 4'}], series: [{d: c1, c: cssv('--navy'), w: 2.8}, {d: c2, c: 'var(--c-gr)', w: 2.8}], pts: f > 0 ? [{x: c * 100, y: Math.min(900, o.total), c: 'var(--c-or)', r: 7}] : [],
     tip: x => `<b>${fmt(x, 2)} US¢/kWh</b><br>Today: $${fmt(emethanol(ff, x / 100, 1000, 55).total, 0)}/t<br>2050: $${fmt(emethanol(ff, x / 100, 200, 45).total, 0)}/t`});
-  $('eleg2').innerHTML = `<span><i class="sw ln" style="background:var(--navy)"></i>Today’s electrolyser</span><span><i class="sw ln" style="background:#548235"></i>2050 electrolyser</span><span><i class="sw dash" style="border-color:#C00000"></i>Methanol market price</span><span><i class="sw dot" style="background:#C55A11"></i>Current case</span>`;
+  $('eleg2').innerHTML = `<span><i class="sw ln" style="background:var(--navy)"></i>Today’s electrolyser</span><span><i class="sw ln" style="background:var(--c-gr)"></i>2050 electrolyser</span><span><i class="sw dash" style="border-color:var(--c-rd)"></i>Methanol market price</span><span><i class="sw dot" style="background:var(--c-or)"></i>Current case</span>`;
   const be = (cp, e) => { if (emethanol(ff, 0, cp, e).total > pm) return null; let lo = 0, hi = 0.3; for (let k = 0; k < 50; k++) { const m = (lo + hi) / 2; if (emethanol(ff, m, cp, e).total > pm) hi = m; else lo = m; } return lo * 100; };
   const b1 = be(1000, 55), b2 = be(200, 45); $('ebe').textContent = 'Break-even electricity price at $' + fmt(pm, 0) + '/t of methanol: ' + (b1 === null ? 'none' : fmt(b1, 2) + ' US¢/kWh') + ' today and ' + (b2 === null ? 'none' : fmt(b2, 2) + ' US¢/kWh') + ' with the 2050 electrolyser.';
 }
@@ -695,15 +771,18 @@ function rVal() {
   $('valtab2').innerHTML = '<thead><tr><th>Quantity</th><th>Report</th><th>Twin</th></tr></thead><tbody>' + rows2.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td class="okc">${r[2]}</td></tr>`).join('') + '</tbody>';
 }
 // ===================================================================== command palette
-const CMDS = () => PAGES.map(p => ({t: TITLES[p], k: 'page', f: () => go(p)})).concat([{t: 'Reset every page to the design point', k: 'action', f: () => resetPage('all')}, {t: 'Toggle heat integration', k: 'action', f: () => { ST.HI = !ST.HI; syncInputs(); HICACHE = {}; render(); toast('Heat integration ' + (ST.HI ? 'ON' : 'OFF')); }},
+const PKW = {overview: 'home plant mass balance schedule', process: 'pfd flowsheet streams units data sheet', operations: 'ai optimiser set points beta phi rho feed profit safe', heat: 'pinch hen composite curves dtmin exchangers utility',
+  control: 'loops pid tuning p&id isa response', economics: 'npv irr dcfror cash flow capital cost tornado monte carlo payback', market: 'prices scenarios crisis methanol hydrogen', safety: 'pca fault diagnosis t2 q knn monitoring',
+  emethanol: 'solar electrolysis co2 purge e-methanol', validation: 'report check chapters values'};
+const CMDS = () => PAGES.map(p => ({t: TITLES[p], kw: PKW[p], k: 'page', f: () => go(p)})).concat([{t: 'Reset every page to the design point', k: 'action', f: () => resetPage('all')}, {t: 'Toggle heat integration', k: 'action', f: () => { ST.HI = !ST.HI; syncInputs(); HICACHE = {}; render(); toast('Heat integration ' + (ST.HI ? 'ON' : 'OFF')); }},
   {t: 'AI: maximum profit', k: 'action', f: () => { go('operations'); setTimeout(() => runMode('npv'), 300); }}, {t: 'AI: safe operation', k: 'action', f: () => { go('operations'); setTimeout(() => runMode('safe'), 300); }},
   {t: 'Crisis scenario 2026', k: 'scenario', f: () => { const s = SCEN.find(z => z.id === 'crisis'); ST.SCID = s.id; ST.MK = clone(s.mk); syncInputs(); go('market'); render(); }}, {t: 'Run the Monte Carlo simulation', k: 'action', f: () => { go('economics'); setTimeout(() => $('mcRun').click(), 300); }},
   {t: 'Light / dark theme', k: 'action', f: () => $('theme').click()}]).concat(Object.keys(UNITS).filter(k => !UNITS[k].alias).map(k => ({t: k + ' – ' + UNITS[k].n, k: 'unit', f: () => { go('process'); setTimeout(() => openUnit(k), 350); }})));
-let palSel = 0;
+let palSel = 0; const esc = t => t.replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'})[c]);
 function openPal() { $('palette').classList.add('open'); $('pq').value = ''; palSel = 0; renderPal(); setTimeout(() => $('pq').focus(), 10); }
 function closePal() { $('palette').classList.remove('open'); }
-function renderPal() { const q = $('pq').value.toLowerCase(); const L = CMDS().filter(c => c.t.toLowerCase().includes(q)).slice(0, 12); palSel = Math.min(palSel, L.length - 1);
-  $('pres').innerHTML = L.map((c, i) => `<button class="${i === palSel ? 'on' : ''}" data-i="${i}">${c.t}<small>${c.k}</small></button>`).join(''); $$('#pres button').forEach(b => b.addEventListener('click', () => { closePal(); L[+b.dataset.i].f(); })); $('pres')._L = L; }
+function renderPal() { const q = $('pq').value.toLowerCase(); const L = CMDS().filter(c => (c.t + ' ' + (c.kw || '')).toLowerCase().includes(q)).slice(0, 12); palSel = Math.max(0, Math.min(palSel, L.length - 1));
+  $('pres').innerHTML = L.length ? L.map((c, i) => `<button class="${i === palSel ? 'on' : ''}" data-i="${i}">${c.t}<small>${c.k}</small></button>`).join('') : `<p class="pnone">Nothing matches “${esc(q)}”. Try a sheet name, a unit tag such as R-103, or a word such as NPV or pinch.</p>`; $$('#pres button').forEach(b => b.addEventListener('click', () => { closePal(); L[+b.dataset.i].f(); })); $('pres')._L = L; }
 $('pal').addEventListener('click', openPal); $('pq').addEventListener('input', () => { palSel = 0; renderPal(); });
 $('palette').addEventListener('click', e => { if (e.target.id === 'palette') closePal(); });
 document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openPal(); }
