@@ -171,5 +171,5 @@ export const SLIDES = [
   {id: 'twin', chap: 'Digital twin', cam: 'local', shot: 'twin', kicker: 'Chapter 10 · Smart plant', title: 'The plant, live in your browser',
    text: 'The digital twin runs the plant model, the heat integration, the control loops and the economics. Scan the code to open it.'},
   {id: 'end', chap: 'Thank you', cam: 'globe', team: true, kicker: 'College of Engineering · Department of Chemical Engineering', title: 'Thank you',
-   text: 'Supervisors: Prof. Dr. Abdelhamid Ajbar and Dr. Lhassan Elbelidi'}
+   text: 'Supervisors: Prof. Dr. Abdelhamid Ajbar and Dr. Lahassean Elbelidi'}
 ];
