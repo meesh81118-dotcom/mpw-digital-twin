@@ -493,8 +493,6 @@ table.pick tbody tr.on td:first-child{box-shadow:inset 4px 0 0 var(--ink)}
 .ecin .ecg{display:none} .ecin .ecg.on{display:block}
 .ecin .ecg h4{margin:14px 0 4px}
 .ecin .ecg .note{margin:-2px 0 10px}
-.ecin #ecDiff{margin-top:14px}
-.ecin #ecDiff ul{margin:6px 0 0;padding-left:18px} .ecin #ecDiff li{margin:2px 0}
 .ctl .ref{display:block;font:500 12.5px var(--f);color:var(--graphite);margin-top:-2px}
 /* phones: the title block keeps its first line only, so the sheet starts sooner */
 @media (max-width:760px){
@@ -504,3 +502,5 @@ table.pick tbody tr.on td:first-child{box-shadow:inset 4px 0 0 var(--ink)}
   .phead{padding:18px 0 16px}
   .phead .pagebar{margin-top:10px}
 }
+
+#marginBox[hidden]{display:none}

@@ -114,7 +114,7 @@
     <aside class="card sticky">
       <h3><span class="h">Operating mode</span></h3>
       <div class="modes" id="modes"><button data-m="design" class="on">Design point</button><button data-m="safe">Safe operation</button><button data-m="npv">Maximum profit</button><button data-m="feed">Maximum throughput</button><button data-m="meoh">Maximum methanol</button><button data-m="h2">Maximum hydrogen</button></div>
-      <div class="ctl" style="margin-top:14px"><label for="margin">Safety margin below design load <output id="o-margin"></output></label><input id="margin" type="range" min="0" max="5" step="0.5" value="2"></div>
+      <div class="ctl" id="marginBox" style="margin-top:14px"><label for="margin">Safe operation: margin below the design load <output id="o-margin"></output></label><input id="margin" type="range" min="0" max="5" step="0.5" value="2"><span class="ref">The AI search runs again for the margin selected.</span></div>
       <div class="box" id="modetxt"></div>
       <h4>Set points</h4>
       <div class="ctl"><label for="beta">Syngas to methanol (D-102), β <output id="o-beta"></output></label><input id="beta" type="range" min="0.35" max="0.45" step="0.0001" value="0.40"></div>
@@ -245,7 +245,6 @@
       <div class="ecg" data-g="cap" id="ecCap"></div>
       <div class="ecg" data-g="time" id="ecTime"></div>
       <div class="ecg" data-g="fin" id="ecFin"></div>
-      <div class="box" id="ecDiff"></div>
     </aside>
     <div class="cq">
       <div class="kpis" id="ecK"></div>

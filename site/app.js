@@ -119,7 +119,7 @@ function resetPage(p, quiet) {
 $('resetAll').addEventListener('click', () => { resetPage('all'); window.scrollTo({top: 0, behavior: 'smooth'}); });
 function syncInputs() {
   const set = (id, v) => { const el = $(id); if (el) { el.value = v; fillRange(el); } };
-  set('beta', ST.X[0]); set('phi', ST.X[1]); set('rho', ST.X[2]); set('feed', ST.X[3] * 100); set('margin', ST.margin);
+  set('beta', ST.X[0]); set('phi', ST.X[1]); set('rho', ST.X[2]); set('feed', ST.X[3] * 100); set('margin', ST.margin); $('marginBox').hidden = ST.MODE !== 'safe';
   $$('#modes button').forEach(b => b.classList.toggle('on', b.dataset.m === ST.MODE));
   $('pfdHI').checked = ST.pfdHI; $('pfdFlow').checked = ST.pfdFlow; $$('#secSeg button').forEach(b => b.classList.toggle('on', b.dataset.s === ST.sec)); $('stq').value = ST.stq;
   $('hiOn').checked = ST.HI; set('dtmin', ST.dT); set('cpm', ST.cpm);
@@ -359,7 +359,8 @@ function rOps() {
     return `<tr><td><b>${n}</b></td><td>${SNAME[n]}</td><td>${fmt(b, 2)}</td><td>${fmt(v, 2)}</td><td class="${Math.abs(x) < 0.05 ? '' : x > 0 ? 'okc' : 'badc'}">${Math.abs(x) < 0.05 ? '—' : (x > 0 ? '+' : '') + fmt(x, 2) + ' %'}</td></tr>`; }).join('') + '</tbody>';
 }
 function runMode(m) {
-  ST.MODE = m; $$('#modes button').forEach(b => b.classList.toggle('on', b.dataset.m === m));
+  const prev = ST.MODE; if (m !== 'safe' && m !== 'feed' && prev !== 'manual') ST.X[3] = 1.0;   // AI modes start from the design feed unless the operator set the feed by hand
+  ST.MODE = m; $$('#modes button').forEach(b => b.classList.toggle('on', b.dataset.m === m)); $('marginBox').hidden = m !== 'safe';
   if (m === 'design') { ST.X = [0.40, 0.10, 0.90, 1.0]; syncInputs(); $('ainote').textContent = 'Design point of Chapter 2.'; render(); return; }
   $$('#modes button').forEach(b => b.disabled = true); $('ainote').innerHTML = '<span class="spin"></span> AI search running…';
   setTimeout(() => { const o = optimise(MKX(), {objective: m === 'safe' ? 'npv' : m, mode: m === 'safe' ? 'safe' : 'max', margin: ST.margin / 100, feed: m === 'safe' ? 1 : ST.X[3]});
@@ -367,8 +368,8 @@ function runMode(m) {
 }
 $$('#modes button').forEach(b => b.addEventListener('click', () => runMode(b.dataset.m)));
 $('margin').addEventListener('input', () => { ST.margin = +$('margin').value; $('o-margin').value = fmt(ST.margin, 1) + ' %'; });
-$('margin').addEventListener('change', () => { if (ST.MODE === 'safe') runMode('safe'); else render(); });
-['beta', 'phi', 'rho', 'feed'].forEach((id, j) => $(id).addEventListener('input', () => { ST.X[j] = j === 3 ? +$(id).value / 100 : +$(id).value; ST.MODE = 'manual'; $$('#modes button').forEach(b => b.classList.remove('on')); $('ainote').textContent = 'Manual set point.'; render(); }));
+$('margin').addEventListener('change', () => runMode('safe'));
+['beta', 'phi', 'rho', 'feed'].forEach((id, j) => $(id).addEventListener('input', () => { ST.X[j] = j === 3 ? +$(id).value / 100 : +$(id).value; ST.MODE = 'manual'; $$('#modes button').forEach(b => b.classList.remove('on')); $('marginBox').hidden = true; $('ainote').textContent = 'Manual set point.'; render(); }));
 $('toDesign').addEventListener('click', () => runMode('design'));
 // ===================================================================== HEAT INTEGRATION
 const HEATC = 2060796.77 / 25927.58, CWC = 0.45 * 28.512, CHWC = 17.037 / 5 * 28.512, CRF = 0.1 * Math.pow(1.1, 20) / (Math.pow(1.1, 20) - 1), FCIF = 478400128.68 / 298183405.96;
@@ -629,21 +630,11 @@ function syncEcon() {
   $$('#xdep button').forEach(b => b.classList.toggle('on', b.dataset.k === ST.EC.dep));
   $$('#ecTab button').forEach(b => b.classList.toggle('on', b.dataset.k === ST.ecTab)); $$('.ecin .ecg').forEach(g => g.classList.toggle('on', g.dataset.g === ST.ecTab));
 }
-// inputs that differ from Chapter 8, listed with the value of the report
-function ecChanges() {
-  const out = []; MS.forEach(([id, k, dflt, , inv, l, , , , f]) => { if (k in ST.MK && Math.abs(ST.MK[k] - dflt) > 1e-9) out.push([l.replace(/ \(.*\)$/, ''), f(inv(ST.MK[k])), f(inv(dflt))]); });
-  const D = DEF.EC; ESALL().forEach(([id, k, l, , , , f]) => { const v = ecGet(k), d = k.startsWith('eq.') ? 0 : D[k]; if (Math.abs(v - d) > 1e-9) out.push([l.replace(/ \(.*\)$/, ''), f(v), f(d)]); });
-  if (ST.EC.dep !== D.dep) out.push(['Depreciation', DEPS.find(d => d[0] === ST.EC.dep)[1], 'MACRS 5']);
-  if (!ST.HI) out.push(['Heat integration', 'OFF', 'ON']); return out;
-}
 function rEcon() {
   const p = E0.p, D = econDetail(p), ind = indicators(E0.cf, p.i, D.B), full = D.full, cep = p.cepci || 840.9;
-  // input read-outs and the list of changes
+  // read-outs of the inputs
   EC_MS.price.concat(EC_MS.cap, EC_MS.fin).forEach(id => { const m = MS.find(z => z[0] === id); $('o-e' + id).value = m[9](+$('e' + id).value); });
   ESALL().forEach(([id, k, , , , , f]) => { $('o-x' + id).value = f(ecGet(k)); });
-  const ch = ecChanges(); $('ecDiff').className = 'box' + (ch.length ? ' or' : '');
-  $('ecDiff').innerHTML = ch.length ? `<b>Changed from Chapter 8</b><ul>${ch.map(([l, v, d]) => `<li>${l}: <b>${v}</b> <span style="color:var(--graphite)">(report ${d})</span></li>`).join('')}</ul><p style="margin:8px 0 0">NPV ${money(ind.npv)} M against ${money(DES.npv)} M in the report (${ind.npv - DES.npv >= 0 ? '+' : '−'}${fmt(Math.abs(ind.npv - DES.npv), 2)} M$).</p>`
-    : `Every input is at its value in Chapter 8: NPV ${money(DES.npv)} M, DCFROR ${fmt(DES.irr * 100, 2)} %.`;
   const K = [['Fixed-capital investment', money(D.F / 1e6) + ' M', 'var(--navy)', (ST.HI ? 'Turton module method' : 'without heat integration') + ', CEPCI ' + fmt(cep, 1)], ['Annual revenue', money(full.R / 1e6) + ' M', 'var(--green)', 'full capacity, year ' + full.y],
    ['Cost of manufacturing', money(full.C / 1e6) + ' M/y', 'var(--orange)', 'COMd, Turton correlation'], ['Net present value', money(ind.npv) + ' M', 'var(--blue)', 'at ' + fmt(p.i * 100, 1) + ' %, ' + D.L + ' years of operation'],
    ['DCFROR', ind.irr === null ? '—' : fmt(ind.irr * 100, 2) + ' %', 'var(--gold)', 'discounted payback ' + (ind.dpb === null ? 'beyond the life' : fmt(ind.dpb, 2) + ' years')], ['ROROI / payback', fmt(D.roroi * 100, 2) + ' % · ' + fmt(D.pbp, 2) + ' y', 'var(--grey)', 'non-discounted']];
