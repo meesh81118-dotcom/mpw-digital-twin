@@ -207,7 +207,7 @@ function unitPanel(id, tab) { const u = UNITS[id]; if (!u) return; const I = INF
   $('pBody').querySelectorAll('.tabs button').forEach(b => b.onclick = () => { PTAB = b.dataset.t; P0.classList.toggle('compact', PTAB !== 'over'); $('pBody').querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b)); const t = $('pTab'); t.innerHTML = tabBody(id, PTAB); t.scrollTop = 0; t.style.animation = 'none'; void t.offsetWidth; t.style.animation = ''; });
   $('pBack').onclick = plantView; $('pNext').onclick = () => go(IDX + 1);
   P0.classList.add('on'); }
-function streamsPanel() { const ids = Object.keys(SNAME).map(Number); const P0 = $('panel'); P0.style.setProperty('--sec', '#e8620c');
+function streamsPanel() { const ids = Object.keys(SNAME).map(Number); const P0 = $('panel'); P0.style.setProperty('--sec', '#e04a1b');
   $('pBody').innerHTML = `<div class="ph"><div class="row"><span class="plate">PFD</span><span class="secn">Heat-integrated flowsheet, Figure 4.18</span></div><h3>42 streams</h3>
     <div class="legend">${Object.entries(SVC).map(([k, [c, n]]) => `<span><i class="sw" style="background:${c}"></i>${n}</span>`).join('')}</div></div>
     <div class="pb"><div class="slist">${ids.map(n => { const d = SDATA[n]; return `<button data-s="${n}">${dia(n)}<span>${SNAME[n]}</span><em>${d && d[0] != null ? d[0].toLocaleString('en-US', {maximumFractionDigits: 0}) + ' °C' : ''}</em></button>`; }).join('')}</div></div>`;
@@ -231,13 +231,13 @@ function cardHTML(o, sl) { let h = sl.steps ? `${kick(sl.kicker)}<h1>${o.kicker}
   if (sl.team) h += `<div class="team"><span>Prepared by</span><b>${TEAM[0]}</b><b>${TEAM[1]}</b></div>`;
   if (sl.steps) h += `<div class="steps">${sl.steps.map((s, i) => `<i class="${i <= STEP ? 'on' : ''}"></i>`).join('')}</div>`;
   return h; }
-function showCard(sl, o = sl) { const c = $('card'); c.classList.remove('on'); c.classList.toggle('globe', sl.cam === 'globe'); c.style.setProperty('--sec', sl.focus && UNITS[sl.focus] ? UNITS[sl.focus].col : '#e8620c');
+function showCard(sl, o = sl) { const c = $('card'); c.classList.remove('on'); c.classList.toggle('globe', sl.cam === 'globe'); c.style.setProperty('--sec', sl.focus && UNITS[sl.focus] ? UNITS[sl.focus].col : '#e04a1b');
   setTimeout(() => { $('cardIn').innerHTML = cardHTML(o, sl); c.classList.add('on'); setTimeout(() => { $('cardIn').querySelectorAll('[data-w]').forEach(i => i.style.width = i.dataset.w + '%'); $('cardIn').querySelectorAll('[data-c]').forEach(s => cnt(s, s.dataset.c)); if (sl.id === 'econ') spark(); }, 120); }, 260 * FAST); }
 function spark() { const s = $('spark'); if (!s) return; const X = i => 34 + i / 22 * 470, Y = v => 22 + (125 - v) / 600 * 84;
-  s.innerHTML = `<line x1="34" x2="504" y1="${Y(0)}" y2="${Y(0)}" stroke="rgba(15,34,54,.3)" stroke-dasharray="4 4"/><path d="${CF.map((v, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(v).toFixed(1)).join(' ')}" fill="none" stroke="#e8620c" stroke-width="3" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="transition:stroke-dashoffset 2.2s ease .3s"/>
-    <circle cx="${X(22)}" cy="${Y(105.04)}" r="5" fill="#e8620c"/><text x="${X(22) - 8}" y="${Y(105.04) - 9}" text-anchor="end" fill="#0f2236" style="font:700 15px Barlow Semi Condensed">NPV 105.04 M$</text>
-    <text x="34" y="127" fill="#627589" style="font:500 13px Barlow">Cumulative discounted cash flow, years 0–22 (M$)</text>`; requestAnimationFrame(() => s.querySelector('path').style.strokeDashoffset = 0); }
-function navUI(i) { $$('#dots button').forEach((b, k) => { b.classList.toggle('on', k === i); b.classList.toggle('done', k < i); }); $('num').innerHTML = `<b>${SLIDES[i].chap}</b><span>${i + 1} / ${SLIDES.length}</span>`; $('chap').textContent = SLIDES[i].chap; }
+  s.innerHTML = `<line x1="34" x2="504" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--mut)" stroke-dasharray="4 4"/><path d="${CF.map((v, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(v).toFixed(1)).join(' ')}" fill="none" stroke="var(--pen)" stroke-width="3" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="transition:stroke-dashoffset 2.2s ease .3s"/>
+    <circle cx="${X(22)}" cy="${Y(105.04)}" r="5" fill="var(--hot)"/><text x="${X(22) - 8}" y="${Y(105.04) - 9}" text-anchor="end" style="fill:var(--ink);font:800 18px Shoulders">NPV 105.04 M$</text>
+    <text x="34" y="127" style="fill:var(--mut);font:500 13px Plex">Cumulative discounted cash flow, years 0–22 (M$)</text>`; requestAnimationFrame(() => s.querySelector('path').style.strokeDashoffset = 0); }
+function navUI(i) { $$('#dots button').forEach((b, k) => { b.classList.toggle('on', k === i); b.classList.toggle('done', k < i); }); $('num').innerHTML = `<b>${SLIDES[i].chap}</b><span>${String(i + 1).padStart(2, '0')} / ${SLIDES.length}</span>`; $('chap').textContent = SLIDES[i].chap; }
 async function closeCut() { if (!OPEN_CUT) return; const c = OPEN_CUT; OPEN_CUT = null;  (c.meshes || []).forEach(m => m.userData.cut = false); await c.close(); }
 async function openCut(id) { const c = CUT[id]; if (!c) return; OPEN_CUT = c;  (c.meshes || []).forEach(m => { if (m.userData.orig === undefined) m.userData.orig = null; }); const f = FOCUS[id]; c.open(f.az * D2R); (c.meshes || []).forEach(m => m.userData.cut = true); }
 const GLOBE_INTRO = {lat: 18, lon: 34, alt: 21000, tilt: 0, head: 0, shift: 0.16}, GLOBE_END = {lat: 20, lon: 42, alt: 19000, tilt: 0, head: 0, shift: 0.16};
@@ -307,11 +307,11 @@ addEventListener('keydown', e => { if (e.target.closest && e.target.closest('inp
 function toggleFull() { if (!document.fullscreenElement) document.documentElement.requestFullscreen?.(); else document.exitFullscreen?.(); }
 function toggleLabels() { LABELS = !LABELS; $('bLabels').classList.toggle('on', LABELS); }
 let STREAMS_ON = false; function toggleStreams() { STREAMS_ON = !STREAMS_ON; $('bStreams').classList.toggle('on', STREAMS_ON); SHOW_ALL_STREAMS = STREAMS_ON || (SLIDE && SLIDE.streams === 'all'); if (MODE === 'local') setFlows(STREAMS_ON ? 'all' : (SLIDE && SLIDE.streams) || []); }
-function buildNav() { $('dots').innerHTML = SLIDES.map((s, i) => `<button data-t="${s.chap}" title="${s.chap}"></button>`).join(''); $$('#dots button').forEach((b, i) => b.onclick = () => go(i));
+function buildNav() { $('dots').innerHTML = SLIDES.map((s, i) => `<button data-t="${s.chap}" aria-label="${s.chap}"><i data-n="${String(i + 1).padStart(2, '0')}"></i></button>`).join(''); $$('#dots button').forEach((b, i) => b.onclick = () => go(i));
   $('next').onclick = () => { if (!nextStep(1)) go(IDX + 1); }; $('prev').onclick = () => go(IDX - 1); $('home').onclick = () => go(0);
   $('bFull').onclick = toggleFull; $('bQ').onclick = () => { try { localStorage.setItem('mpwQuality', LITE ? 'high' : 'lite'); } catch (e) {} const u = new URL(location.href); u.searchParams.set('q', LITE ? 'high' : 'lite'); location.href = u.toString(); }; $('bExplore').onclick = () => (EXPLORE ? exitExplore() : enterExplore()); $('bLabels').onclick = toggleLabels; $('bAuto').onclick = toggleAuto; $('bStreams').onclick = toggleStreams; $('pClose').onclick = back;
   $('bTop').onclick = plantView; $('bMenu').onclick = () => toggleMenu();
-  $('menu').innerHTML = SLIDES.map((s, i) => `<button data-i="${i}"><i>${i + 1}</i><span>${s.chap}<small>${s.title.replace(/<br>/g, ' ').replace(/<[^>]+>/g, '')}</small></span></button>`).join('') + `<div class="cr">© 2026 ${TEAM[0]} and ${TEAM[1]}. All rights reserved.</div>`;
+  $('menu').innerHTML = SLIDES.map((s, i) => `<button data-i="${i}"><i>${String(i + 1).padStart(2, '0')}</i><span>${s.chap}<small>${s.title.replace(/<br>/g, ' ').replace(/<[^>]+>/g, '').replace(/ · /g, ', ')}</small></span></button>`).join('') + `<div class="cr">© 2026 ${TEAM[0]} and ${TEAM[1]}. All rights reserved.</div>`;
   $$('#menu button').forEach(b => b.onclick = () => { toggleMenu(false); go(+b.dataset.i); });
   addEventListener('pointerdown', e => { if ($('menu').classList.contains('on') && !e.target.closest('#menu,#bMenu')) toggleMenu(false); }); }
 function toggleMenu(on) { const m = $('menu'); on = on ?? !m.classList.contains('on'); m.classList.toggle('on', on); $('bMenu').classList.toggle('on', on);
@@ -374,7 +374,7 @@ function makeTags() {
   // callouts of the cutaways
   for (const id in CUT) CUT[id].callouts.forEach((c, i) => { const side = i % 2 ? -1 : 1, m = c.html.match(/^<b>(.*?)<\/b>(.*)$/), title = m ? m[1] : c.html, parts = m && m[2] ? m[2].split(' · ') : [];
     const body = parts.map(t => { const q = t.match(/^Stream (\d+)(.*)$/); return q ? `<span>${dia(q[1], 1)}${q[2].trim()}</span>` : `<span>${t}</span>`; }).join('');
-    const el = mkEl('co', `<div class="ln"></div><div class="dt"></div><div class="box"><b>${title}</b>${body ? `<div class="vals">${body}</div>` : ''}</div>`); el.style.setProperty('--c', UNITS[id] ? UNITS[id].col : '#e8620c');
+    const el = mkEl('co', `<div class="ln"></div><div class="dt"></div><div class="box"><b>${title}</b>${body ? `<div class="vals">${body}</div>` : ''}</div>`); el.style.setProperty('--c', UNITS[id] ? UNITS[id].col : '#e04a1b');
     CALLS.push({el, box: el.querySelector('.box'), ln: el.querySelector('.ln'), p: c.p, cw: CUT[id], side, on: false, w: 0}); });
 }
 
