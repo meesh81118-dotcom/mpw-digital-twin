@@ -7,7 +7,7 @@ function mcDecode() { if (mcDecode.v) return mcDecode.v; const b = atob(MC2026),
 function monteCarlo(n, base, seed) {
   const fixed = seed === 2026 && typeof MC2026 !== 'undefined'; const U = fixed ? mcDecode() : null;
   let s = seed || 20261; const rnd = () => { s = (s * 1103515245 + 12345) % 2147483648; return s / 2147483648; };
-  const r0 = base && base.fq && feedOf(base.fq) ? plant(0.40, 0.10, 0.90, 1, feedOf(base.fq)) : BASE_R, out = [];   // the feed of sheet 11 at the design set point
+  const r0 = base && base.fq && feedOf(base.fq) ? plant(0.40, 0.10, 0.90, 1, feedOf(base.fq)) : BASE_R, out = [];   // the feed of sheet 10 at the design set point
   for (let k = 0; k < n; k++) { const mk = Object.assign({}, base || {}); MC_DIST.forEach(([key, a, c, b], j) => mk[key] = fixed ? a + U[7 * k + j] / 65535 * (b - a) : tri(rnd(), a, c, b));
     const p = econParams(r0, mk); const cf = cashflow(p); out.push(npvAt(cf, p.i) / 1e6); }
   out.sort((a, b) => a - b); const mean = out.reduce((a, b) => a + b, 0) / n;

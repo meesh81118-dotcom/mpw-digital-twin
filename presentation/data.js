@@ -162,14 +162,34 @@ export const SLIDES = [
   {id: 'control', chap: 'Control', cam: 'local', shot: 'control', kicker: 'Chapter 6 · Process control', title: '34 control loops',
    text: 'Feedback, cascade, ratio and feedforward loops on every unit. TC-310 was tuned with five methods; Cohen–Coon PID was selected and verified in Simulink.',
    stats: [['34', '', 'loops'], ['1.07 / 0.675 / 0.112', '', 'Kc / τI / τD (TC-310)'], ['6.0', '', 'gain margin']]},
-  {id: 'safety', chap: 'Safety', cam: 'local', shot: 'safety', kicker: 'Chapter 7 · Safety', title: 'Safety by layout',
-   text: 'R-103 is the most hazardous unit (Dow F&EI 74.3). Every occupied building lies outside its 19 m radius of exposure; the flare keeps a 16 m exclusion zone.',
-   stats: [['74.3', '', 'Dow F&EI of R-103'], ['19.0', 'm', 'radius of exposure'], ['62', 'm', 'to occupied buildings']], units: ['R-103', 'FLARE', 'CONTROL']},
+  {id: 'safety', chap: 'Safety', cam: 'local', shot: 'safety', kicker: 'Chapter 7 · Safety', title: 'Safety by layout', units: ['R-103', 'FLARE', 'CONTROL'],
+   steps: [
+     {kicker: 'Safety by layout', text: 'R-103 is the most hazardous unit (Dow F&EI 74.3). Every occupied building lies outside its 19 m radius of exposure; the flare keeps a 16 m exclusion zone. <b>Press → to run an emergency.</b>',
+      stats: [['74.3', '', 'Dow F&EI of R-103'], ['19.0', 'm', 'radius of exposure'], ['62', 'm', 'to occupied buildings']]},
+     {kicker: 'Emergency: purge gas leak', text: 'The worst case of the hazard analysis (scenario 9, Table 7.7): the CO-rich purge escapes at D-103. The gas is drawn in colour, but CO can be neither seen nor smelled. The north-north-west wind carries it away from the control room.',
+      stats: [['26.6', '%', 'CO in the purge'], ['1,200', 'ppm', 'IDLH of CO'], ['25', 'ppm', 'exposure limit']]},
+     {kicker: 'Detect, isolate, flare', text: 'Fixed CO detectors around the loop raise the alarm. The emergency shutdown isolates the loop and the relief valves send the gas to the closed flare instead of the air.',
+      seq: ['CO detectors alarm at 25 ppm', 'ESD closes the purge and isolation valves', 'The loop relieves to the closed flare', 'Operators act from the blast-resistant control room, 24 m upwind']},
+     {kicker: 'Everyone to the assembly points', text: 'Four assembly points in open areas (staff parking, garden, truck parking and product loading) lie upwind or away from the process area. The fire engines reach any unit on the ring road without crossing a building block.',
+      stats: [['4', '', 'assembly points'], ['24', 'm', 'control room, upwind'], ['2', '', 'emergency gates (G4, G5)']]}]},
   {id: 'econ', chap: 'Economics', cam: 'local', shot: 'econ', kicker: 'Chapter 8 · Economic analysis', title: 'A profitable plant',
-   text: 'Turton module costing, MACRS-5 depreciation, zakat 2.5 % and a 20-year discounted cash flow at 10 %.',
-   stats: [['478.40', 'M$', 'fixed capital'], ['105.04', 'M$', 'NPV at 10 %'], ['12.80', '%', 'DCFROR'], ['13.06', 'y', 'discounted payback']]},
+   steps: [
+     {kicker: 'Two years to build', text: 'The fixed capital of $478.40 M is spent evenly over two years of construction. Watch the plant rise, section by section, from the feed hall in the west to the tank farm in the east.', build: true},
+     {kicker: 'A profitable plant', text: 'Turton module costing, MACRS-5 depreciation, zakat 2.5 % and a 20-year discounted cash flow at 10 %.', spark: true,
+      stats: [['478.40', 'M$', 'fixed capital'], ['105.04', 'M$', 'NPV at 10 %'], ['12.80', '%', 'DCFROR'], ['13.06', 'y', 'discounted payback']]}]},
   {id: 'twin', chap: 'Digital twin', cam: 'local', shot: 'twin', kicker: 'Chapter 10 · Smart plant', title: 'The plant, live in your browser',
-   text: 'The digital twin runs the plant model, the heat integration, the control loops and the economics. Scan the code to open it.'},
+   steps: [
+     {kicker: 'The plant, live in your browser', text: 'The digital twin runs the plant model, the heat integration, the control loops and the economics. Scan the code to open it. <b>Press → to see it watch the plant.</b>'},
+     {kicker: 'The twin watches every unit', text: 'Eight signals are checked every minute with PCA. Here the R-103 catalyst slowly loses activity: the Q statistic crosses its 99 % limit 30 minutes after the fault starts, and the k-NN diagnosis names it correctly.', fdd: true}]},
+  {id: 'future', chap: 'Vision 2030', cam: 'local', shot: 'future', kicker: 'Phase 2 · Saudi Vision 2030', title: 'The plant of 2030',
+   steps: [
+     {kicker: 'Sunlight into hydrogen', text: 'A solar field powers 411.8 MW of electrolysers at the Saudi solar tariff of 1.04 US¢/kWh. Their hydrogen meets the carbon of the purge gas, which today is burned as fuel.',
+      stats: [['411.8', 'MW', 'electrolysers'], ['1.04', 'US¢/kWh', 'solar tariff'], ['288', '$/t', 'e-methanol cost']]},
+     {kicker: 'Closing the carbon loop', text: 'The CO and CO₂ of the purge become e-methanol. The carbon of the plastic kept in products rises from 41 % to 94 %, a step towards the Kingdom’s net-zero target of 2060 (Section 10.5).', carbon: [41.04, 94.23],
+      stats: [['345,008', 't/y', 'e-methanol'], ['416,400', 't/y', 'CO₂ avoided'], ['94.23', '%', 'carbon to products']]}]},
   {id: 'end', chap: 'Thank you', cam: 'globe', team: true, kicker: 'College of Engineering · Department of Chemical Engineering', title: 'Thank you',
    text: 'Supervisors: Prof. Dr. Abdelhamid Ajbar and Dr. Lahassean Elbelidi'}
 ];
+
+// Q statistic of Fault 4 (deactivation of the R-103 catalyst), one value every 2 min; 99 % limit 2.018 (Section 10.4, twin sheet 08)
+export const FDD4 = {Qlim: 2.018, dQ: 30, dT: 81, acc: 100, c: [2.3,0,1,1.1,67.1,13.5,15,0], Q: [0.266,0.44,0.084,0.0104,0.643,0.622,0.105,0.766,0.173,0.192,0.416,0.476,1.13,0.24,0.375,0.577,0.271,0.765,0.235,0.77,0.411,1.28,0.652,0.125,1.17,0.382,0.763,0.867,0.238,0.623,1.87,0.337,0.517,0.277,1.67,0.156,0.543,1.07,1.56,0.145,0.188,1.34,0.419,0.276,0.314,0.189,0.877,0.5,0.4,0.444,0.313,1.29,0.362,0.656,0.202,0.146,0.749,0.746,0.493,1.29,0.999,1.62,0.229,1.88,1.69,3.76,4.37,3.33,3.56,3.01,3.4,5.15,4.64,8.93,10.9,9.97,12.4,7.9,17.3,13.9,15.3,11.1,17.1,15.9,24.8,18.4,27,32.3,27.4,28.2,32.4,33,35.1,34.4,54,41.4,48.2,54,50.1,60,58.1,59.8,62,72.3,68.3,69,83.5,77.7,80.6,79.2,96.8,81.8,100,113,106,105,126,130,105,116,153,141,148,144,152,149,150,148,159,204,190,199,192,177,203,190,217,185,218,224,254,257,228,227,283,261,256,288,271,286,269,302,322,306,304,344,326,348,336,361,400,375,375,387,393,390,420,394,438,420,434,463,468,465,507,471,523,540,536,564,492,525,545,583,581,605,624,658,618,649,638,695,658,652,671,658,711,724,771,702,754,795,743,784,781,786,818,859,830,821,893,843,915,887,907,926,933,907,965,1020,954,996,1010,1030,1040,1090,1040,1060,1110,1200,1100,1170,1150,1160,1210,1160,1160,1190,1280,1150,1230,1260,1210,1330,1300,1310,1370,1380,1390,1350,1370,1440,1420,1510,1440,1390,1510,1450,1470,1460,1460,1530,1490,1520,1530,1510,1550,1600,1530,1570,1540,1500,1520,1550,1550,1600,1490,1580,1600,1500,1540,1580,1550,1640,1600,1520,1520,1560,1480,1540,1590,1550,1550,1510,1540,1520,1540,1520,1550,1520]};

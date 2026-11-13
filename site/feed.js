@@ -1,5 +1,5 @@
-// ===================================================================== FEEDSTOCK LAB (sheet 11) and SUSTAINABILITY (sheet 12)
-// The feed chosen on sheet 11 enters every model of the twin through MKX() (mk.fq): R-101 syngas, products, limits and economics.
+// ===================================================================== FEEDSTOCK LAB (sheet 10) and SUSTAINABILITY (sheet 11)
+// The feed chosen on sheet 10 enters every model of the twin through MKX() (mk.fq): R-101 syngas, products, limits and economics.
 const PCOL = {HDPE: 'var(--c-bl)', LDPE: 'var(--c-lb)', PP: 'var(--c-gr)', PS: 'var(--c-pu)', PET: 'var(--c-go)', PVC: 'var(--c-rd)', w: 'var(--s-water)', a: 'var(--c-gy)'};
 const PNAME = {HDPE: 'HDPE', LDPE: 'LDPE', PP: 'PP', PS: 'PS', PET: 'PET', PVC: 'PVC', w: 'Moisture', a: 'Inerts'};
 const PLONG = {HDPE: 'High-density polyethylene: bottles, crates, pipes', LDPE: 'Low-density polyethylene: films and bags', PP: 'Polypropylene: caps, containers, woven sacks',
@@ -37,7 +37,7 @@ function buildFeed() {
   $$('#fqFpK button').forEach(b => b.addEventListener('click', () => { ST.fpk = b.dataset.k; $$('#fqFpK button').forEach(x => x.classList.toggle('on', x === b)); rFeed(); }));
   $('fqMC').addEventListener('click', () => { ST.mcSeed = (ST.mcSeed || 1) + 1; TRUCK = null; rFeed(); });
   // the feed selector on the operations sheet
-  const sel = $('opFeed'); if (sel) { sel.innerHTML = FPRE.map(([k, n]) => `<option value="${k}">${n}</option>`).join('') + '<option value="custom" disabled>Custom feed (sheet 11)</option>';
+  const sel = $('opFeed'); if (sel) { sel.innerHTML = FPRE.map(([k, n]) => `<option value="${k}">${n}</option>`).join('') + '<option value="custom" disabled>Custom feed (sheet 10)</option>';
     sel.addEventListener('change', () => { const p = FPRE.find(z => z[0] === sel.value); if (p) setFeed(p[2], 'Feed selected: ' + p[1]); }); }
   // sustainability inputs
   [['grE', 'e'], ['grM', 'm'], ['grH', 'h'], ['grB', 'b']].forEach(([id, k]) => $(id).addEventListener('input', () => { ST.gr[k] = +$(id).value; rGreen(); }));

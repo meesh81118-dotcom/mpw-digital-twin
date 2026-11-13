@@ -8,6 +8,8 @@ import {makeGlobe, llVec} from './globe.js';
 import {makeGround} from './ground.js';
 import {buildCutaways, LITE_FX} from './fx.js';
 import {TRAINS} from './plant.js';
+import {makeStory} from './story.js';
+import {makeColourKey, KEY, KEY_NAMES} from './colourkey.js';
 
 // ================================================================== basics
 const $ = id => document.getElementById(id), $$ = s => [...document.querySelectorAll(s)];
@@ -68,7 +70,8 @@ function flyGlobe(to, d, e = ease.io) { const G = globe.GC, A = {...G}; let dl =
 
 // ================================================================== shots (plant frame: x east, z south; az 0 = camera south of the target)
 const SHOTS = {hero: {x: 8, y: 0, z: 18, dist: 215, az: -15, el: 30, shift: 0.11}, streams: {x: 10, y: 0, z: 22, dist: 280, az: -4, el: 54, shift: -0.06}, heat: {x: 0, y: 0, z: 18, dist: 260, az: -12, el: 46, shift: 0.1},
-  control: {x: 15, y: 0, z: 14, dist: 250, az: 12, el: 48, shift: 0.12}, safety: {x: 128, y: 0, z: 46, dist: 290, az: 10, el: 60, shift: 0.12}, econ: {x: 0, y: 0, z: 0, dist: 470, az: 36, el: 38, shift: 0.12}, twin: {x: 0, y: 0, z: 0, dist: 340, az: -52, el: 26, shift: -0.05}};
+  control: {x: 15, y: 0, z: 14, dist: 250, az: 12, el: 48, shift: 0.12}, safety: {x: 128, y: 0, z: 46, dist: 290, az: 10, el: 60, shift: 0.12}, econ: {x: 0, y: 0, z: 0, dist: 470, az: 36, el: 38, shift: 0.12}, twin: {x: 0, y: 0, z: 0, dist: 340, az: -52, el: 26, shift: -0.05},
+  future: {x: 40, y: 0, z: 120, dist: 560, az: 22, el: 30, shift: 0.12}};
 const FOCUS = {'CR-101': {y: 2.8, dist: 15, az: 62, el: 16}, 'R-101': {y: 6.6, dist: 25, az: -62, el: 12}, 'CY-101': {y: 15.0, dist: 21, az: -96, el: 7}, 'R-102': {y: 8.5, dist: 24, az: -40, el: 10},
   'ME-101': {y: 4.0, dist: 8.5, az: 4, el: 10}, 'C-101': {y: 2.9, dist: 21, az: 8, el: 14}, 'R-103': {y: 10.6, dist: 19, az: -28, el: 6}, 'F-101': {y: 6.6, dist: 21, az: -50, el: 10}, 'T-101': {y: 21, dist: 54, az: -42, el: 4}};
 function focusShot(id) { const f = FOCUS[id], c = CUT[id]; return {x: c.o.x, y: f.y, z: c.o.z, dist: f.dist, az: f.az, el: f.el, shift: innerWidth > 980 ? -0.02 : 0}; }
@@ -121,6 +124,7 @@ function updateLabels() {
   for (const id in STAGS) { const s = STAGS[id]; let vis = local && LABELS && (SHOW_ALL_STREAMS || ACTIVE_STREAMS.includes(id));
     if (vis) { project(s.p, SP); vis = SP.ok && inView(SP.x, SP.y) && fits(SP.x - 1.1 * REM, SP.y - 1.1 * REM, 2.2 * REM, 2.2 * REM); if (vis) setT(s, SP.x, SP.y); }
     if (vis !== s.on) { s.on = vis; s.el.classList.toggle('on', vis); } }
+  if (STORY) for (const x of STORY.XL) { let vis = local && x.want; if (vis) { project(x.p, SP); vis = SP.ok && inView(SP.x, SP.y - 1.4 * REM); if (vis) setT(x, SP.x, SP.y); } if (vis !== x.on) { x.on = vis; x.el.classList.toggle('on', vis); } }
   globe.updateLabels(MODE === 'globe' && !FADE.on);
 }
 function streamAnchor(pts) { let best = 0, bi = 1; for (let i = 1; i < pts.length; i++) { const L2 = pts[i].distanceTo(pts[i - 1]) * (Math.abs(pts[i].y - pts[i - 1].y) < 0.01 ? 1.4 : 0.6); if (L2 > best) { best = L2; bi = i; } }
@@ -132,9 +136,9 @@ function flowMesh(id) { if (FLOWS[id] !== undefined) return FLOWS[id]; const s =
   const path = new THREE.CurvePath(); for (let i = 1; i < s.pts.length; i++) path.add(new THREE.LineCurve3(s.pts[i - 1], s.pts[i])); const len = path.getLength();
   const g = new THREE.TubeGeometry(path, Math.max(16, Math.round(len / 1.5)), (s.r || 0.3) * 1.32 + 0.05, 10, false);
   const col = new THREE.Color((SVC[s.svc] || SVC.syn)[0]);
-  const m = new THREE.ShaderMaterial({uniforms: {uT: flowU.uT, uL: {value: len}, uC: {value: col}, uA: {value: 0}}, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+  const m = new THREE.ShaderMaterial({uniforms: {uT: flowU.uT, uL: {value: len}, uC: {value: col}, uA: {value: 0}, uS: {value: caseSpeed(id)}}, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
     vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }`,
-    fragmentShader: `uniform float uT,uL,uA; uniform vec3 uC; varying vec2 vUv; void main(){ float d = fract(vUv.x * uL / 7.0 - uT * 0.9); float a = smoothstep(0.0, 0.25, d) * smoothstep(0.75, 0.3, d); gl_FragColor = vec4(uC * (0.35 + 1.2 * a), (0.18 + 0.7 * a) * uA); }`});
+    fragmentShader: `uniform float uT,uL,uA,uS; uniform vec3 uC; varying vec2 vUv; void main(){ float d = fract(vUv.x * uL / 7.0 - uT * 0.9 * uS); float a = smoothstep(0.0, 0.25, d) * smoothstep(0.75, 0.3, d); gl_FragColor = vec4(uC * (0.35 + 1.2 * a), (0.18 + 0.7 * a) * uA); }`});
   const mesh = new THREE.Mesh(g, m); mesh.renderOrder = 5; mesh.visible = false; P.root.add(mesh); return (FLOWS[id] = mesh); }
 function setFlows(ids) { for (const id in P.streams) { const want = ids === 'all' || (ids || []).includes(id); const m = want ? flowMesh(id) : FLOWS[id]; if (!m) continue;
     if (want) { m.visible = true; tween(m.material.uniforms.uA, {value: 1}, 0.8); } else if (m.visible) tween(m.material.uniforms.uA, {value: 0}, 0.5).then(() => { if (m.material.uniforms.uA.value < 0.01) m.visible = false; }); } }
@@ -197,6 +201,7 @@ function unitPanel(id, tab) { const u = UNITS[id]; if (!u) return; const I = INF
   const tagM = u.name.match(/\b([A-Z]{1,3}-\d{3}R?)\b/), plate = tagM ? tagM[1] : TAGNAME[id] || id, title = tagM ? u.name.replace(tagM[0], '').replace(/\s{2,}/g, ' ').trim() : u.name;
   const P0 = $('panel'); P0.style.setProperty('--sec', u.col); P0.classList.toggle('compact', cur !== 'over');
   $('pBody').innerHTML = `<div class="ph"><div class="row"><span class="plate">${plate}</span><span class="secn">${u.sec}</span></div><h3>${title}</h3><p class="role">${u.role}</p>
+    ${CASE && CASE.on ? caseUnit(id) : ''}
     ${u.kpi ? `<div class="kp">${u.kpi.map(([v, s, l]) => `<div><b><span data-v="${v}">${v}</span>${s ? `<u>${s}</u>` : ''}</b><span class="l">${l}</span></div>`).join('')}</div>` : ''}
     ${TABS.length > 1 ? `<div class="tabs" role="tablist">${TABS.map(([k, n]) => `<button role="tab" data-t="${k}" class="${k === cur ? 'on' : ''}">${n}${k === 'safety' ? `<i>${(I.safety || []).length}</i>` : ''}</button>`).join('')}</div>` : ''}</div>
     <div class="pb" id="pTab">${tabBody(id, cur)}</div>
@@ -217,6 +222,43 @@ function pulseStream(id, on) { const m = flowMesh(id); if (!m) return; m.visible
 function focusStream(id) { const s = P.streams[id]; if (!s || !s.pts) return; const b = new THREE.Box3().setFromPoints(s.pts), c = b.getCenter(new THREE.Vector3()), sz = b.getSize(new THREE.Vector3());
   exitExplore(); flyTo({x: c.x, y: c.y * 0.5, z: c.z, dist: clamp(Math.max(sz.x, sz.z, sz.y * 1.5) * 1.6, 35, 260), az: LC.az - PLOT.rot / D2R, el: 42}, 1.8); pulseStream(id, true); setTimeout(() => pulseStream(id, false), 2600); }
 
+// ================================================================== the live case from the digital twin
+// The twin writes its current case (feed, set point, market) when the presentation is opened from it; the plant then shows that case:
+// stream flows run faster or slower, the plastic on the conveyor takes the polymer mix, units near or over their limit glow, and the cards quote the case.
+let CASE = null;
+const CASE_UNIT = {'R-101F': 'R-101'}, PCOL3 = {HDPE: 0x2b74c9, LDPE: 0x9fc4f0, PP: 0x2f9a52, PS: 0x8a5cc8, PET: 0xe0b030, PVC: 0xd23c2c};
+const pct = (v, d = 1) => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toLocaleString('en-US', {minimumFractionDigits: d, maximumFractionDigits: d}) + ' %';
+const num = (v, d = 0) => v.toLocaleString('en-US', {minimumFractionDigits: d, maximumFractionDigits: d});
+function caseSpeed(id) { if (!CASE || !CASE.on) return 1; const f = CASE.d.flows && CASE.d.flows[id]; return f ? clamp(f, 0.25, 3) : 1; }
+function caseInit() { let c = null; try { c = JSON.parse(localStorage.getItem('mpw-case') || 'null'); } catch (e) {}
+  if (!c || c.v !== 1 || c.design || Date.now() - c.t > 30 * 86400e3 || Q.has('design')) return;
+  CASE = {d: c, on: true}; const b = document.createElement('button'); b.id = 'caseB'; b.className = 'glass on';
+  b.title = `Your case from the digital twin: ${c.feed}${c.scen && c.scen !== 'Base case' ? ', ' + c.scen : ''}. Methanol ${pct(c.dm)}, hydrogen ${pct(c.dh)}, NPV ${c.npv < 0 ? '−' : ''}$${num(Math.abs(c.npv), 1)} M. Click to switch between your case and the design point.`;
+  const lab = () => { b.innerHTML = `<span class="cd" aria-hidden="true"></span><span class="ct"><small>${CASE.on ? 'Your case' : 'Design point'}</small><b>${CASE.on ? c.feed : 'Report values'}</b></span>`; };
+  lab(); $('bTwin').after(b); b.onclick = () => { CASE.on = !CASE.on; b.classList.toggle('on', CASE.on); lab(); applyCase(); if (SLIDE) showCard(SLIDE, SLIDE.steps ? SLIDE.steps[STEP] || SLIDE.steps[0] : SLIDE); if (FOCUSED) unitPanel(FOCUSED); };
+  applyCase(); ANIM.push(t => { if (!CASE || !CASE.on) return; const k = 0.5 + 0.5 * Math.sin(t * 6); for (const id of CASE.over || []) { const u = P.units[id]; if (u) u.group.children.forEach(m => { const h = m.userData && m.userData['hl' + 0xff2a2a]; if (h) h.emissiveIntensity = 0.2 + 0.7 * k; }); } }); }
+function applyCase() { if (!CASE) return; for (const id in FLOWS) { const m = FLOWS[id]; if (m) m.material.uniforms.uS.value = caseSpeed(id); }
+  if (FLAKES) { const {col, n} = FLAKES, c = new THREE.Color(), d = CASE.d, parts = Object.entries(d.poly || {}).map(([k, v]) => [PCOL3[k], v * (1 - (d.w || 0) / 100 - (d.a || 0) / 100)]).concat([[0x8a8a80, d.a || 0]]);
+    const tot = parts.reduce((a, p) => a + p[1], 0) || 1; let acc = 0; const cum = parts.map(([cc, v]) => [cc, (acc += v / tot)]);
+    for (let i = 0; i < n; i++) { const u = ((i * 0.6180339887) % 1); const pc = CASE.on ? (cum.find(q => u <= q[1]) || cum[cum.length - 1])[0] : [0x2b74c9, 0xd23c2c, 0xf0f0f0, 0x2f9a52, 0xe0b030][i % 5]; c.set(pc); col.set([c.r, c.g, c.b], i * 3); }
+    FLAKES.g.attributes.color.needsUpdate = true; }
+  applyCaseTints(); }
+function applyCaseTints() { if (!CASE || !P) return; const over = [], near = [];
+  for (const [u, v, l] of CASE.d.loads || []) { const id = CASE_UNIT[u] || u; if (v > l * (1 + 1e-6)) over.push(id); else if (v > l * 0.98) near.push(id); }
+  (CASE.over || []).concat(CASE.near || []).forEach(id => { tint(id, 0xff2a2a, false); tint(id, 0xffa000, false); });
+  CASE.over = CASE.on ? over : []; CASE.near = CASE.on ? near.filter(id => !over.includes(id)) : [];
+  CASE.near.forEach(id => tint(id, 0xffa000, true)); CASE.over.forEach(id => tint(id, 0xff2a2a, true)); }
+const LOADN = {'R-101': 'feed', 'R-101F': 'furnace duty'};
+function caseUnit(id) { const L = (CASE.d.loads || []).filter(([u]) => (CASE_UNIT[u] || u) === id); if (!L.length) return ''; const bad = L.some(([, v, l]) => v > l * (1 + 1e-6)), warn = L.some(([, v, l]) => v > l * 0.98);
+  return `<div class="cunit ${bad ? 'bad' : warn ? 'warn' : ''}"><i></i>Your case: ${L.map(([u, v]) => (L.length > 1 ? LOADN[u] + ' ' : '') + num(v * 100, 1) + ' %').join(', ')} of the design load${bad ? ', beyond the allowed limit' : ''}</div>`; }
+function caseLoad(id) { if (!CASE) return null; let best = null; for (const [u, v, l] of CASE.d.loads || []) if ((CASE_UNIT[u] || u) === id) { const r = v / l; if (!best || r > best[0]) best = [r, v, u]; } return best; }
+function caseStrip(sl, o) { const d = CASE.d; let h = '';
+  if (sl.id === 'plant' || sl.id === 'econ' || sl.id === 'future') h += `<div class="cs3"><div><b>${num(d.meoh)}</b><span>methanol t/y</span><em class="${d.dm >= 0 ? 'up' : 'dn'}">${pct(d.dm)}</em></div><div><b>${num(d.h2)}</b><span>hydrogen t/y</span><em class="${d.dh >= 0 ? 'up' : 'dn'}">${pct(d.dh)}</em></div><div><b>${d.npv < 0 ? '−' : ''}$${num(Math.abs(d.npv), 1)} M</b><span>NPV at 10 %</span><em class="${d.dn >= 0 ? 'up' : 'dn'}">${(d.dn >= 0 ? '+' : '−') + num(Math.abs(d.dn), 1)} M</em></div></div>`;
+  if (sl.id === 'feed') { const parts = Object.entries(d.poly || {}).filter(([, v]) => v > 0); h += `<div class="cmix">${parts.map(([k, v]) => `<i style="flex:${v};background:#${PCOL3[k].toString(16).padStart(6, '0')}" title="${k} ${num(v, 1)} %"><span>${v > 9 ? k : ''}</span></i>`).join('')}</div><p class="cnote">${parts.map(([k, v]) => `${k} ${num(v, 0)} %`).join(', ')}${d.w ? ` · ${num(d.w, 1)} % moisture` : ''}${d.a ? ` · ${num(d.a, 1)} % inerts` : ''}${d.pur ? ` · cleaned ${num(d.pur, 0)} %` : ''}${d.cl ? ` · Cl ${num(d.cl)} ppm` : ''}</p>`; }
+  const st = (sl.streams && sl.streams !== 'all' ? sl.streams : []).map(n => [n, d.flows && d.flows[n]]).filter(([, f]) => f && Math.abs(f - 1) > 0.0005).slice(0, 4);
+  if (st.length) h += `<div class="cst">${st.map(([n, f]) => `<span>${dia(n, 1)}<em class="${f >= 1 ? 'up' : 'dn'}">${pct((f - 1) * 100)}</em></span>`).join('')}</div>`;
+  const ld = sl.focus ? caseLoad(sl.focus) : null; if (ld && Math.abs(ld[1] - 1) > 0.0005) h += `<p class="cnote ${ld[0] > 1 + 1e-6 ? 'bad' : ld[0] > 0.98 ? 'warn' : ''}">${sl.focus} at ${num(ld[1] * 100, 1)} % of its design load${ld[0] > 1 + 1e-6 ? ', beyond its allowed limit' : ''}.</p>`;
+  if (!h) return ''; return `<div class="case"><div class="ch"><i></i>Your case · ${d.feed}</div>${h}</div>`; }
 // ================================================================== slides
 let PV = false;   // plant view (whole plant from above): every unit tag shown
 let MODE = 'globe', IDX = -1, SLIDE = null, BUSY = false, EXPLORE = false, FOCUSED = null, OPEN_CUT = null, HOVER = null, AUTO = null, STEP = 0, STEP_TIMER = null;
@@ -227,18 +269,20 @@ function cardHTML(o, sl) { let h = sl.steps ? `${kick(sl.kicker)}<h1>${o.kicker}
   if (o.bars) h += `<div class="bars">${o.bars.map(([n, v]) => `<div class="bar"><span>${n}</span><div class="t"><i data-w="${v / 10}"></i></div><b>${v}</b></div>`).join('')}</div>`;
   if (o.bars2) h += `<div style="margin-top:14px">${o.bars2.map(([n, a, b, u]) => `<div class="b2"><span>${n}</span><div class="tt"><i data-w="100"></i><s data-w="${b / a * 100}"></s></div><em>${a.toLocaleString('en-US')} → <b>${b.toLocaleString('en-US')}</b> ${u}</em></div>`).join('')}</div>`;
   if (o.stats) h += `<div class="stats">${o.stats.map(([v, u, l]) => `<div class="stat"><b><span data-c="${v}">${v}</span>${u ? `<u>${u}</u>` : ''}</b><span>${l}</span></div>`).join('')}</div>`;
-  if (sl.id === 'econ') h += `<svg id="spark" viewBox="0 0 520 130"></svg>`;
+  if (sl.id === 'econ' && (!sl.steps || o.spark)) h += `<svg id="spark" viewBox="0 0 520 130"></svg>`;
+  if (STORY) h += STORY.cardExtra(o, sl);
+  if (CASE && CASE.on && sl.cam === 'local') h += caseStrip(sl, o);
   if (sl.team) h += `<div class="team"><span>Prepared by</span><b>${TEAM[0]}</b><b>${TEAM[1]}</b></div>`;
   if (sl.steps) h += `<div class="steps">${sl.steps.map((s, i) => `<i class="${i <= STEP ? 'on' : ''}"></i>`).join('')}</div>`;
   return h; }
 function showCard(sl, o = sl) { const c = $('card'); c.classList.remove('on'); c.classList.toggle('globe', sl.cam === 'globe'); c.style.setProperty('--sec', sl.focus && UNITS[sl.focus] ? UNITS[sl.focus].col : '#e04a1b');
-  setTimeout(() => { $('cardIn').innerHTML = cardHTML(o, sl); c.classList.add('on'); setTimeout(() => { $('cardIn').querySelectorAll('[data-w]').forEach(i => i.style.width = i.dataset.w + '%'); $('cardIn').querySelectorAll('[data-c]').forEach(s => cnt(s, s.dataset.c)); if (sl.id === 'econ') spark(); }, 120); }, 260 * FAST); }
+  setTimeout(() => { $('cardIn').innerHTML = cardHTML(o, sl); c.classList.add('on'); setTimeout(() => { $('cardIn').querySelectorAll('[data-w]').forEach(i => i.style.width = i.dataset.w + '%'); $('cardIn').querySelectorAll('[data-c]').forEach(s => cnt(s, s.dataset.c)); if (sl.id === 'econ') spark(); if (STORY) STORY.afterCard(o, sl); }, 120); }, 260 * FAST); }
 function spark() { const s = $('spark'); if (!s) return; const X = i => 34 + i / 22 * 470, Y = v => 22 + (125 - v) / 600 * 84;
   s.innerHTML = `<line x1="34" x2="504" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--mut)" stroke-dasharray="4 4"/><path d="${CF.map((v, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(v).toFixed(1)).join(' ')}" fill="none" stroke="var(--pen)" stroke-width="3" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="transition:stroke-dashoffset 2.2s ease .3s"/>
     <circle cx="${X(22)}" cy="${Y(105.04)}" r="5" fill="var(--hot)"/><text x="${X(22) - 8}" y="${Y(105.04) - 9}" text-anchor="end" style="fill:var(--ink);font:800 18px Shoulders">NPV 105.04 M$</text>
     <text x="34" y="127" style="fill:var(--mut);font:500 13px Plex">Cumulative discounted cash flow, years 0–22 (M$)</text>`; requestAnimationFrame(() => s.querySelector('path').style.strokeDashoffset = 0); }
 function navUI(i) { $$('#dots button').forEach((b, k) => { b.classList.toggle('on', k === i); b.classList.toggle('done', k < i); }); $('num').innerHTML = `<b>${SLIDES[i].chap}</b><span>${String(i + 1).padStart(2, '0')} / ${SLIDES.length}</span>`; $('chap').textContent = SLIDES[i].chap; }
-async function closeCut() { if (!OPEN_CUT) return; const c = OPEN_CUT; OPEN_CUT = null;  (c.meshes || []).forEach(m => m.userData.cut = false); await c.close(); }
+async function closeCut() { if (!OPEN_CUT) return; const c = OPEN_CUT; OPEN_CUT = null;  (c.meshes || []).forEach(m => m.userData.cut = false); await c.close(); if (CK && CK.on) CK.reapply(); }
 async function openCut(id) { const c = CUT[id]; if (!c) return; OPEN_CUT = c;  (c.meshes || []).forEach(m => { if (m.userData.orig === undefined) m.userData.orig = null; }); const f = FOCUS[id]; c.open(f.az * D2R); (c.meshes || []).forEach(m => m.userData.cut = true); }
 const GLOBE_INTRO = {lat: 18, lon: 34, alt: 21000, tilt: 0, head: 0, shift: 0.16}, GLOBE_END = {lat: 20, lon: 42, alt: 19000, tilt: 0, head: 0, shift: 0.16};
 const BEATS = [{lat: 23.8, lon: 44.2, alt: 3700, tilt: 0, head: 0, shift: 0.13}, {lat: 25.8, lon: 49.0, alt: 1050, tilt: 26, head: -18, shift: 0.1}, {lat: PLOT.lat, lon: PLOT.lon, alt: 42, tilt: 34, head: -40, shift: 0.08}];
@@ -254,6 +298,7 @@ async function crossTo(mode, dur = 0.9) { FADE.other = MODE; MODE = mode; FADE.o
 
 async function go(i, opts = {}) {
   if (i < 0 || i >= SLIDES.length || (BUSY && !opts.force)) return; const prev = SLIDE, sl = SLIDES[i]; BUSY = true; IDX = i; SLIDE = sl; STEP = 0;
+  if (prev && prev !== sl && STORY && STORY.S[prev.id]) { STORY.S[prev.id].leave(); applyCaseTints(); }
   PV = false; navUI(i); exitExplore(); $('panel').classList.remove('on'); $('qr').classList.toggle('on', sl.id === 'twin'); if (FOCUSED) { FOCUSED = null; }
   ACTIVE_UNITS = sl.units || []; ACTIVE_STREAMS = sl.streams === 'all' ? [] : (sl.streams || []); SHOW_ALL_STREAMS = sl.streams === 'all'; SHOW_LOOPS = sl.id === 'control';
   try {
@@ -266,9 +311,9 @@ async function go(i, opts = {}) {
       if (MODE === 'globe') { clearTimeout(STEP_TIMER); STEP = 3; if (!prev || prev.id !== 'site' || Math.abs(globe.GC.alt - BEATS[2].alt) > 2) await flyGlobe(BEATS[2], prev ? 2.6 : 0.01); localFromGlobe(); applyLocal(); crossTo('local', 0.9); }
       $('attr').classList.add('on');
       if (OPEN_CUT && OPEN_CUT.id !== sl.focus) closeCut();
-      showCard(sl); setFlows(sl.streams || []); setHeat(sl.id === 'heat'); setSafety(sl.id === 'safety');
+      STEP = 0; showCard(sl, sl.steps ? sl.steps[0] : sl); setFlows(CK && CK.on || STREAMS_ON ? 'all' : sl.streams || []); setHeat(sl.id === 'heat'); setSafety(sl.id === 'safety'); applyCaseTints();
       if (sl.focus) { const d = prev && prev.cam === 'globe' ? 5 : 2.0; setTimeout(() => { if (SLIDE === sl) { FOCUSED = sl.focus; unitPanel(sl.focus); } }, d * 600 * FAST); await flyTo(focusShot(sl.focus), d); if (SLIDE === sl) openCut(sl.focus); }
-      else { await flyTo(SHOTS[sl.shot], prev && prev.cam === 'globe' ? 5 : 2.2); if (sl.streams === 'all' && SLIDE === sl) streamsPanel(); }
+      else { await flyTo(SHOTS[sl.shot], prev && prev.cam === 'globe' ? 5 : 2.2); if (sl.streams === 'all' && SLIDE === sl) streamsPanel(); if (SLIDE === sl && STORY && STORY.S[sl.id]) { STORY.S[sl.id].enter(0); applyCaseTints(); } }
     }
     if (sl.cam === 'globe') $('attr').classList.remove('on');
   } finally { BUSY = false; }
@@ -298,19 +343,26 @@ canvas.addEventListener('pointerdown', e => { if (MODE !== 'local' || EXPLORE ||
   const mv = ev => { if (Math.hypot(ev.clientX - sx, ev.clientY - sy) > 4) { canvas.removeEventListener('pointermove', mv); if (!EXPLORE) enterExplore(); } };
   canvas.addEventListener('pointermove', mv); addEventListener('pointerup', () => { canvas.removeEventListener('pointermove', mv); if (!EXPLORE) controls.enabled = false; }, {once: true}); });
 canvas.addEventListener('wheel', () => { if (MODE === 'local' && !EXPLORE && !BUSY && controls) enterExplore(); }, {passive: true});
-function toggleAuto() { if (AUTO) { clearInterval(AUTO); AUTO = null; } else AUTO = setInterval(() => { if (!BUSY && !EXPLORE) { if (IDX < SLIDES.length - 1) go(IDX + 1); else toggleAuto(); } }, 10000); $('bAuto').classList.toggle('on', !!AUTO); }
-function nextStep(d) { if (SLIDE && SLIDE.id === 'site' && d > 0 && STEP < 2 && !BUSY) { STEP++; runBeats(STEP); return true; } return false; }
+function toggleAuto() { if (AUTO) { clearInterval(AUTO); AUTO = null; } else AUTO = setInterval(() => { if (!BUSY && !EXPLORE && !(STORY && STORY.busyStep())) { if (nextStep(1)) return; if (IDX < SLIDES.length - 1) go(IDX + 1); else toggleAuto(); } }, 10000); $('bAuto').classList.toggle('on', !!AUTO); }
+function nextStep(d) { if (SLIDE && SLIDE.id === 'site' && d > 0 && STEP < 2 && !BUSY) { STEP++; runBeats(STEP); return true; }
+  if (SLIDE && SLIDE.cam === 'local' && SLIDE.steps && STORY && STORY.S[SLIDE.id]) { const n = STEP + (d > 0 ? 1 : -1); if (n < 0 || n >= SLIDE.steps.length) return false; if (BUSY) return true;
+    exitExplore(); $('panel').classList.remove('on'); FOCUSED = null; STEP = n; showCard(SLIDE, SLIDE.steps[n]); STORY.S[SLIDE.id].enter(n, d < 0); applyCaseTints(); return true; }
+  return false; }
 addEventListener('keydown', e => { if (e.target.closest && e.target.closest('input,textarea')) return; const k = e.key;
-  if (k === 'ArrowRight' || k === 'PageDown') { if (!nextStep(1)) go(IDX + 1); } else if (k === 'ArrowLeft' || k === 'PageUp') go(IDX - 1);
+  if (k === 'ArrowRight' || k === 'PageDown') { if (!nextStep(1)) go(IDX + 1); } else if (k === 'ArrowLeft' || k === 'PageUp') { if (!nextStep(-1)) go(IDX - 1); }
   else if (k === 'Escape') { if ($('menu').classList.contains('on')) toggleMenu(false); else back(); } else if (k === 'f' || k === 'F') toggleFull(); else if (k === 'e' || k === 'E') (EXPLORE ? exitExplore() : enterExplore());
-  else if (k === 'l' || k === 'L') toggleLabels(); else if (k === 's' || k === 'S') toggleStreams(); else if (k === ' ') { e.preventDefault(); toggleAuto(); } else if (k === 'Home') go(0); else if (k === 'p' || k === 'P') plantView(); else if (k === 'm' || k === 'M') toggleMenu(); });
+  else if (k === 'l' || k === 'L') toggleLabels(); else if (k === 'c' || k === 'C') toggleKey(); else if (k === 's' || k === 'S') toggleStreams(); else if (k === ' ') { e.preventDefault(); toggleAuto(); } else if (k === 'Home') go(0); else if (k === 'p' || k === 'P') plantView(); else if (k === 'm' || k === 'M') toggleMenu(); });
 function toggleFull() { if (!document.fullscreenElement) document.documentElement.requestFullscreen?.(); else document.exitFullscreen?.(); }
+// colours of the printed model (board 1:150): units, streams and section tiles as on the board
+function toggleKey(on) { if (!CK) return; on = on ?? !CK.on; if (on) { for (const id in P.streams) flowMesh(id); } CK.apply(on); $('bKey').classList.toggle('on', on); $('keyL').classList.toggle('on', on);
+  if (MODE === 'local') setFlows(on || STREAMS_ON ? 'all' : (SLIDE && SLIDE.streams) || []); applyCaseTints(); }
 function toggleLabels() { LABELS = !LABELS; $('bLabels').classList.toggle('on', LABELS); }
 let STREAMS_ON = false; function toggleStreams() { STREAMS_ON = !STREAMS_ON; $('bStreams').classList.toggle('on', STREAMS_ON); SHOW_ALL_STREAMS = STREAMS_ON || (SLIDE && SLIDE.streams === 'all'); if (MODE === 'local') setFlows(STREAMS_ON ? 'all' : (SLIDE && SLIDE.streams) || []); }
 function buildNav() { $('dots').innerHTML = SLIDES.map((s, i) => `<button data-t="${s.chap}" aria-label="${s.chap}"><i data-n="${String(i + 1).padStart(2, '0')}"></i></button>`).join(''); $$('#dots button').forEach((b, i) => b.onclick = () => go(i));
-  $('next').onclick = () => { if (!nextStep(1)) go(IDX + 1); }; $('prev').onclick = () => go(IDX - 1); $('home').onclick = () => go(0);
+  $('next').onclick = () => { if (!nextStep(1)) go(IDX + 1); }; $('prev').onclick = () => { if (!nextStep(-1)) go(IDX - 1); }; $('home').onclick = () => go(0);
   $('bFull').onclick = toggleFull; $('bQ').onclick = () => { try { localStorage.setItem('mpwQuality', LITE ? 'high' : 'lite'); } catch (e) {} const u = new URL(location.href); u.searchParams.set('q', LITE ? 'high' : 'lite'); location.href = u.toString(); }; $('bExplore').onclick = () => (EXPLORE ? exitExplore() : enterExplore()); $('bLabels').onclick = toggleLabels; $('bAuto').onclick = toggleAuto; $('bStreams').onclick = toggleStreams; $('pClose').onclick = back;
-  $('bTop').onclick = plantView; $('bMenu').onclick = () => toggleMenu();
+  $('bTop').onclick = plantView; $('bKey').onclick = () => toggleKey();
+  $('keyL').innerHTML = `<b>Colour key of the printed model</b>${KEY_NAMES.map(([k, n]) => `<span><i style="background:#${KEY[k].toString(16).padStart(6, '0')}"></i>${n}</span>`).join('')}<em>Every unit and stream as on the 1:150 board: a stream takes the colour of the unit it leaves.</em>`; $('bMenu').onclick = () => toggleMenu();
   $('menu').innerHTML = SLIDES.map((s, i) => `<button data-i="${i}"><i>${String(i + 1).padStart(2, '0')}</i><span>${s.chap}<small>${s.title.replace(/<br>/g, ' ').replace(/<[^>]+>/g, '').replace(/ · /g, ', ')}</small></span></button>`).join('') + `<div class="cr">© 2026 ${TEAM[0]} and ${TEAM[1]}. All rights reserved.</div>`;
   $$('#menu button').forEach(b => b.onclick = () => { toggleMenu(false); go(+b.dataset.i); });
   addEventListener('pointerdown', e => { if ($('menu').classList.contains('on') && !e.target.closest('#menu,#bMenu')) toggleMenu(false); }); }
@@ -324,12 +376,12 @@ async function plantView() { if (BUSY) return; toggleMenu(false);
   PV = true; BUSY = true; try { await flyTo(TOP_SHOT, 2.0); } finally { BUSY = false; } }
 
 // ================================================================== animated details
-const ANIM = [];
+const ANIM = []; const FLARE = {k: 1}; let FLAKES = null, STORY = null, CK = null;
 function addDetails() {
   const U = P.units, M = L.M, T = L.T;
   // flare flame
   if (U.FLARE && U.FLARE.flame) { const f = U.FLARE.flame; const sp = new THREE.Sprite(new THREE.SpriteMaterial({map: T.flame, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false})); sp.position.set(f.x, f.y + 3, f.z); sp.scale.set(6, 11, 1); P.root.add(sp);
-    const pl = new THREE.PointLight(0xff8a3a, 900, 90, 2); pl.position.set(f.x, f.y + 3, f.z); P.root.add(pl); ANIM.push(t => { const k = 0.85 + 0.15 * Math.sin(t * 17) * Math.sin(t * 7.3); sp.scale.set(5.5 * k, 11 * (0.9 + 0.2 * Math.sin(t * 11)), 1); pl.intensity = 800 * k; }); }
+    const pl = new THREE.PointLight(0xff8a3a, 900, 90, 2); pl.position.set(f.x, f.y + 3, f.z); P.root.add(pl); ANIM.push(t => { const k = 0.85 + 0.15 * Math.sin(t * 17) * Math.sin(t * 7.3); sp.scale.set(5.5 * k, 11 * (0.9 + 0.2 * Math.sin(t * 11)), 1); pl.intensity = 800 * k * FLARE.k; sp.scale.multiplyScalar(FLARE.k); }); }
   // cooling-tower fans and plumes
   if (U.CTOWER && U.CTOWER.fans) U.CTOWER.fans.forEach((f, i) => { const g = new THREE.Group(); g.position.set(f.x, f.y, f.z); for (let b = 0; b < 4; b++) { const m = new THREE.Mesh(new THREE.BoxGeometry(7.6, 0.08, 0.7), M.dark); m.rotation.y = b * Math.PI / 4; g.add(m); } P.root.add(g); ANIM.push(t => g.rotation.y = t * 3.4 + i);
     plume(f.x, f.y + 3, f.z, 1.1); });
@@ -340,7 +392,7 @@ function addDetails() {
       g.position.set(lerp(a[0], b[0], k), 0, lerp(a[1], b[1], k) + (i % 2 ? 0 : 2.6) * (i === 0 ? 1 : -1)); g.rotation.y = Math.atan2(-(b[1] - a[1]), b[0] - a[0]); }); });
   // flakes riding the conveyor gallery to the feed bins
   { const path = P.N.convPath, n = 260, g = new THREE.BufferGeometry(), pos = new Float32Array(n * 3), col = new Float32Array(n * 3), c = new THREE.Color();
-    for (let i = 0; i < n; i++) { c.set([0x2b74c9, 0xd23c2c, 0xf0f0f0, 0x2f9a52, 0xe0b030][i % 5]); col.set([c.r, c.g, c.b], i * 3); }
+    for (let i = 0; i < n; i++) { c.set([0x2b74c9, 0xd23c2c, 0xf0f0f0, 0x2f9a52, 0xe0b030][i % 5]); col.set([c.r, c.g, c.b], i * 3); } FLAKES = {g, col, n};
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 3)); const pts = new THREE.Points(g, new THREE.PointsMaterial({size: 0.35, vertexColors: true})); pts.frustumCulled = false; P.root.add(pts);
     const segL = []; let tot2 = 0; for (let i = 1; i < path.length; i++) { segL.push(path[i].distanceTo(path[i - 1])); tot2 += segL[i - 1]; }
     ANIM.push(t => { for (let i = 0; i < n; i++) { let d = ((t * 2.2 / tot2 + i / n) % 1) * tot2, s = 0; while (d > segL[s]) { d -= segL[s]; s++; } const a = path[s], b = path[s + 1], k = d / segL[s]; pos[i * 3] = lerp(a.x, b.x, k) + ((i * 7) % 5 - 2) * 0.2; pos[i * 3 + 1] = lerp(a.y, b.y, k) + 1.15; pos[i * 3 + 2] = lerp(a.z, b.z, k) + ((i * 3) % 5 - 2) * 0.18; } g.attributes.position.needsUpdate = true; }); }
@@ -428,6 +480,9 @@ async function init() {
   L = makeLocalScene(renderer, {shadow: 2048, sky: LOW ? 256 : 512}); P = L.P; app.scene = L.scene;
   controls = new OrbitControls(L.cam, canvas); controls.enabled = false; controls.enableDamping = true; controls.dampingFactor = 0.2; controls.rotateSpeed = 0.85; controls.zoomSpeed = 1.1; controls.panSpeed = 0.9; controls.maxPolarAngle = 1.48; controls.minDistance = 2.5; controls.maxDistance = 9000;
   LITE_FX.on = LITE; app.cutLight = new THREE.PointLight(0xfff1dc, 0, 40, 1.6); L.scene.add(app.cutLight); CUT = buildCutaways(app, P); addDetails(); makeTags();
+  STORY = makeStory({P, L, renderer, tween, flyTo, ease, tint, flowU, mkEl, toW, FAST, FLARE, D2R, SHOTS, qr: on => $('qr').classList.toggle('on', !!on && SLIDE && SLIDE.id === 'twin')});
+  ANIM.push((t, dt) => STORY.tick(t, dt)); const unPre = STORY.prewarm(); caseInit();
+  CK = makeColourKey({P, L, toW, mkEl, XL: STORY.XL, FLOWS, renderer}); if (Q.has('key')) setTimeout(() => toggleKey(true), 50);
   // the ground below the plot: one plane, bundled textures first, real imagery when it arrives
   { const fk = Math.cos(PLOT.lat * D2R), W0 = 49.4083, E0 = 49.7117, S0 = 26.8849, N0 = 27.1551; const lr = new THREE.Vector4((W0 - PLOT.lon) * 111320 * fk, (E0 - PLOT.lon) * 111320 * fk, -(N0 - PLOT.lat) * 110574, -(S0 - PLOT.lat) * 110574);
     const G = makeGround(L.under, renderer, PLOT.lat, PLOT.lon, regionTex, fallbackTex, lr); if (!Q.has('nosat')) G.done.then(r => { if (r.patch) globe.setPatch(r.patch.tex, r.patch.geo); }).catch(() => {}); }
@@ -437,7 +492,7 @@ async function init() {
   // compile every program now so that no slide stalls on a shader compile later
   status('Preparing the shaders…'); await new Promise(r => setTimeout(r, 20));
   Object.assign(LC, shotW(SHOTS.hero)); applyLocal(); globe.apply();
-  await prewarmCuts();
+  await prewarmCuts(); unPre();
   // upload every buffer and texture now (one render with culling off), so nothing is uploaded mid-flight later
   renderScene('local');
   try { await renderer.compileAsync(globe.scene, globe.cam); } catch (e) { renderer.compile(globe.scene, globe.cam); }
@@ -454,4 +509,4 @@ async function init() {
 }
 $('start').onclick = () => { $('loader').classList.add('off'); go(0); };
 init();
-window.__app = {THREE, get P() { return P; }, get LITE() { return LITE; }, GPU, get REFRESH() { return REFRESH; }, LONG, CALLS, TAGS, bench, GOV, get DPR() { return DPR; }, frame: t => frame(t), render: renderScene, go, get IDX() { return IDX; }, get MODE() { return MODE; }, LC, globe, renderer, get L() { return L; }, get CUT() { return CUT; }, selectUnit, get BUSY() { return BUSY; }};
+window.__app = {get CK() { return CK; }, toggleKey: on => toggleKey(on), plantView: () => plantView(), THREE, get P() { return P; }, get LITE() { return LITE; }, GPU, get REFRESH() { return REFRESH; }, LONG, CALLS, TAGS, bench, GOV, get DPR() { return DPR; }, frame: t => frame(t), render: renderScene, go, get IDX() { return IDX; }, get MODE() { return MODE; }, LC, globe, renderer, get L() { return L; }, get CUT() { return CUT; }, selectUnit, get BUSY() { return BUSY; }};

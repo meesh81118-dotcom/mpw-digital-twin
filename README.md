@@ -6,6 +6,8 @@
 
 Interactive digital twin of the mixed-plastic-waste (MPW) gasification plant that produces methanol and hydrogen in Jubail Industrial City. It was prepared for Chapter 10, *Smart and Sustainable Plant*, of the senior design project.
 
+The presentation also has: **Model colours** (key C), which paints every unit, stream and section exactly as on the printed 1:150 board (colours read from the board's 3MF file); a live link to the twin, so the plant shows the case chosen in the twin (feed, set points, market); an emergency drill on the safety slide; the construction of the plant on the economics slide; the twin finding a fault in R-103; and a Vision 2030 slide with the solar e-methanol phase.
+
 **Open the tool:** https://meesh81118-dotcom.github.io/mpw-digital-twin/
 
 The site runs entirely in the browser. The **Share** button copies a link that reopens the twin with the same feed, set points and market. It needs no installation and no server. One button (**Reset all**) returns every page to the design point.

@@ -76,7 +76,7 @@ function donut(id, parts, center) {
 }
 function bindTips(root, sel) { $$(sel, root).forEach(el => { el.addEventListener('mousemove', e => showTip(el.dataset.t, e)); el.addEventListener('mouseleave', hideTip); }); }
 // ===================================================================== router
-const PAGES = ['overview', 'process', 'operations', 'heat', 'control', 'economics', 'market', 'safety', 'emethanol', 'validation', 'feed', 'green'];
+const PAGES = ['overview', 'process', 'operations', 'heat', 'control', 'economics', 'market', 'safety', 'emethanol', 'feed', 'green', 'validation'];
 const TITLES = {overview: 'Overview', process: 'Process flow diagram', operations: 'Operations and AI set points', heat: 'Heat integration', control: 'Process control', economics: 'Economics', market: 'Market and scenarios', safety: 'Process monitoring', emethanol: 'e-Methanol extension', validation: 'Validation', feed: 'Feedstock lab', green: 'Sustainability and Vision 2030'};
 let FIRST_SHOWN = false;
 function show(p) {
@@ -193,9 +193,9 @@ function buildOverview() {
    ['07', 'market', 'Market and scenarios', 'Prices of 2025–2026 and fourteen scenarios, from the base case to the 2026 Gulf and Red Sea crisis.', 'Table 8.27'],
    ['08', 'safety', 'Process monitoring', 'PCA monitoring of eight signals with T², Q and a k-NN diagnosis of five faults.', 'Section 10.4'],
    ['09', 'emethanol', 'Solar e-methanol', 'The purge carbon becomes extra methanol with electrolytic hydrogen and Saudi solar power.', 'Section 10.5'],
-   ['10', 'validation', 'Validation', 'Every model of the twin checked against the values of the report.', 'All chapters'],
-   ['11', 'feed', 'Feedstock lab', 'Change the polymers, moisture and dirt of the plastic, clean it, and follow a day of truck deliveries through the whole plant.', 'Table 2.3, Section 2.2'],
-   ['12', 'green', 'Sustainability and Vision 2030', 'The journey of the carbon, the CO₂ ledger against the routes replaced and the national goals the plant serves.', 'Chapter 7']];
+   ['10', 'feed', 'Feedstock lab', 'Change the polymers, moisture and dirt of the plastic, clean it, and follow a day of truck deliveries through the whole plant.', 'Table 2.3, Section 2.2'],
+   ['11', 'green', 'Sustainability and Vision 2030', 'The journey of the carbon, the CO₂ ledger against the routes replaced and the national goals the plant serves.', 'Chapter 7'],
+   ['12', 'validation', 'Validation', 'Every model of the twin checked against the values of the report.', 'All chapters']];
   $('feats').innerHTML = F.map(([n, p, h, t, src]) => `<a class="reveal" data-go="${p}"><span class="n">${n}</span><h4>${h}</h4><p>${t}</p><span class="src">${src}</span></a>`).join('');
   // equipment and project schedule
   const EQ = [['R-101', 'Gasifiers, carbon conversion', '97.16 %'], ['R-101', 'Raw syngas', '7,852 kmol/h'], ['R-102', 'Shift, CO conversion', '90 %'], ['ME-101', 'Membrane area', '6,040 m²'], ['C-101', 'Compressor power', '22.5 MW'], ['R-103', 'Methanol reactor', '3,447 tubes'], ['T-101', 'Methanol column', '52 trays, 33.6 m']];
@@ -895,7 +895,17 @@ document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.ke
   if (e.key === 'Enter') { const L = $('pres')._L; if (L && L[palSel]) { closePal(); L[palSel].f(); } } });
 // ===================================================================== return from the 3D presentation
 // The state of the twin is kept for this tab when the presentation is opened, and restored when the viewer comes back.
-function saveReturn() { try { sessionStorage.setItem('mpw-twin-return', JSON.stringify({ST, page: PAGE, y: scrollY, t: Date.now()})); } catch (e) {} }
+function saveReturn() { try { sessionStorage.setItem('mpw-twin-return', JSON.stringify({ST, page: PAGE, y: scrollY, t: Date.now()})); } catch (e) {} saveCase(); }
+// the current case, written for the 3D presentation (same site): products, unit loads, stream flows against the design and the feed
+function saveCase() { try { compute(); const L = lims(), r = E.r, fm = r.fm || FMD, tot = shareTot(ST.FQ);
+  const loads = [['R-101', r.feed, L.feed], ['R-102', r.S15 / DES.r.S15, L.S15], ['ME-101', r.A / A_INST, L.A], ['C-101', r.S18 / DES.r.S18, L.S18], ['R-103', r.S20 / DES.r.S20, L.S20], ['F-101', r.S23 / DES.r.S23, L.S23],
+    ['T-101', r.S26 / DES.r.S26, L.S26], ['C-102', r.H2p / DES.r.H2p, L.H2p], ['R-101F', r.Q101, L.Q101]].map(([u, v, l]) => [u, +v.toFixed(4), +l.toFixed(4)]);
+  const flows = {}; for (let n = 1; n <= 31; n++) { const a = liveFlow(n, r), b = liveFlow(n, DES.r); if (a && b) flows[n] = +(a / b).toFixed(4); } flows[1] = flows[2] = +(E.p.mpw_kgh / P_BASE.mpw_kgh).toFixed(4);
+  const design = isDesignFeed(ST.FQ) && ST.X.every((v, i) => Math.abs(v - DEF.X[i]) < 1e-9) && !Object.keys(ST.MK).length && ST.HI;
+  localStorage.setItem('mpw-case', JSON.stringify({v: 1, t: Date.now(), design, feed: fqName(), scen: scenName(), X: ST.X, hi: ST.HI,
+    meoh: Math.round(E.p.meoh_kgh * 7.92), h2: Math.round(E.p.h2_kgh * 7.92), npv: +E.npv.toFixed(2), irr: E.irr, dm: +((E.r.MeOH / DES.r.MeOH - 1) * 100).toFixed(2), dh: +((E.r.H2p / DES.r.H2p - 1) * 100).toFixed(2),
+    dn: +(E.npv - DES.npv).toFixed(2), worst: +E.worst.toFixed(4), lim: UNITNAME[E.limiting] || E.limiting, ok: E.ok, loads, flows,
+    poly: Object.fromEntries(PKEYS.map(k => [k, +(ST.FQ[k] / tot * 100).toFixed(2)])), w: ST.FQ.w, a: ST.FQ.a, pur: ST.FQ.pur, cl: Math.round(fm.clppm)})); } catch (e) {} }
 document.addEventListener('click', e => { if (e.target.closest('a[href^="presentation"]')) saveReturn(); }, true);
 addEventListener('pagehide', saveReturn);
 function restoreReturn() {
