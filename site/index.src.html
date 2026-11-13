@@ -22,11 +22,12 @@
   </button>
   <div class="cur" id="cur"><i>01</i><span>Overview</span></div>
   <nav class="main" id="nav" aria-label="Sheets">
-    <a data-go="overview"><i>01</i><span>Overview</span></a><a data-go="process"><i>02</i><span>Process flow diagram</span></a><a data-go="operations"><i>03</i><span>Operations and AI</span></a><a data-go="heat"><i>04</i><span>Heat integration</span></a><a data-go="control"><i>05</i><span>Process control</span></a><a data-go="economics"><i>06</i><span>Economics</span></a><a data-go="market"><i>07</i><span>Market and scenarios</span></a><a data-go="safety"><i>08</i><span>Process monitoring</span></a><a data-go="emethanol"><i>09</i><span>Solar e-methanol</span></a><a data-go="validation"><i>10</i><span>Validation</span></a>
+    <a data-go="overview"><i>01</i><span>Overview</span></a><a data-go="process"><i>02</i><span>Process flow diagram</span></a><a data-go="operations"><i>03</i><span>Operations and AI</span></a><a data-go="heat"><i>04</i><span>Heat integration</span></a><a data-go="control"><i>05</i><span>Process control</span></a><a data-go="economics"><i>06</i><span>Economics</span></a><a data-go="market"><i>07</i><span>Market and scenarios</span></a><a data-go="safety"><i>08</i><span>Process monitoring</span></a><a data-go="emethanol"><i>09</i><span>Solar e-methanol</span></a><a data-go="validation"><i>10</i><span>Validation</span></a><a data-go="feed" class="new"><i>11</i><span>Feedstock lab</span></a><a data-go="green" class="new"><i>12</i><span>Sustainability and Vision 2030</span></a>
     <a href="presentation/" class="tour" title="Open the live 3D presentation of the plant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 21 7v10l-9 5-9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg><span>3D presentation</span></a>
   </nav>
   <div class="tools">
     <a class="ibtn tourb" href="presentation/" title="Open the live 3D presentation of the plant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 21 7v10l-9 5-9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg><span>3D</span></a>
+    <button class="ibtn" id="share" title="Copy a link to this case"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg></button>
     <button class="ibtn" id="pal" title="Quick search (Ctrl + K)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="lbl">Search</span></button>
     <button class="ibtn" id="theme" title="Whiteprint or blueprint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
     <button class="ibtn reset" id="resetAll" title="Return every sheet to the design point"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg><span class="lbl">Reset all</span></button>
@@ -62,7 +63,7 @@
       <h3 class="ovh reveal">Live readout</h3>
       <p class="note reveal" style="margin-top:0">Current state of the twin with the set point, the market and the heat-integration choice of the other sheets.</p>
       <div class="kpis two reveal" id="snap"></div>
-      <div class="cta reveal"><button class="btn pri" data-go="operations">Change the set points</button><button class="btn" data-go="economics">Change the economics</button></div>
+      <div class="cta reveal"><button class="btn pri" data-go="operations">Change the set points</button><button class="btn" data-go="feed">Change the plastic</button><button class="btn" data-go="economics">Change the economics</button></div>
     </div>
   </div></div></div>
   <div class="section" style="padding-top:8px"><div class="wrap">
@@ -85,7 +86,7 @@
   <div class="phead"><div class="wrap"><div><div class="sheetno"><b>02</b></div><h1>The plant, unit by unit</h1>
     <p class="lead">Live flowsheet of Figures 3.79 and 4.18. Hover a stream number for its conditions, select any unit for its data sheet, and switch on heat integration to see the exchangers that change service.</p>
     <div class="pagebar"><span class="chip" id="pfdChip"><i></i>Flows follow the twin set point</span><button class="btn sm ghost" data-reset="process">Reset this page</button></div></div>
-    <dl class="tblock"><div><dt>Drawing</dt><dd class="no">MPW-PFD-02</dd></div><div><dt>Sheet</dt><dd class="no">02 / 10</dd></div><div class="w"><dt>Source</dt><dd>Figures 3.79 and 4.18 of the report</dd></div><div class="w"><dt>Drawn by</dt><dd>Meshari A. Almuhaysin, Mohammed F. Alotaibi</dd></div><div><dt>Issued</dt><dd>November 2026</dd></div><div><dt>Units</dt><dd>SI, US$</dd></div></dl></div></div>
+    <dl class="tblock"><div><dt>Drawing</dt><dd class="no">MPW-PFD-02</dd></div><div><dt>Sheet</dt><dd class="no">02 / 12</dd></div><div class="w"><dt>Source</dt><dd>Figures 3.79 and 4.18 of the report</dd></div><div class="w"><dt>Drawn by</dt><dd>Meshari A. Almuhaysin, Mohammed F. Alotaibi</dd></div><div><dt>Issued</dt><dd>November 2026</dd></div><div><dt>Units</dt><dd>SI, US$</dd></div></dl></div></div>
   <div class="section"><div class="wrap">
     <div class="card" style="padding:14px 16px">
       <div class="split" style="margin-bottom:12px">
@@ -109,7 +110,7 @@
   <div class="phead"><div class="wrap"><div><div class="sheetno"><b>03</b></div><h1>Plant operations and AI set points</h1>
     <p class="lead">Move the four set points by hand or let the AI search for the most profitable, the safest or the largest operation inside the equipment limits.</p>
     <div class="pagebar"><span class="chip" id="opChip"><i></i>All units within design limits</span><span class="chip" id="mkChip"><i style="background:var(--c-lb);box-shadow:none"></i>Market: Base case</span><button class="btn sm ghost" data-reset="operations">Reset this page</button></div></div>
-    <dl class="tblock"><div><dt>Drawing</dt><dd class="no">MPW-OPS-03</dd></div><div><dt>Sheet</dt><dd class="no">03 / 10</dd></div><div class="w"><dt>Source</dt><dd>Section 10.2, the digital twin</dd></div><div class="w"><dt>Drawn by</dt><dd>Meshari A. Almuhaysin, Mohammed F. Alotaibi</dd></div><div><dt>Issued</dt><dd>November 2026</dd></div><div><dt>Units</dt><dd>SI, US$</dd></div></dl></div></div>
+    <dl class="tblock"><div><dt>Drawing</dt><dd class="no">MPW-OPS-03</dd></div><div><dt>Sheet</dt><dd class="no">03 / 12</dd></div><div class="w"><dt>Source</dt><dd>Section 10.2, the digital twin</dd></div><div class="w"><dt>Drawn by</dt><dd>Meshari A. Almuhaysin, Mohammed F. Alotaibi</dd></div><div><dt>Issued</dt><dd>November 2026</dd></div><div><dt>Units</dt><dd>SI, US$</dd></div></dl></div></div>
   <div class="section"><div class="wrap"><div class="grid side">
     <aside class="card sticky">
       <h3><span class="h">Operating mode</span></h3>
@@ -121,6 +122,9 @@
       <div class="ctl"><label for="phi">Purge fraction (D-103), φ <output id="o-phi"></output></label><input id="phi" type="range" min="0.08" max="0.12" step="0.0001" value="0.10"></div>
       <div class="ctl"><label for="rho">H₂ recovery (ME-101), ρ <output id="o-rho"></output></label><input id="rho" type="range" min="0.85" max="0.93" step="0.0001" value="0.90"></div>
       <div class="ctl"><label for="feed">MPW feed rate (R-101) <output id="o-feed"></output></label><input id="feed" type="range" min="80" max="110" step="0.1" value="100"></div>
+      <h4 class="fqh">Feedstock <button class="btn sm" data-go="feed">Open the lab</button></h4>
+      <select id="opFeed" class="sel" aria-label="Mixed plastic waste fed to the plant"></select>
+      <p class="note" id="opFeedN" style="margin-bottom:14px">Design MPW of Table 2.3.</p>
       <button class="btn pri" id="toDesign" style="width:100%">Return to the design point</button>
       <p class="note" id="ainote">Design point of Chapter 2.</p>
     </aside>
@@ -141,7 +145,7 @@
   <div class="phead"><div class="wrap"><div><div class="sheetno"><b>04</b></div><h1>Heat integration and its effect on the whole plant</h1>
     <p class="lead">Switch the integration on and off, or change the minimum approach temperature, and follow the effect on energy, cost, emissions, equipment, control and operation.</p>
     <div class="pagebar"><span class="chip" id="hiChip"><i></i>Heat integration ON</span><button class="btn sm ghost" data-reset="heat">Reset this page</button></div></div>
-    <dl class="tblock"><div><dt>Drawing</dt><dd class="no">MPW-HEN-04</dd></div><div><dt>Sheet</dt><dd class="no">04 / 10</dd></div><div class="w"><dt>Source</dt><dd>Chapter 4, pinch analysis and Aspen Energy Analyzer</dd></div><div class="w"><dt>Drawn by</dt><dd>Meshari A. Almuhaysin, Mohammed F. Alotaibi</dd></div><div><dt>Issued</dt><dd>November 2026</dd></div><div><dt>Units</dt><dd>SI, US$</dd></div></dl></div></div>
+    <dl class="tblock"><div><dt>Drawing</dt><dd class="no">MPW-HEN-04</dd></div><div><dt>Sheet</dt><dd class="no">04 / 12</dd></div><div class="w"><dt>Source</dt><dd>Chapter 4, pinch analysis and Aspen Energy Analyzer</dd></div><div class="w"><dt>Drawn by</dt><dd>Meshari A. Almuhaysin, Mohammed F. Alotaibi</dd></div><div><dt>Issued</dt><dd>November 2026</dd></div><div><dt>Units</dt><dd>SI, US$</dd></div></dl></div></div>
   <div class="section"><div class="wrap">
     <div class="grid side">
       <aside class="card sticky">
@@ -186,7 +190,7 @@
   <div class="phead"><div class="wrap"><div><div class="sheetno"><b>05</b></div><h1>Control system and loop simulator</h1>
     <p class="lead">Switch between four control loops of the plant — temperature, level, pressure and ratio — tune each one and watch its closed-loop response; browse the 34 loops of the plant and the two P&amp;IDs.</p>
     <div class="pagebar"><span class="chip" id="pidChip"><i></i>Loop stable</span><button class="btn sm ghost" data-reset="control">Reset this page</button></div></div>
-    <dl class="tblock"><div><dt>Drawing</dt><dd class="no">MPW-CTL-05</dd></div><div><dt>Sheet</dt><dd class="no">05 / 10</dd></div><div class="w"><dt>Source</dt><dd>Chapter 6, process control and instrumentation</dd></div><div class="w"><dt>Drawn by</dt><dd>Meshari A. Almuhaysin, Mohammed F. Alotaibi</dd></div><div><dt>Issued</dt><dd>November 2026</dd></div><div><dt>Units</dt><dd>SI, US$</dd></div></dl></div></div>
+    <dl class="tblock"><div><dt>Drawing</dt><dd class="no">MPW-CTL-05</dd></div><div><dt>Sheet</dt><dd class="no">05 / 12</dd></div><div class="w"><dt>Source</dt><dd>Chapter 6, process control and instrumentation</dd></div><div class="w"><dt>Drawn by</dt><dd>Meshari A. Almuhaysin, Mohammed F. Alotaibi</dd></div><div><dt>Issued</dt><dd>November 2026</dd></div><div><dt>Units</dt><dd>SI, US$</dd></div></dl></div></div>
   <div class="section"><div class="wrap">
     <div class="kicker">Loop simulator</div><h2 class="t" style="margin-bottom:12px">Select a control loop</h2>
     <div class="lpick" id="lpick"></div>
@@ -236,7 +240,7 @@
   <div class="phead"><div class="wrap"><div><div class="sheetno"><b>06</b></div><h1>Capital, costs and profitability</h1>
     <p class="lead">The cash-flow model of Appendix G runs live with the market of the market page and the heat-integration choice of the heat-integration page.</p>
     <div class="pagebar"><span class="chip" id="ecChip"><i></i>Base case</span><button class="btn sm ghost" data-reset="economics">Reset this page</button></div></div>
-    <dl class="tblock"><div><dt>Drawing</dt><dd class="no">MPW-ECO-06</dd></div><div><dt>Sheet</dt><dd class="no">06 / 10</dd></div><div class="w"><dt>Source</dt><dd>Chapter 8, economic analysis</dd></div><div class="w"><dt>Drawn by</dt><dd>Meshari A. Almuhaysin, Mohammed F. Alotaibi</dd></div><div><dt>Issued</dt><dd>November 2026</dd></div><div><dt>Units</dt><dd>SI, US$</dd></div></dl></div></div>
+    <dl class="tblock"><div><dt>Drawing</dt><dd class="no">MPW-ECO-06</dd></div><div><dt>Sheet</dt><dd class="no">06 / 12</dd></div><div class="w"><dt>Source</dt><dd>Chapter 8, economic analysis</dd></div><div class="w"><dt>Drawn by</dt><dd>Meshari A. Almuhaysin, Mohammed F. Alotaibi</dd></div><div><dt>Issued</dt><dd>November 2026</dd></div><div><dt>Units</dt><dd>SI, US$</dd></div></dl></div></div>
   <div class="section"><div class="wrap"><div class="grid side">
     <aside class="card sticky ecin">
       <h3><span class="h">Economic inputs</span><span class="mini">all pages follow</span></h3>
@@ -270,7 +274,7 @@
   <div class="phead"><div class="wrap"><div><div class="sheetno"><b>07</b></div><h1>Market, prices and crisis scenarios</h1>
     <p class="lead">Product prices of 2025–2026, the crisis levels of Table 8.27 and fourteen scenarios — each one evaluated at the design point and at the AI set point.</p>
     <div class="pagebar"><span class="chip" id="mkChip2"><i></i>Base case</span><button class="btn sm ghost" data-reset="market">Reset this page</button></div></div>
-    <dl class="tblock"><div><dt>Drawing</dt><dd class="no">MPW-MKT-07</dd></div><div><dt>Sheet</dt><dd class="no">07 / 10</dd></div><div class="w"><dt>Source</dt><dd>Chapter 8, market and risk</dd></div><div class="w"><dt>Drawn by</dt><dd>Meshari A. Almuhaysin, Mohammed F. Alotaibi</dd></div><div><dt>Issued</dt><dd>November 2026</dd></div><div><dt>Units</dt><dd>SI, US$</dd></div></dl></div></div>
+    <dl class="tblock"><div><dt>Drawing</dt><dd class="no">MPW-MKT-07</dd></div><div><dt>Sheet</dt><dd class="no">07 / 12</dd></div><div class="w"><dt>Source</dt><dd>Chapter 8, market and risk</dd></div><div class="w"><dt>Drawn by</dt><dd>Meshari A. Almuhaysin, Mohammed F. Alotaibi</dd></div><div><dt>Issued</dt><dd>November 2026</dd></div><div><dt>Units</dt><dd>SI, US$</dd></div></dl></div></div>
   <div class="section"><div class="wrap"><div class="grid side">
       <aside class="card sticky">
         <h3><span class="h">Market and project conditions</span></h3>
@@ -297,7 +301,7 @@
   <div class="phead"><div class="wrap"><div><div class="sheetno"><b>08</b></div><h1>Process monitoring</h1>
     <p class="lead">Principal component monitoring of eight signals of the synthesis loop: Hotelling’s T², the squared prediction error Q and a k-nearest-neighbour diagnosis of five faults.</p>
     <div class="pagebar"><span class="chip" id="fdChip"><i></i>Normal operation</span><button class="btn sm ghost" data-reset="safety">Reset this page</button></div></div>
-    <dl class="tblock"><div><dt>Drawing</dt><dd class="no">MPW-FDD-08</dd></div><div><dt>Sheet</dt><dd class="no">08 / 10</dd></div><div class="w"><dt>Source</dt><dd>Section 10.4, fault detection and diagnosis</dd></div><div class="w"><dt>Drawn by</dt><dd>Meshari A. Almuhaysin, Mohammed F. Alotaibi</dd></div><div><dt>Issued</dt><dd>November 2026</dd></div><div><dt>Units</dt><dd>SI, US$</dd></div></dl></div></div>
+    <dl class="tblock"><div><dt>Drawing</dt><dd class="no">MPW-FDD-08</dd></div><div><dt>Sheet</dt><dd class="no">08 / 12</dd></div><div class="w"><dt>Source</dt><dd>Section 10.4, fault detection and diagnosis</dd></div><div class="w"><dt>Drawn by</dt><dd>Meshari A. Almuhaysin, Mohammed F. Alotaibi</dd></div><div><dt>Issued</dt><dd>November 2026</dd></div><div><dt>Units</dt><dd>SI, US$</dd></div></dl></div></div>
   <div class="section"><div class="wrap"><div class="grid side">
     <aside class="card sticky">
       <h3><span class="h">Fault scenario</span></h3><div class="modes" id="fbtns" style="grid-template-columns:1fr"></div>
@@ -323,7 +327,7 @@
   <div class="phead"><div class="wrap"><div><div class="sheetno"><b>09</b></div><h1>Solar e-methanol from the purge gas</h1>
     <p class="lead">The CO and CO₂ of the purge are combined with electrolytic hydrogen powered by Saudi solar electricity; size the extension and compare its cost with the market price.</p>
     <div class="pagebar"><button class="btn sm ghost" data-reset="emethanol">Reset this page</button></div></div>
-    <dl class="tblock"><div><dt>Drawing</dt><dd class="no">MPW-EME-09</dd></div><div><dt>Sheet</dt><dd class="no">09 / 10</dd></div><div class="w"><dt>Source</dt><dd>Section 10.5, future extension</dd></div><div class="w"><dt>Drawn by</dt><dd>Meshari A. Almuhaysin, Mohammed F. Alotaibi</dd></div><div><dt>Issued</dt><dd>November 2026</dd></div><div><dt>Units</dt><dd>SI, US$</dd></div></dl></div></div>
+    <dl class="tblock"><div><dt>Drawing</dt><dd class="no">MPW-EME-09</dd></div><div><dt>Sheet</dt><dd class="no">09 / 12</dd></div><div class="w"><dt>Source</dt><dd>Section 10.5, future extension</dd></div><div class="w"><dt>Drawn by</dt><dd>Meshari A. Almuhaysin, Mohammed F. Alotaibi</dd></div><div><dt>Issued</dt><dd>November 2026</dd></div><div><dt>Units</dt><dd>SI, US$</dd></div></dl></div></div>
   <div class="section"><div class="wrap"><div class="grid side">
     <aside class="card sticky">
       <h3><span class="h">Extension</span></h3>
@@ -350,12 +354,74 @@
 <section class="page" data-page="validation">
   <div class="phead"><div class="wrap"><div><div class="sheetno"><b>10</b></div><h1>How the twin works and how well it agrees</h1>
     <p class="lead">Every model of the site is checked against the values of the report.</p></div>
-    <dl class="tblock"><div><dt>Drawing</dt><dd class="no">MPW-VAL-10</dd></div><div><dt>Sheet</dt><dd class="no">10 / 10</dd></div><div class="w"><dt>Source</dt><dd>Models of all chapters against the report</dd></div><div class="w"><dt>Drawn by</dt><dd>Meshari A. Almuhaysin, Mohammed F. Alotaibi</dd></div><div><dt>Issued</dt><dd>November 2026</dd></div><div><dt>Units</dt><dd>SI, US$</dd></div></dl></div></div>
+    <dl class="tblock"><div><dt>Drawing</dt><dd class="no">MPW-VAL-10</dd></div><div><dt>Sheet</dt><dd class="no">10 / 12</dd></div><div class="w"><dt>Source</dt><dd>Models of all chapters against the report</dd></div><div class="w"><dt>Drawn by</dt><dd>Meshari A. Almuhaysin, Mohammed F. Alotaibi</dd></div><div><dt>Issued</dt><dd>November 2026</dd></div><div><dt>Units</dt><dd>SI, US$</dd></div></dl></div></div>
   <div class="section"><div class="wrap">
     <div class="cq"><div class="grid howg" id="howCards"></div></div>
     <div class="grid g2" style="margin-top:18px">
       <div class="card"><h3><span class="h">Plant and economic model</span></h3><div class="tbl"><table id="valtab"></table></div></div>
       <div class="card"><h3><span class="h">Heat integration and control</span></h3><div class="tbl"><table id="valtab2"></table></div></div>
+    </div>
+  </div></div>
+</section>
+<!-- =========================================================== FEEDSTOCK LAB -->
+<section class="page" data-page="feed">
+  <div class="phead"><div class="wrap"><div><div class="sheetno"><b>11</b></div><h1>Feedstock lab: what the plastic is made of</h1>
+    <p class="lead">Change the polymers, the moisture and the dirt in the mixed plastic waste, clean it in the pre-treatment line and watch the gasifier, the products, the safety and the profit of the whole twin respond.</p>
+    <div class="pagebar"><span class="chip" id="fqChip"><i></i>Design MPW of Table 2.3</span><span class="chip" id="fqLim"><i></i>All units within design limits</span><button class="btn sm ghost" data-reset="feed">Reset this page</button></div></div>
+    <dl class="tblock"><div><dt>Drawing</dt><dd class="no">MPW-FDS-11</dd></div><div><dt>Sheet</dt><dd class="no">11 / 12</dd></div><div class="w"><dt>Source</dt><dd>Table 2.3 and the R-101 balance of Section 2.2, extended</dd></div><div class="w"><dt>Drawn by</dt><dd>Meshari A. Almuhaysin, Mohammed F. Alotaibi</dd></div><div><dt>Issued</dt><dd>November 2026</dd></div><div><dt>Units</dt><dd>SI, US$</dd></div></dl></div></div>
+  <div class="section"><div class="wrap"><div class="grid side">
+    <aside class="card sticky fqside">
+      <h3><span class="h">Waste received</span></h3>
+      <div class="modes fqpre" id="fqPre"></div>
+      <div class="box" id="fqTxt"></div>
+      <h4>Polymers in the plastic <small class="mini" id="fqSum"></small></h4>
+      <div id="fqPoly"></div>
+      <h4>Contaminants of the waste received</h4>
+      <div class="ctl"><label for="fqw">Moisture <output id="o-fqw"></output></label><input id="fqw" type="range" min="0" max="25" step="0.5" value="0"><span class="ref">Water carried with the waste (wt% as received).</span></div>
+      <div class="ctl"><label for="fqa">Inerts: sand, glass, metal, ash <output id="o-fqa"></output></label><input id="fqa" type="range" min="0" max="20" step="0.5" value="0"><span class="ref">Mineral matter that does not gasify (wt% as received).</span></div>
+      <h4>Pre-treatment line</h4>
+      <div class="ctl"><label for="fqp">Cleaning intensity <output id="o-fqp"></output></label><input id="fqp" type="range" min="0" max="100" step="1" value="0"><span class="ref">NIR sorting of PVC, thermal drying, screening and eddy-current separation.</span></div>
+      <button class="btn pri" id="fqAI" style="width:100%">AI: best cleaning intensity</button>
+      <button class="btn" id="fqOpt" style="width:100%;margin-top:8px">AI: best set point for this feed</button>
+      <p class="note" id="fqNote">The feed chosen here drives every sheet of the twin.</p>
+    </aside>
+    <div class="cq">
+      <div class="kpis" id="fqK"></div>
+      <div class="grid fqg" style="margin-top:18px">
+        <div class="card"><h3><span class="h">The waste, before and after cleaning</span><span class="mini">wt%</span></h3><svg id="fqBar" class="chart" viewBox="0 0 520 250"></svg><div class="lg" id="fqLg"></div>
+          <div class="tbl" style="margin-top:12px"><table id="fqEl"></table></div></div>
+        <div class="card"><h3><span class="h">Raw syngas from R-101 (Stream 10)</span><span class="mini">kmol/h per unit feed</span></h3><svg id="fqGas" class="chart" viewBox="0 0 520 300"></svg>
+          <div class="lg"><span><i class="sw" style="background:var(--c-lb)"></i>Design MPW (Table 2.7)</span><span><i class="sw" style="background:var(--c-or)"></i>Selected feed</span></div><p class="verdict" id="fqGasV"></p></div>
+        <div class="card"><h3><span class="h">Feed-quality alarms</span><span class="mini">live checks of the selected feed</span></h3><div id="fqAlarm" class="alarms"></div></div>
+        <div class="card"><h3><span class="h">The fingerprint of each polymer</span><span class="mini">+10 points of one polymer</span></h3><svg id="fqFp" class="chart" viewBox="0 0 520 300"></svg>
+          <div class="seg" id="fqFpK" style="margin-top:10px"><button data-k="npv" class="on">NPV</button><button data-k="meoh">Methanol</button><button data-k="h2">Hydrogen</button></div><p class="note">Each bar adds ten percentage points of one polymer to the selected plastic, taking them from the others in proportion.</p></div>
+        <div class="card"><h3><span class="h">Is cleaning worth it?</span><span class="mini">NPV at 10 %, million US$</span></h3><svg id="fqPur" class="chart" viewBox="0 0 520 300"></svg>
+          <div class="lg"><span><i class="sw ln" style="background:var(--navy)"></i>NPV against cleaning intensity</span><span><i class="sw dot" style="background:var(--c-or)"></i>Selected</span><span><i class="sw dot" style="background:var(--c-gr)"></i>AI optimum</span></div><p class="verdict ok" id="fqPurV"></p></div>
+        <div class="card"><h3><span class="h">One day of truck deliveries</span><button class="btn sm pri" id="fqMC">Deliver 288 new loads</button></h3><svg id="fqMCc" class="chart" viewBox="0 0 520 300"></svg>
+          <div class="kpis two" id="fqMCk" style="margin-top:12px"></div><p class="note">Every five minutes a truck tips a load whose polymers, moisture and inerts scatter around the selected feed (±25 % of each polymer, ±40 % of the contaminants). The twin follows each load at the current set point.</p></div>
+      </div>
+    </div>
+  </div></div></div>
+</section>
+<!-- =========================================================== SUSTAINABILITY -->
+<section class="page" data-page="green">
+  <div class="phead"><div class="wrap"><div><div class="sheetno"><b>12</b></div><h1>Sustainability and Saudi Vision 2030</h1>
+    <p class="lead">Where every atom of carbon in the plastic ends up, how much CO₂ the plant saves against today’s routes, and how the project serves the national goals. Every figure follows the twin live.</p>
+    <div class="pagebar"><span class="chip" id="grChip"><i></i>Net CO₂ benefit</span><button class="btn sm ghost" data-reset="green">Reset this page</button></div></div>
+    <dl class="tblock"><div><dt>Drawing</dt><dd class="no">MPW-SUS-12</dd></div><div><dt>Sheet</dt><dd class="no">12 / 12</dd></div><div class="w"><dt>Source</dt><dd>Chapter 7 (Section 7.5) and the twin, with literature emission factors</dd></div><div class="w"><dt>Drawn by</dt><dd>Meshari A. Almuhaysin, Mohammed F. Alotaibi</dd></div><div><dt>Issued</dt><dd>November 2026</dd></div><div><dt>Units</dt><dd>SI, US$</dd></div></dl></div></div>
+  <div class="section"><div class="wrap">
+    <div class="kpis" id="grK"></div>
+    <div class="grid grg" style="margin-top:18px">
+      <div class="card wide"><h3><span class="h">The journey of the carbon in the plastic</span><span class="mini">kmol/h of carbon at the current feed and set point</span></h3><svg id="grSk" class="chart" viewBox="0 0 1000 380"></svg></div>
+      <div class="card"><h3><span class="h">CO₂ ledger: this plant against the routes it replaces</span><span class="mini">thousand t CO₂ per year</span></h3><svg id="grL" class="chart" viewBox="0 0 520 320"></svg><div class="lg" id="grLg"></div><p class="verdict ok" id="grV"></p></div>
+      <div class="card"><h3><span class="h">Emission factors</span><span class="mini">change them to test the result</span></h3>
+        <div class="ctl"><label for="grE">Saudi grid electricity (kg CO₂/kWh) <output id="o-grE"></output></label><input id="grE" type="range" min="0" max="0.8" step="0.001" value="0.597"><span class="ref">0.597: IEA emission factors 2025 for Saudi Arabia; 0 = solar power.</span></div>
+        <div class="ctl"><label for="grM">Methanol from natural gas (t CO₂/t) <output id="o-grM"></output></label><input id="grM" type="range" min="0.5" max="1.6" step="0.01" value="1.0"><span class="ref">Conventional plants emit about 1.0–1.4 t CO₂ per tonne of methanol.</span></div>
+        <div class="ctl"><label for="grH">Grey hydrogen from SMR (kg CO₂/kg) <output id="o-grH"></output></label><input id="grH" type="range" min="6" max="14" step="0.01" value="10.13"><span class="ref">10.13 kg CO₂-eq/kg: IEAGHG (2022) reference for hydrogen from natural gas without capture.</span></div>
+        <div class="ctl"><label for="grB">Fate of the waste without the plant <output id="o-grB"></output></label><input id="grB" type="range" min="0" max="100" step="5" value="0"><span class="ref">Share burned in the open or incinerated; the rest is landfilled and keeps its carbon.</span></div>
+      </div>
+      <div class="card wide"><h3><span class="h">How the plant serves Saudi Vision 2030</span><span class="mini">live contribution of the current case</span></h3><div class="v30" id="grV30"></div></div>
+      <div class="card wide"><h3><span class="h">Circular carbon economy: the 4R framework</span><span class="mini">endorsed by the G20 under the Saudi presidency, Riyadh 2020</span></h3><div class="r4" id="grR4"></div></div>
     </div>
   </div></div>
 </section>
@@ -365,7 +431,7 @@
     <div><h5>Project</h5><p class="pj">MPW Gasification Complex</p><p>Gasification of mixed plastic waste for the production of methanol and hydrogen. Senior design project, College of Engineering, Department of Chemical Engineering, King Saud University.</p><p class="mini">Every number on this site comes from the design report or is calculated live from its models.</p></div>
     <div class="names"><h5>Drawn by</h5><b>Meshari A. Almuhaysin</b><b>Mohammed F. Alotaibi</b></div>
     <div><h5>Sheets</h5><a data-go="process">02 Process flow diagram</a><a data-go="operations">03 Operations and AI</a><a data-go="heat">04 Heat integration</a><a data-go="control">05 Process control</a><a data-go="economics">06 Economics</a></div>
-    <div><h5>Sheets</h5><a data-go="market">07 Market and scenarios</a><a data-go="safety">08 Process monitoring</a><a data-go="emethanol">09 Solar e-methanol</a><a data-go="validation">10 Validation</a><a href="presentation/">3D presentation</a></div>
+    <div><h5>Sheets</h5><a data-go="market">07 Market and scenarios</a><a data-go="safety">08 Process monitoring</a><a data-go="emethanol">09 Solar e-methanol</a><a data-go="validation">10 Validation</a><a data-go="feed">11 Feedstock lab</a><a data-go="green">12 Sustainability and Vision 2030</a><a href="presentation/">3D presentation</a></div>
   </div>
   <div class="cr">© 2026 Meshari A. Almuhaysin and Mohammed F. Alotaibi. All rights reserved. The design, the models, the data and the code of this site may not be copied, republished or reused without the written permission of the authors.</div>
 </div></footer>

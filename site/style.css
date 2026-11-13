@@ -504,3 +504,41 @@ table.pick tbody tr.on td:first-child{box-shadow:inset 4px 0 0 var(--ink)}
 }
 
 #marginBox[hidden]{display:none}
+/* =========================================================== feedstock lab and sustainability (sheets 11 and 12) */
+nav.main a.new span::after{content:"new";margin-left:7px;font:700 10.5px var(--f);letter-spacing:.06em;text-transform:uppercase;padding:1px 5px;background:var(--signal);color:#15191c;vertical-align:2px}
+nav.main a.new.on span::after{background:var(--paper);color:var(--ink)}
+.fqpre{grid-template-columns:1fr 1fr;margin-bottom:12px}
+.fqpre button{font-size:13.5px;padding:9px 6px}
+.fqside h4 small{font:500 12.5px var(--f);color:var(--graphite);margin-left:6px}
+.fqc{margin:4px 0 8px}
+.fqc label{font-size:14.5px}
+.fqc label span{display:flex;align-items:center;gap:7px;min-width:0}
+.fqc label small{font:400 12.5px var(--f);color:var(--graphite);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fqc .sw,.fqside .sw{display:inline-block;width:11px;height:11px;flex:0 0 auto}
+.fqc output{font-size:16px}
+.fqh{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.sel{width:100%;font:600 15px var(--f);padding:9px 10px;border:1.5px solid var(--ink);background:var(--sheet);color:var(--ink);border-radius:0;cursor:pointer}
+#fqK,#grK{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:900px){#fqK,#grK{grid-template-columns:repeat(2,minmax(0,1fr))}} @media (max-width:420px){#fqK,#grK{grid-template-columns:1fr}}
+.fqg{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+@container (min-width:1500px){#fqK{grid-template-columns:repeat(6,minmax(0,1fr))}.fqg{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@container (max-width:680px){.fqg,.grg{grid-template-columns:minmax(0,1fr)!important}.grg>.wide{grid-column:auto}}
+.alarms{display:grid;gap:8px}
+.al{display:grid;grid-template-columns:auto 1fr auto;align-items:baseline;gap:4px 10px;padding:9px 12px;border-left:4px solid var(--ok);background:var(--paper2)}
+.al::before{content:"";width:10px;height:10px;background:var(--ok);align-self:center}
+.al b{font:600 14.5px var(--f)} .al .av{font:700 16px var(--fd);letter-spacing:.02em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.al p{grid-column:2/-1;margin:0;font-size:13.5px;color:var(--ink2);line-height:1.45}
+.al.warn{border-color:var(--warn)} .al.warn::before{background:var(--warn)}
+.al.bad{border-color:var(--bad);background:var(--lred)} .al.bad::before{background:var(--bad);animation:lamp .8s steps(2) infinite}
+.grg{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+.grg>.wide{grid-column:1/-1}
+.v30,.r4{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:0;border-top:2px solid var(--ink)}
+.vt{position:relative;padding:14px 16px 16px;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);background:var(--sheet);transition:background .15s}
+.vt[data-go]{cursor:pointer} .vt[data-go]:hover{background:var(--paper2)}
+.vt .tag{display:inline-block;font:700 11.5px var(--f);letter-spacing:.07em;text-transform:uppercase;color:var(--ok);border:1.5px solid currentColor;padding:2px 6px}
+.r4 .vt .tag{color:var(--pen)}
+.vt h4{margin:10px 0 4px;font:600 15.5px var(--f)}
+.vt b{display:block;font:800 26px/1.1 var(--fd);letter-spacing:.01em;color:var(--ink);font-variant-numeric:tabular-nums}
+.vt p{margin:6px 0 0;font-size:13.5px;color:var(--graphite);line-height:1.45}
+#grSk{width:100%;height:auto}
+.v30{grid-template-columns:repeat(3,minmax(0,1fr))} @media (max-width:1100px){.v30{grid-template-columns:repeat(2,minmax(0,1fr))}} @media (max-width:560px){.v30{grid-template-columns:1fr}}

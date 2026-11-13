@@ -8,7 +8,7 @@ Interactive digital twin of the mixed-plastic-waste (MPW) gasification plant tha
 
 **Open the tool:** https://meesh81118-dotcom.github.io/mpw-digital-twin/
 
-The site runs entirely in the browser. It needs no installation and no server. One button (**Reset all**) returns every page to the design point.
+The site runs entirely in the browser. The **Share** button copies a link that reopens the twin with the same feed, set points and market. It needs no installation and no server. One button (**Reset all**) returns every page to the design point.
 
 | Page | Content |
 |---|---|
@@ -22,6 +22,8 @@ The site runs entirely in the browser. It needs no installation and no server. O
 | Monitoring | PCA fault detection (T², Q) and k-NN diagnosis of five faults |
 | e-Methanol | Solar e-methanol from the purge gas |
 | Validation | Every model checked against the values of the report |
+| Feedstock lab | Polymer mix (HDPE, LDPE, PP, PS, PET, PVC), moisture and inerts of the waste, a pre-treatment line and its AI optimum; the R-101 balance of Section 2.2 is solved for any feed, and the feed drives every other sheet. Feed-quality alarms (HCl, furnace duty, ash, gas quality, flammability), the fingerprint of each polymer and a day of 288 truck deliveries |
+| Sustainability and Vision 2030 | The journey of the carbon (Sankey), the CO₂ ledger against the routes the plant replaces with editable emission factors, the national goals served and the 4R circular-carbon framework |
 
 ## Files
 

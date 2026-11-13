@@ -22,18 +22,68 @@ function loop(S18, phi) {
   }
   return {f, out, vap, liq, rec, x1, x2};
 }
-function plant(beta, phi, rho, feed = 1) {
-  const S11 = {}, S12 = {}; for (const k in S10) { S11[k] = feed * beta * S10[k]; S12[k] = feed * (1 - beta) * S10[k]; }
-  const S6 = 2 * S12.CO - S12.H2O, water = feed * S7 + S6, xw = XCO_WGS * S12.CO;
-  const S15 = {H2: S12.H2 + xw, CO: S12.CO - xw, CO2: S12.CO2 + xw, CH4: S12.CH4, H2O: 2 * S12.CO - xw};
+function plant(beta, phi, rho, feed = 1, fm = null) {
+  const G = fm ? fm.S10 : S10;   // syngas of R-101 per unit feed: Chapter 2, or the feedstock model for another MPW
+  const S11 = {}, S12 = {}; for (const k in G) { S11[k] = feed * beta * G[k]; S12[k] = feed * (1 - beta) * G[k]; }
+  const S6 = Math.max(0, 2 * S12.CO - S12.H2O), water = feed * S7 + S6, xw = XCO_WGS * S12.CO;
+  const S15 = {H2: S12.H2 + xw, CO: S12.CO - xw, CO2: S12.CO2 + xw, CH4: S12.CH4, H2O: S12.H2O + S6 - xw};
   const A = membrane(S15, rho), H2p = rho * S15.H2; const S17 = Object.assign({}, S15); S17.H2 -= H2p;
   const dry = {}; ['H2', 'CO', 'CO2', 'CH4'].forEach(k => dry[k] = S17[k] + S11[k]);
   const S18 = Object.assign({}, dry); S18.H2O = Y_W18 * sum(dry);
   const L = loop(S18, phi);
   return {S6, water, S15: sum(S15), A, H2p, S18: sum(S18), S20: sum(L.f), S23: sum(L.vap), S24: sum(L.rec), S26: sum(L.liq),
     MeOH: 0.999 * L.liq.MeOH, x1: L.x1, x2: L.x2, purge: phi * sum(L.vap), S17: sum(S17), S11: sum(S11), S12: sum(S12), feed,
-    purgeCO: phi * L.vap.CO, purgeCO2: phi * L.vap.CO2};
+    purgeCO: phi * L.vap.CO, purgeCO2: phi * L.vap.CO2, purgeH2: phi * L.vap.H2, purgeCH4: phi * L.vap.CH4,
+    S10: feed * sum(G), char: feed * (fm ? fm.char : CHAR0), fm, gas: G, Q101: feed * (1 + (fm ? fm.qExtra : 0) / 145.67)};
 }
+// ===== Feedstock model (extension of Section 2.2): polymer mix and contaminants -> elemental composition -> R-101 equilibrium
+// Polymer elemental mass fractions (C, H, O, Cl) from the repeat units; HHV in MJ/kg.
+const POLY = {HDPE: {C: .8563, H: .1437, O: 0, Cl: 0, hhv: 46.4}, LDPE: {C: .8563, H: .1437, O: 0, Cl: 0, hhv: 46.6}, PP: {C: .8563, H: .1437, O: 0, Cl: 0, hhv: 46.4},
+  PS: {C: .9226, H: .0774, O: 0, Cl: 0, hhv: 41.4}, PET: {C: .6250, H: .0420, O: .3330, Cl: 0, hhv: 22.9}, PVC: {C: .3844, H: .0484, O: 0, Cl: .5672, hhv: 19.9}};
+const PKEYS = ['HDPE', 'LDPE', 'PP', 'PS', 'PET', 'PVC'];
+// design MPW: the polymer mix that stands for Table 2.3; w = moisture and a = inerts (wt% of the waste received), pur = pre-treatment 0-100 %
+const FQ_DES = {HDPE: 24, LDPE: 22, PP: 26, PS: 13, PET: 15, PVC: 0, w: 0, a: 0, pur: 0};
+const MPW_KGH = 37879, MPW0 = {C: 2556.14 * 12.011 / 37879, H: 2571.39 * 2.016 / 37879, O: 62.30 * 31.998 / 37879};   // Table 2.3 (kmol/h of C, H2 and O2)
+const CHAR0 = 72.616, CH40 = 0.083, C0 = 2556.14, T_EQ = 1267.937, K_EQ = Math.exp(4800 / T_EQ - 4.72);
+const polyMix = sh => { const t = PKEYS.reduce((a, k) => a + (sh[k] || 0), 0) || 1, o = {C: 0, H: 0, O: 0, Cl: 0, hhv: 0}; PKEYS.forEach(k => { const f = (sh[k] || 0) / t; for (const e in o) o[e] += f * POLY[k][e]; }); return o; };
+const MIX0 = polyMix(FQ_DES);
+// removal by the pre-treatment line at 100 %: NIR sorting of PVC, thermal drying, screening and eddy-current separation of inerts
+const PRE = {PVC: 0.92, w: 0.85, a: 0.95, loss: 0.015};
+function feedModel(fq) {
+  fq = Object.assign({}, FQ_DES, fq || {}); const p = Math.max(0, Math.min(1, (fq.pur || 0) / 100));
+  const w0 = Math.max(0, fq.w || 0) / 100, a0 = Math.max(0, fq.a || 0) / 100, P0 = Math.max(0, 1 - w0 - a0);
+  const tot = PKEYS.reduce((a, k) => a + (fq[k] || 0), 0) || 1, sPVC = (fq.PVC || 0) / tot;
+  // per kg of waste received, after the pre-treatment line
+  const pvc = P0 * sPVC * (1 - PRE.PVC * p), other = P0 * (1 - sPVC) * (1 - PRE.loss * p), wat = w0 * (1 - PRE.w * p), ine = a0 * (1 - PRE.a * p);
+  const Y = pvc + other + wat + ine;   // kg of cleaned feed per kg received
+  const sh = {}; PKEYS.forEach(k => sh[k] = k === 'PVC' ? pvc : other * (fq[k] || 0) / Math.max(1e-12, tot - (fq.PVC || 0)));
+  const mix = polyMix(sh), fP = (pvc + other) / Y, fW = wat / Y, fA = ine / Y;
+  // elemental composition of the plastic, calibrated so that the design mix gives Table 2.3 exactly
+  const el = {C: Math.max(0, MPW0.C + mix.C - MIX0.C), H: Math.max(0, MPW0.H + mix.H - MIX0.H), O: Math.max(0, MPW0.O + mix.O - MIX0.O), Cl: mix.Cl};
+  const se = el.C + el.H + el.O + el.Cl, s0 = MPW0.C + MPW0.H + MPW0.O; for (const e in el) el[e] *= s0 / se;
+  const kg = MPW_KGH, nC = kg * fP * el.C / 12.011, nH = kg * fP * el.H / 1.008, nO = kg * fP * el.O / 15.999, nCl = kg * fP * el.Cl / 35.453, nW = kg * fW / 18.015;
+  // R-101: atom balances with the shift equilibrium at the temperature approach of Section 2.2 (Eqs I-IV); char and CH4 in the design ratio to the carbon fed
+  const char = CHAR0 / C0 * nC, ch4 = CH40 / C0 * nC, hcl = nCl;
+  const Cg = nC - char - ch4, Og = nO + S7 + nW, Hg = (nH + 2 * (S7 + nW) - 4 * ch4 - hcl) / 2, D = Og - Cg, Gq = Hg - Og + Cg;
+  const a = 1 - K_EQ, b = K_EQ * (Cg + D) + Gq, c = -K_EQ * Cg * D; let x = D > 0 ? (-b + Math.sqrt(b * b - 4 * a * c)) / (2 * a) : 0; x = Math.max(0, Math.min(x, Cg, Math.max(0, D)));
+  const S10m = {H2: Gq + x, CO: Cg - x, CO2: x, CH4: ch4, H2O: D - x};
+  // heat and costs of the feed quality (zero for the design feed)
+  const hhvP = 0.3491 * el.C * 100 + 1.1783 * el.H * 100 - 0.1034 * el.O * 100, hhvFeed = fP * hhvP;   // MJ/kg of cleaned feed (Channiwala and Parikh)
+  const qExtra = (kg * fW * 4.88 + kg * fA * 1.06) / 3600;   // MW: evaporate the moisture and heat it and the inerts to 1,200 °C in R-101
+  const rec = kg / Y;   // kg/h of waste bought for one unit of feed rate
+  const removedW = rec * (w0 - wat), removedS = rec * (P0 * sPVC * PRE.PVC * p + P0 * (1 - sPVC) * PRE.loss * p + a0 * PRE.a * p);
+  const qDry = removedW * 2.9 / 3600;   // MW of fuel for the dryer
+  const cost = rec / 1000 * 6 * p + removedS / 1000 * 25 + kg * fA / 1000 * 25 + hcl * 36.46 * 0.30;   // US$/h: sorting line, rejects and ash to landfill, HCl sorbent
+  const synMW = (S10m.H2 * 285.8 + S10m.CO * 283.0 + S10m.CH4 * 890.3) / 3600, feedMW = kg * hhvFeed / 3600;   // MW, higher heating value
+  const comb = S10m.H2 + S10m.CO + S10m.CH4, LFL = comb > 0 ? 1 / ((S10m.H2 / comb) / 4.0 + (S10m.CO / comb) / 12.5 + (S10m.CH4 / comb) / 5.0) : null,
+    UFL = comb > 0 ? 1 / ((S10m.H2 / comb) / 75.0 + (S10m.CO / comb) / 74.0 + (S10m.CH4 / comb) / 15.0) : null;
+  const clppm = el.Cl * fP * 1e6, hclppm = hcl / (sum(S10m) + hcl) * 1e6;
+  return {S10: S10m, char, ch4, hcl, nC, nH, nO, nCl, nW, el, fP, fW, fA, Y, rec, sh, mix, qExtra, qDry, cost, removedW, removedS, hhv: hhvFeed, synMW, feedMW, LFL, UFL, clppm, hclppm,
+    SC: (S7 + nW) / Math.max(1e-9, nC), h2co: S10m.H2 / Math.max(1e-9, S10m.CO), fq};
+}
+const isDesignFeed = fq => !fq || Object.keys(FQ_DES).every(k => Math.abs((fq[k] || 0) - FQ_DES[k]) < 1e-9);
+// the design feed returns null, so that the plant runs on the syngas of Chapter 2 exactly
+const FM_CACHE = {}; function feedOf(fq) { if (isDesignFeed(fq)) return null; const k = JSON.stringify(fq); return FM_CACHE[k] || (FM_CACHE[k] = feedModel(fq)); }
 // ===== Economic model (Chapter 8, Appendix G) =====
 const P_BASE = {meoh_kgh: 33701.38806641478, h2_kgh: 7806.985623098963, mpw_kgh: 37879.0, p_meoh: 393.0, p_h2: 2473.0, p_mpw: 80.0,
   p_elec: 0.23 / 3.75, p_ng: 2.5, p_water: 8.04 / 3.75, p_ww: 3.64 / 3.75, p_sw: 69.16 / 3.75 / 1000, eta_f: 0.85,
@@ -57,6 +107,7 @@ function econParams(r, mk) {
   const b = BASE_R, p = Object.assign({}, P_BASE, mk || {});
   p.meoh_kgh = P_BASE.meoh_kgh * r.MeOH / b.MeOH; p.h2_kgh = P_BASE.h2_kgh * r.H2p / b.H2p;
   p.mpw_kgh = P_BASE.mpw_kgh * r.feed; p.Q_R101 = P_BASE.Q_R101 * r.feed;
+  if (r.fm) { const f = r.fm; p.mpw_kgh = f.rec * r.feed; p.Q_R101 += f.qExtra * r.feed; p.fq_add = f.cost * r.feed; p.qh_add = (p.qh_add || 0) + f.qDry * r.feed; }
   const k18 = r.S18 / b.S18, k24 = r.S24 / b.S24, kh = r.H2p / b.H2p;
   p.W_total = 22533.2 * k18 + WCIRC * k24 + C102W * kh + WCH * r.S17 / b.S17 + 2083 + 5 * 228 + 1500;
   p.Q_CW = 12.39579 * r.S20 / b.S20 + 20.62523 * r.S17 / b.S17 + 18.843 * r.MeOH / b.MeOH + 17.772 * k18 + C102W / 1000 * kh;
@@ -68,7 +119,7 @@ function econParams(r, mk) {
 function comD(p, F, f) {
   const meoh = p.meoh_kgh * HRS / 1000 * f, h2 = p.h2_kgh * HRS / 1000 * f, mpw = p.mpw_kgh * HRS / 1000 * f;
   const rev = meoh * (p.p_meoh - p.logi) + h2 * p.p_h2;
-  const CRM = mpw * p.p_mpw + (p.proc_water + p.bfw) * HRS * f * p.p_water + p.cat_cost + p.mem_cost;
+  const CRM = mpw * p.p_mpw + (p.proc_water + p.bfw) * HRS * f * p.p_water + p.cat_cost + p.mem_cost + (p.fq_add || 0) * HRS * f;
   const fe = p.p_ng / 1.055056 / p.eta_f;
   let CUT = p.W_total * HRS * f * p.p_elec * p.elec_mult + p.Q_R101 / p.eta_f * GJ_MW * f / 1.055056 * p.p_ng + p.Q_heat * GJ_MW * f * fe
     + p.Q_CW * 1000 / (4.0 * 10) / 1025 * 3600 * HRS * f * p.p_sw - p.Q_steam * GJ_MW * f * fe;
@@ -100,14 +151,14 @@ function indicators(cf, i, B) {
   return {npv: npvAt(cf, i) / 1e6, irr, dpb};
 }
 // ===== Design limits and operating modes =====
-const LIMITS_MAX = {S15: 1.00, S18: 1.05, S20: 1.05, S23: 1.05, S26: 1.05, H2p: 1.05, feed: 1.05};
+const LIMITS_MAX = {S15: 1.00, S18: 1.05, S20: 1.05, S23: 1.05, S26: 1.05, H2p: 1.05, feed: 1.05, Q101: 1.10};   // Q101: duty of the R-101 furnaces (feedstock extension)
 function limitsFor(mode, margin) {
   const L = {}; for (const k in LIMITS_MAX) L[k] = mode === 'safe' ? Math.min(1.0, LIMITS_MAX[k]) * (1 - margin) : LIMITS_MAX[k];
   L.A = mode === 'safe' ? 1 - margin : 1.0; return L;
 }
 function evaluate(x, mk, L) {
   L = L || limitsFor('max', 0);
-  const r = plant(x[0], x[1], x[2], x[3] === undefined ? 1 : x[3]); const p = econParams(r, mk); const cf = cashflow(p);
+  const r = plant(x[0], x[1], x[2], x[3] === undefined ? 1 : x[3], mk && mk.fq ? feedOf(mk.fq) : null); const p = econParams(r, mk); const cf = cashflow(p);
   let worst = r.A / (A_INST * L.A), lim = 'ME-101 area';
   for (const k in LIMITS_MAX) { const v = r[k] / (L[k] * (k === 'feed' ? 1 : BASE_R[k])); if (v > worst) { worst = v; lim = k; } }
   const ind = indicators(cf, p.i, p.build);
@@ -155,4 +206,4 @@ function econDetail(p) {
   const E = econRows(p), op = E.rows.filter(r => r.y > E.B), npavg = op.reduce((a, r) => a + r.np, 0) / op.length;
   return {rows: E.rows, F: E.F, WC: E.WC, B: E.B, L: E.L, N: E.N, npavg, roroi: npavg / (E.F + E.WC), pbp: E.F / (npavg + E.F / op.length), full: E.rows[Math.min(E.N, E.B + 3)]};
 }
-if (typeof module !== 'undefined') module.exports = {plant, evaluate, optimise, limitsFor, BASE_R, emethanol, cashflow, econParams, indicators, P_BASE, econDetail, econRows, fciOf, CEPCI0, FCI_PER_CBM};
+if (typeof module !== 'undefined') module.exports = {isDesignFeed, feedModel, feedOf, FQ_DES, POLY, PKEYS, plant, evaluate, optimise, limitsFor, BASE_R, emethanol, cashflow, econParams, indicators, P_BASE, econDetail, econRows, fciOf, CEPCI0, FCI_PER_CBM};

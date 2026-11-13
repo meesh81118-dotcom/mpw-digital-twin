@@ -14,7 +14,8 @@ document.addEventListener('input', e => { if (e.target.type === 'range') fillRan
 const DEF = {X: [0.40, 0.10, 0.90, 1.0], MODE: 'design', margin: 2, MK: {}, SCID: 'base', HI: true, dT: 10, cpm: 550,
   loop: 'TC-310', FK: '1', ft: 598, em: {f: 100, c: 1.04, tech: 'today'},
   pfdHI: false, pfdFlow: true, sec: 'all', scf: 'all', iSeg: 'all', iq: '', stq: '', pidSel: 'base', ecTab: 'price',
-  EC: {lease: 0, buy: 0, build: 2, life: 20, dep: 'macrs5', cepci: 840.9, escp: 0, escc: 0, wc: 10, sal: 5, eq: {'R-101 (×5)': 0, 'C-101': 0, 'C-102': 0, 'ME-101': 0, '*': 0}}};
+  EC: {lease: 0, buy: 0, build: 2, life: 20, dep: 'macrs5', cepci: 840.9, escp: 0, escc: 0, wc: 10, sal: 5, eq: {'R-101 (×5)': 0, 'C-101': 0, 'C-102': 0, 'ME-101': 0, '*': 0}},
+  FQ: Object.assign({}, FQ_DES), fpk: 'npv', mcSeed: 1, gr: {e: 0.597, m: 1.0, h: 10.13, b: 0}};
 DEF.pids = initPids();
 let ST = clone(DEF), PAGE = 'overview', AIRES = {}, MC = null, MCKEY = '';
 // economic inputs of the economics page, turned into model parameters (defaults reproduce Chapter 8)
@@ -23,12 +24,12 @@ const EQX = [['R-101 (×5)', 'Gasifiers R-101 (×5)'], ['C-101', 'Syngas compres
 const cbmOf = k => k === '*' ? CBM.filter(c => !EQX.some(e => e[0] === c[0])).reduce((a, c) => a + c[2], 0) : CBM.find(c => c[0] === k)[2];
 function ecMK() { const c = ST.EC; let add = 0; EQX.forEach(([k]) => { add += cbmOf(k) * (c.eq[k] || 0) / 100; });
   return {land: c.lease * PLOT_M2 / SAR, land_buy: c.buy * PLOT_M2 / SAR, build: c.build, life: c.life, dep: c.dep, cepci: c.cepci, esc_p: c.escp / 100, esc_c: c.escc / 100, wc: c.wc / 100, salvage: c.sal / 100, cbm_add: add}; }
-const MKX = () => Object.assign(ecMK(), ST.MK, {hi: ST.HI});
-const SCMK = mk => Object.assign(ecMK(), mk, {hi: ST.HI});   // a scenario of the market page with the economic inputs of the economics page
+const MKX = () => Object.assign(ecMK(), ST.MK, {hi: ST.HI, fq: ST.FQ});
+const SCMK = mk => Object.assign(ecMK(), mk, {hi: ST.HI, fq: ST.FQ});   // a scenario of the market page with the economic inputs of the economics page
 const lims = () => ST.MODE === 'safe' ? limitsFor('safe', ST.margin / 100) : limitsFor('max', 0);
 let E, E0, DES = evaluate([0.40, 0.10, 0.90, 1], {});
 function compute() { const L = lims(); E = evaluate(ST.X, MKX(), L); E0 = evaluate([0.40, 0.10, 0.90, 1], MKX(), L); }
-const UNITNAME = {S15: 'R-102', S18: 'C-101', S20: 'R-103', S23: 'F-101', S26: 'T-101', H2p: 'C-102', feed: 'R-101', 'ME-101 area': 'ME-101'};
+const UNITNAME = {Q101: 'R-101 furnaces', S15: 'R-102', S18: 'C-101', S20: 'R-103', S23: 'F-101', S26: 'T-101', H2p: 'C-102', feed: 'R-101', 'ME-101 area': 'ME-101'};
 // ===================================================================== charts
 function plot(id, c) {
   const svg = $(id); if (!svg) return; const vb = svg.viewBox.baseVal; const W = vb.width, H = vb.height; const m = Object.assign({l: 56, r: 14, t: 12, b: 40}, c.m || {});
@@ -75,8 +76,8 @@ function donut(id, parts, center) {
 }
 function bindTips(root, sel) { $$(sel, root).forEach(el => { el.addEventListener('mousemove', e => showTip(el.dataset.t, e)); el.addEventListener('mouseleave', hideTip); }); }
 // ===================================================================== router
-const PAGES = ['overview', 'process', 'operations', 'heat', 'control', 'economics', 'market', 'safety', 'emethanol', 'validation'];
-const TITLES = {overview: 'Overview', process: 'Process flow diagram', operations: 'Operations and AI set points', heat: 'Heat integration', control: 'Process control', economics: 'Economics', market: 'Market and scenarios', safety: 'Process monitoring', emethanol: 'e-Methanol extension', validation: 'Validation'};
+const PAGES = ['overview', 'process', 'operations', 'heat', 'control', 'economics', 'market', 'safety', 'emethanol', 'validation', 'feed', 'green'];
+const TITLES = {overview: 'Overview', process: 'Process flow diagram', operations: 'Operations and AI set points', heat: 'Heat integration', control: 'Process control', economics: 'Economics', market: 'Market and scenarios', safety: 'Process monitoring', emethanol: 'e-Methanol extension', validation: 'Validation', feed: 'Feedstock lab', green: 'Sustainability and Vision 2030'};
 let FIRST_SHOWN = false;
 function show(p) {
   if (!PAGES.includes(p)) p = 'overview'; PAGE = p;
@@ -85,7 +86,7 @@ function show(p) {
     window.scrollTo(0, 0); render(); requestAnimationFrame(reveal); setTimeout(reveal, 60); document.title = TITLES[p] + ' – MPW Gasification Complex';
     const cur = $('cur'); if (cur) cur.innerHTML = `<i>${String(PAGES.indexOf(p) + 1).padStart(2, '0')}</i><span>${TITLES[p]}</span>`; };
   // animated page change when the browser supports it; the first page and any delayed transition are shown directly
-  if (document.startViewTransition && FIRST_SHOWN && !matchMedia('(prefers-reduced-motion: reduce)').matches) { try { document.startViewTransition(doit); } catch (e) { doit(); } setTimeout(doit, 400); } else doit();
+  if (document.startViewTransition && FIRST_SHOWN && !matchMedia('(prefers-reduced-motion: reduce)').matches) { try { const vt = document.startViewTransition(doit); [vt.ready, vt.finished, vt.updateCallbackDone].forEach(q => q && q.catch(() => {})); } catch (e) { doit(); } setTimeout(doit, 400); } else doit();
   FIRST_SHOWN = true;
   $('nav').classList.remove('open');
 }
@@ -114,6 +115,8 @@ function resetPage(p, quiet) {
   if (p === 'market' || p === 'all') { ST.MK = {}; ST.SCID = 'base'; ST.scf = 'all'; AIRES = {}; }
   if (p === 'safety' || p === 'all') { ST.FK = '1'; ST.ft = 598; stopPlay(); }
   if (p === 'emethanol' || p === 'all') { ST.em = D.em; }
+  if (p === 'feed' || p === 'all') { ST.FQ = D.FQ; ST.fpk = 'npv'; ST.mcSeed = 1; TRUCK = null; }
+  if (p === 'green' || p === 'all') { ST.gr = D.gr; }
   syncInputs(); render(); if (!quiet) toast(p === 'all' ? 'Every page has returned to the design point.' : 'This page has returned to its starting point.');
 }
 $('resetAll').addEventListener('click', () => { resetPage('all'); window.scrollTo({top: 0, behavior: 'smooth'}); });
@@ -126,20 +129,23 @@ function syncInputs() {
   $$('#lpick .lp').forEach(b => b.classList.toggle('on', b.dataset.l === ST.loop)); syncLoopInputs();
   $$('#iSeg button').forEach(b => b.classList.toggle('on', b.dataset.k === ST.iSeg)); $('iq').value = ST.iq; $$('#pidSel button').forEach(b => b.classList.toggle('on', b.dataset.k === ST.pidSel));
   MS.forEach(([id, k, dflt, , inv]) => set(id, inv(k in ST.MK ? ST.MK[k] : dflt))); $$('#scFilt button').forEach(b => b.classList.toggle('on', b.dataset.k === ST.scf));
+  syncFeedInputs(); set('grE', ST.gr.e); set('grM', ST.gr.m); set('grH', ST.gr.h); set('grB', ST.gr.b);
   syncEcon(); set('ft', ST.ft); set('ef', ST.em.f); set('ec', ST.em.c); $$('#etech button').forEach(b => b.classList.toggle('on', b.dataset.k === ST.em.tech));
   $$('input[type=range]').forEach(fillRange);
 }
 // ===================================================================== global render
 function render() {
   compute(); headerChips();
-  ({overview: rOverview, process: rProcess, operations: rOps, heat: rHeat, control: rControl, economics: rEcon, market: rMarket, safety: rFault, emethanol: rEM, validation: rVal})[PAGE]();
+  ({overview: rOverview, process: rProcess, operations: rOps, heat: rHeat, control: rControl, economics: rEcon, market: rMarket, safety: rFault, emethanol: rEM, validation: rVal, feed: rFeed, green: rGreen})[PAGE]();
 }
 function scenName() { const s = SCEN.find(z => z.id === ST.SCID); return s ? (s.sh || s.name) : 'Custom scenario'; }
 function headerChips() {
   const c = $('opChip'); if (!E.ok) { c.className = 'chip bad'; c.innerHTML = `<i></i>Limit exceeded: ${UNITNAME[E.limiting] || ''} at ${fmt(E.worst * 100, 1)} %`; }
   else if (E.worst > 0.98) { c.className = 'chip warn'; c.innerHTML = `<i></i>${UNITNAME[E.limiting] || ''} at ${fmt(E.worst * 100, 1)} % of its limit`; } else { c.className = 'chip'; c.innerHTML = '<i></i>All units within design limits'; }
   ['mkChip', 'mkChip2', 'ecChip'].forEach(id => { const el = $(id); if (el) el.innerHTML = `<i style="background:var(--c-lb);box-shadow:none"></i>Market: ${scenName()}${ST.HI ? '' : ' · without heat integration'}`; });
-  $('hiChip').className = 'chip' + (ST.HI ? '' : ' bad'); $('hiChip').innerHTML = `<i></i>Heat integration ${ST.HI ? 'ON' : 'OFF'} · ΔTmin = ${fmt(ST.dT, 1)} °C`;
+  const fn = fqName(), fl = $('fqLim'); ['fqChip'].forEach(id => { const el = $(id); if (el) { el.className = 'chip' + (isDesignFeed(ST.FQ) ? '' : ' warn'); el.innerHTML = `<i></i>Feed: ${fn}`; } });
+  if (fl) { fl.className = $('opChip').className; fl.innerHTML = $('opChip').innerHTML; } const of = $('opFeedN'); if (of) of.textContent = isDesignFeed(ST.FQ) ? 'Design MPW of Table 2.3.' : fn + ': methanol ' + dlt(E.r.MeOH, DES.r.MeOH)[0] + ', hydrogen ' + dlt(E.r.H2p, DES.r.H2p)[0] + '.';
+  $('hiChip').className = 'chip' + ST.HI ? '' : ' bad'; $('hiChip').innerHTML = `<i></i>Heat integration ${ST.HI ? 'ON' : 'OFF'} · ΔTmin = ${fmt(ST.dT, 1)} °C`;
 }
 // ===================================================================== OVERVIEW
 const HERO = [[478.4, 1, ' M$', 'fixed capital'], [105.04, 2, ' M$', 'NPV at 10 %'], [12.8, 2, ' %', 'DCFROR'], [81.7, 1, ' %', 'less hot utility', '−']];
@@ -187,7 +193,9 @@ function buildOverview() {
    ['07', 'market', 'Market and scenarios', 'Prices of 2025–2026 and fourteen scenarios, from the base case to the 2026 Gulf and Red Sea crisis.', 'Table 8.27'],
    ['08', 'safety', 'Process monitoring', 'PCA monitoring of eight signals with T², Q and a k-NN diagnosis of five faults.', 'Section 10.4'],
    ['09', 'emethanol', 'Solar e-methanol', 'The purge carbon becomes extra methanol with electrolytic hydrogen and Saudi solar power.', 'Section 10.5'],
-   ['10', 'validation', 'Validation', 'Every model of the twin checked against the values of the report.', 'All chapters']];
+   ['10', 'validation', 'Validation', 'Every model of the twin checked against the values of the report.', 'All chapters'],
+   ['11', 'feed', 'Feedstock lab', 'Change the polymers, moisture and dirt of the plastic, clean it, and follow a day of truck deliveries through the whole plant.', 'Table 2.3, Section 2.2'],
+   ['12', 'green', 'Sustainability and Vision 2030', 'The journey of the carbon, the CO₂ ledger against the routes replaced and the national goals the plant serves.', 'Chapter 7']];
   $('feats').innerHTML = F.map(([n, p, h, t, src]) => `<a class="reveal" data-go="${p}"><span class="n">${n}</span><h4>${h}</h4><p>${t}</p><span class="src">${src}</span></a>`).join('');
   // equipment and project schedule
   const EQ = [['R-101', 'Gasifiers, carbon conversion', '97.16 %'], ['R-101', 'Raw syngas', '7,852 kmol/h'], ['R-102', 'Shift, CO conversion', '90 %'], ['ME-101', 'Membrane area', '6,040 m²'], ['C-101', 'Compressor power', '22.5 MW'], ['R-103', 'Methanol reactor', '3,447 tubes'], ['T-101', 'Methanol column', '52 trays, 33.6 m']];
@@ -198,7 +206,7 @@ function buildOverview() {
 }
 function rOverview() {
   const K = [['Methanol', fmt(E.p.meoh_kgh * 7.92, 0) + ' t/y', 'var(--s-meoh)'], ['Hydrogen', fmt(E.p.h2_kgh * 7.92, 0) + ' t/y', 'var(--s-h2)'], ['NPV (10 %)', money(E.npv) + ' M', 'var(--hot)'],
-   ['Market', scenName(), 'var(--pen)'], ['Heat integration', ST.HI ? 'ON <small style="font-size:13px;font-weight:500;color:var(--graphite);display:block;margin-top:2px">ΔTmin = ' + fmt(ST.dT, 0) + ' °C</small>' : 'OFF', ST.HI ? 'var(--ok)' : 'var(--bad)'], ['Equipment', E.ok ? 'Within limits' : 'Limit exceeded', E.ok ? 'var(--ok)' : 'var(--bad)']];
+   ['Market', scenName(), 'var(--pen)'], ['Feedstock', fqName(), 'var(--sec-feed)'], ['Heat integration', ST.HI ? 'ON <small style="font-size:13px;font-weight:500;color:var(--graphite);display:block;margin-top:2px">ΔTmin = ' + fmt(ST.dT, 0) + ' °C</small>' : 'OFF', ST.HI ? 'var(--ok)' : 'var(--bad)'], ['Equipment', E.ok ? 'Within limits' : 'Limit exceeded', E.ok ? 'var(--ok)' : 'var(--bad)']];
   $('snap').innerHTML = K.map(([l, v, c]) => `<div class="kpi" style="--c:${c}"><div class="l">${l}</div><div class="v" style="font-size:26px">${v}</div></div>`).join('');
 }
 // ===================================================================== hero: the mass balance as a moving picture
@@ -275,7 +283,7 @@ function modelFlow(n, r) {
   const b = DES.r, f = r.feed, sc = v => v * f; const s = STREAMS[n]; const base = s ? s[2] : null;
   const m = {3: r.water, 6: r.S6, 7: 2797.67 * f, 11: r.S11, 12: r.S12, 13: r.S12 + r.S6, 14: r.S12 + r.S6, 15: r.S15, 16: r.H2p, 17: r.S17, 18: r.S18, 19: r.S20, 20: r.S20,
     21: r.S23 + r.S26, 22: r.S23 + r.S26, 23: r.S23, 24: r.S24, 25: r.purge, 26: r.S26, 27: r.S26, 29: r.MeOH, 31: r.S24, 28: base * r.S26 / b.S26, 4: r.water, 5: r.water};
-  if (m[n] !== undefined) return m[n]; if ([8, 9, 10, 30].includes(+n)) return sc(base); return base;
+  if (m[n] !== undefined) return m[n]; if (+n === 8) return r.S10 + r.char; if (+n === 9) return r.char; if (+n === 10) return r.S10; if (+n === 30) return sc(base); return base;
 }
 // total stream flow, anchored to the stream table of Chapter 3 at the design point (stream 29 = 1,053.88 kmol/h distillate, of which 1,049.12 kmol/h methanol)
 const FLOW_ANCHOR = {};
@@ -344,11 +352,11 @@ function rOps() {
   const dn = E.npv - E0.npv; const K = [['Methanol product', fmt(E.p.meoh_kgh * 7.92, 0) + ' t/y', dlt(E.r.MeOH, DES.r.MeOH), 'var(--navy)'], ['Hydrogen product', fmt(E.p.h2_kgh * 7.92, 0) + ' t/y', dlt(E.r.H2p, DES.r.H2p), 'var(--green)'],
    ['NPV at ' + fmt(E.p.i * 100, 1) + ' %', money(E.npv) + ' M', [Math.abs(dn) < 0.005 ? 'equal to the design point' : (dn > 0 ? '+' : '') + fmt(dn, 2) + ' M vs design point', dn > 0.005 ? 'up' : dn < -0.005 ? 'dn' : ''], 'var(--orange)'],
    ['DCFROR', E.irr === null ? '—' : fmt(E.irr * 100, 2) + ' %', ['payback ' + (E.dpb === null ? 'beyond the project life' : fmt(E.dpb, 2) + ' years'), ''], 'var(--blue)'],
-   ['MPW carbon in methanol', fmt(E.r.MeOH / (2556.14 * E.r.feed) * 100, 1) + ' %', ['purge CO + CO₂ ' + fmt(E.r.purgeCO + E.r.purgeCO2, 0) + ' kmol/h', ''], 'var(--gold)'],
+   ['MPW carbon in methanol', fmt(E.r.MeOH / ((E.r.fm ? E.r.fm.nC : 2556.14) * E.r.feed) * 100, 1) + ' %', ['purge CO + CO₂ ' + fmt(E.r.purgeCO + E.r.purgeCO2, 0) + ' kmol/h', ''], 'var(--gold)'],
    ['Limiting unit', UNITNAME[E.limiting] || E.limiting, [fmt(E.worst * 100, 1) + ' % of its allowed limit', E.ok ? '' : 'dn'], E.ok ? 'var(--grey)' : 'var(--red)']];
   $('opK').innerHTML = K.map(([l, v, [d, c], col]) => `<div class="kpi" style="--c:${col}"><div class="l">${l}</div><div class="v">${v}</div><div class="d ${c}">${d}</div></div>`).join('');
   const L = lims(), r = E.r; const rows = [['R-101 feed (MPW)', r.feed, L.feed], ['R-102 (Stream 15)', r.S15 / DES.r.S15, L.S15], ['ME-101 area', r.A / A_INST, L.A], ['C-101 (Stream 18)', r.S18 / DES.r.S18, L.S18],
-    ['R-103 (Stream 20)', r.S20 / DES.r.S20, L.S20], ['F-101 vapour (23)', r.S23 / DES.r.S23, L.S23], ['T-101 feed (26)', r.S26 / DES.r.S26, L.S26], ['C-102 (Stream 16)', r.H2p / DES.r.H2p, L.H2p]];
+    ['R-103 (Stream 20)', r.S20 / DES.r.S20, L.S20], ['F-101 vapour (23)', r.S23 / DES.r.S23, L.S23], ['T-101 feed (26)', r.S26 / DES.r.S26, L.S26], ['C-102 (Stream 16)', r.H2p / DES.r.H2p, L.H2p], ['R-101 furnace duty', r.Q101, L.Q101]];
   const sc = v => Math.max(0, Math.min(100, (v - 0.75) / 0.37 * 100));
   $('bars').innerHTML = rows.map(([n, v, l]) => { const c = v > l * (1 + 1e-6) ? 'bad' : v > l * 0.98 ? 'warn' : ''; return `<div class="bar"><span>${n}</span><div class="track"><i class="${c}" style="width:${sc(v)}%"></i><b style="left:${sc(1)}%"></b><s style="left:${sc(l)}%"></s></div><span>${fmt(v * 100, 1)} %</span></div>`; }).join('');
   const cum = (cf, i) => { let d = 0; return cf.map((c, y) => [y, (d += c / Math.pow(1 + i, y)) / 1e6]); }; const a = cum(E.cf, E.p.i), bb = cum(E0.cf, E0.p.i);
@@ -851,6 +859,9 @@ function rVal() {
    ['NPV without heat integration (million US$)', '22.226', fmt(nh.npv, 3)], ['DCFROR without heat integration (%)', '10.61', fmt(nh.irr * 100, 2)]];
   SCEN.filter(s => s.rep !== undefined && s.id !== 'base').forEach(s => rows.push(['NPV, ' + (s.sh || s.name) + ' (million US$)', fmt(s.rep, s.repD !== undefined ? s.repD : Number.isInteger(s.rep) && Math.abs(s.rep) >= 80 ? 0 : 2), fmt(evaluate([0.4, 0.1, 0.9, 1], s.mk).npv, 2)]));
   rows.push(['AI set point at $393/t, NPV (million US$)', '106.49 (Section 10.2)', AIVAL ? fmt(AIVAL, 2) : '…']);
+  // feedstock extension: the design MPW must reproduce the R-101 balance of Table 2.7 and the flammable limits of Table 7.5
+  rows.push(['Feedstock model, design MPW: H₂ / CO in Stream 10 (kmol/h)', '5,000.01 / 2,413.49', fmt(FMD.S10.H2, 2) + ' / ' + fmt(FMD.S10.CO, 2)], ['Feedstock model, design MPW: CO₂ / H₂O (kmol/h)', '69.95 / 368.89', fmt(FMD.S10.CO2, 2) + ' / ' + fmt(FMD.S10.H2O, 2)],
+    ['Flammable limits of Stream 10 (vol%)', '5.14 / 74.67', fmt(FMD.LFL, 2) + ' / ' + fmt(FMD.UFL, 2)]);
   $('valtab').innerHTML = '<thead><tr><th>Quantity</th><th>Report</th><th>Twin</th></tr></thead><tbody>' + rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td class="okc">${r[2]}</td></tr>`).join('') + '</tbody>';
   if (AIVAL === null) setTimeout(() => { AIVAL = optimise({}, {feed: 1}).e.npv; if (PAGE === 'validation') rVal(); }, 200);
   const cc = simLoop({}), sp = simLoop({sp: 5, dist: 0}); const os = (Math.max(...sp.pts.map(p => p[1])) - 5) / 5 * 100; const t = (x, y) => [x, y];
@@ -866,11 +877,11 @@ function rVal() {
 // ===================================================================== command palette
 const PKW = {overview: 'home plant mass balance schedule', process: 'pfd flowsheet streams units data sheet', operations: 'ai optimiser set points beta phi rho feed profit safe', heat: 'pinch hen composite curves dtmin exchangers utility',
   control: 'loops pid tuning p&id isa response', economics: 'npv irr dcfror cash flow capital cost tornado monte carlo payback land equipment cepci life construction escalation depreciation salvage working capital', market: 'prices scenarios crisis methanol hydrogen', safety: 'pca fault diagnosis t2 q knn monitoring',
-  emethanol: 'solar electrolysis co2 purge e-methanol', validation: 'report check chapters values'};
+  emethanol: 'solar electrolysis co2 purge e-methanol', validation: 'report check chapters values', feed: 'feedstock plastic polymer pvc pet hdpe ldpe pp ps moisture ash sorting cleaning composition quality chlorine', green: 'sustainability vision 2030 co2 carbon emissions circular green initiative net zero sdg mwan landfill 4r'};
 const CMDS = () => PAGES.map(p => ({t: TITLES[p], kw: PKW[p], k: 'page', f: () => go(p)})).concat([{t: 'Reset every page to the design point', k: 'action', f: () => resetPage('all')}, {t: 'Toggle heat integration', k: 'action', f: () => { ST.HI = !ST.HI; syncInputs(); HICACHE = {}; render(); toast('Heat integration ' + (ST.HI ? 'ON' : 'OFF')); }},
   {t: 'AI: maximum profit', k: 'action', f: () => { go('operations'); setTimeout(() => runMode('npv'), 300); }}, {t: 'AI: safe operation', k: 'action', f: () => { go('operations'); setTimeout(() => runMode('safe'), 300); }},
   {t: 'Crisis scenario 2026', k: 'scenario', f: () => { const s = SCEN.find(z => z.id === 'crisis'); ST.SCID = s.id; ST.MK = clone(s.mk); syncInputs(); go('market'); render(); }}, {t: 'Run the Monte Carlo simulation', k: 'action', f: () => { go('economics'); setTimeout(() => $('mcRun').click(), 300); }},
-  {t: 'Light / dark theme', k: 'action', f: () => $('theme').click()}]).concat(Object.keys(UNITS).filter(k => !UNITS[k].alias).map(k => ({t: k + ' – ' + UNITS[k].n, k: 'unit', f: () => { go('process'); setTimeout(() => openUnit(k), 350); }})));
+  {t: 'Light / dark theme', k: 'action', f: () => $('theme').click()}, {t: 'Copy a link to this case', k: 'action', f: () => $('share').click()}].concat(FPRE.map(([k, n, q]) => ({t: 'Feed: ' + n, kw: 'feedstock plastic', k: 'feed', f: () => { setFeed(q, 'Feed selected: ' + n); go('feed'); }})))).concat(Object.keys(UNITS).filter(k => !UNITS[k].alias).map(k => ({t: k + ' – ' + UNITS[k].n, k: 'unit', f: () => { go('process'); setTimeout(() => openUnit(k), 350); }})));
 let palSel = 0; const esc = t => t.replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'})[c]);
 function openPal() { $('palette').classList.add('open'); $('pq').value = ''; palSel = 0; renderPal(); setTimeout(() => $('pq').focus(), 10); }
 function closePal() { $('palette').classList.remove('open'); }
@@ -892,9 +903,13 @@ function restoreReturn() {
   const nav = ((performance.getEntriesByType && performance.getEntriesByType('navigation')[0]) || {}).type, back = /[?&]back=1/.test(location.search);
   if (back) history.replaceState(null, '', location.pathname + (r && r.page ? '#/' + r.page : location.hash));
   if (!r || !(back || nav === 'back_forward')) return null;
-  const D = clone(DEF), R = r.ST || {}; ST = Object.assign(D, R, {EC: Object.assign(D.EC, R.EC || {}, {eq: Object.assign(D.EC.eq, (R.EC || {}).eq || {})}), em: Object.assign(D.em, R.em || {})}); return r;
+  const D = clone(DEF), R = r.ST || {}; ST = Object.assign(D, R, {EC: Object.assign(D.EC, R.EC || {}, {eq: Object.assign(D.EC.eq, (R.EC || {}).eq || {})}), em: Object.assign(D.em, R.em || {}), FQ: Object.assign({}, FQ_DES, R.FQ || {}), gr: Object.assign(D.gr, R.gr || {})}); return r;
 }
 const RET = restoreReturn();
 // ===================================================================== start
-buildOverview(); buildPFD(); buildMarket(); buildEcon(); buildFault(); buildEM(); buildLoopPick(); syncInputs();
-show(RET ? RET.page : (location.hash.replace('#/', '') || 'overview')); if (RET) setTimeout(() => window.scrollTo(0, RET.y || 0), 120);
+const SHARED = RET ? null : readShared();
+buildOverview(); buildPFD(); buildMarket(); buildEcon(); buildFault(); buildEM(); buildLoopPick(); buildFeed(); syncInputs();
+$('share').addEventListener('click', () => { const u = shareState(); const ok = () => toast('Link to this case copied: anyone who opens it sees the same feed, set points and market.');
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(ok, () => prompt('Copy this link', u)); else prompt('Copy this link', u); });
+if (SHARED) { syncInputs(); history.replaceState(null, '', location.pathname + '#/' + SHARED); }
+show(RET ? RET.page : SHARED || (location.hash.replace('#/', '') || 'overview')); if (RET) setTimeout(() => window.scrollTo(0, RET.y || 0), 120);
