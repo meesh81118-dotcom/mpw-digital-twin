@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MPW Gasification Complex – Live Presentation</title>
+<meta name="description" content="Live 3D presentation of the MPW gasification plant for methanol and hydrogen in Jubail Industrial City">
+<meta name="author" content="Meshari A. Almuhaysin and Mohammed F. Alotaibi">
+<meta name="copyright" content="© 2026 Meshari A. Almuhaysin and Mohammed F. Alotaibi. All rights reserved.">
+<link rel="preload" href="assets/fonts/plex-sans.woff" as="font" type="font/woff" crossorigin>
+<link rel="preload" href="assets/fonts/big-shoulders.woff" as="font" type="font/woff" crossorigin>
+<link rel="stylesheet" href="style.css">
+<script>try{var t=localStorage.getItem('mpw-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script>
+</head>
+<body>
+<canvas id="c"></canvas><div id="fade"></div><div id="shade"></div><div id="labels"></div>
+<header id="top">
+  <button class="brand glass" id="home" title="Back to the first slide"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M6 4h42l10 10v46H6z" fill="none" stroke="currentColor" stroke-width="3.5"/><rect x="23" y="13" width="18" height="38" rx="9" fill="none" stroke="currentColor" stroke-width="3.5"/><path d="M14 51h36" stroke="currentColor" stroke-width="3.5"/><circle cx="32" cy="38" r="5" fill="#ffc20e"/><path d="M32 13V6" stroke="currentColor" stroke-width="3.5"/></svg>
+    <span><b>MPW Gasification Complex</b><small>Live 3D presentation of the plant</small></span></button>
+  <a id="bTwin" class="glass" href="../" title="Back to the digital twin (T)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M19 12H5M11 6l-6 6 6 6"/></svg><span>Back to the digital twin</span></a>
+  <div id="chap"></div>
+  <div class="tb glass">
+    <button id="bMenu" title="All slides (M)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span class="lb">Slides</span></button>
+    <button id="bTop" title="Whole plant from above (P)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 12h18M12 3v18"/></svg><span class="lb">Plant view</span></button>
+    <button id="bExplore" title="Free camera (E)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2.2 4.8-4.8 2.2 2.2-4.8z"/></svg><span class="lb">Explore</span></button>
+    <button id="bStreams" title="Show all streams (S)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h8l3 5h7M3 17h6l3-5"/></svg><span class="lb">Streams</span></button>
+    <button id="bLabels" class="on" title="Labels (L)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12V5a2 2 0 0 1 2-2h7l9 9-9 9-9-9z"/><circle cx="8" cy="8" r="1.5"/></svg><span class="lb">Labels</span></button>
+    <button id="bQ" title="Smooth mode for slow computers"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg><span class="lb">Smooth</span></button>
+    <button id="bKey" title="Colours of the printed model (C)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.7-.8 1.7-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.8-1.6 1.7-1.6H16a5 5 0 0 0 5-5c0-4-4-7.3-9-7.3z"/><circle cx="7.5" cy="11" r="1.3" fill="currentColor"/><circle cx="10.5" cy="7" r="1.3" fill="currentColor"/><circle cx="15.5" cy="7.5" r="1.3" fill="currentColor"/></svg><span class="lb">Model colours</span></button>
+    <button id="bAuto" title="Autoplay (space)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5v14l11-7z"/></svg><span class="lb">Auto</span></button>
+    <button id="bFull" title="Full screen (F)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+  </div>
+</header>
+<nav id="menu" class="glass" aria-label="Slides"></nav>
+<section id="card"><div class="in glass" id="cardIn"></div></section>
+<aside id="panel" class="glass"><button class="x" id="pClose" title="Close (Esc)" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6 6 18"/></svg></button><div id="pBody"></div></aside>
+<div id="qr"><b class="qh">Open the digital twin</b><img src="assets/qr.png" alt="QR code to the digital twin"><span>meesh81118-dotcom.github.io/mpw-digital-twin</span></div>
+<div id="attr">Imagery © Esri, Maxar, Earthstar Geographics</div>
+<footer id="bottom" class="glass">
+  <button class="nb" id="prev" title="Previous (←)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m15 5-7 7 7 7"/></svg></button>
+  <div id="dots"></div><div id="num"></div>
+  <button class="nb" id="next" title="Next (→)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m9 5 7 7-7 7"/></svg></button>
+</footer>
+<div id="keyL" class="glass" aria-live="polite"></div>
+<div id="tip"></div>
+<div id="loader"><div class="w"><div class="lsheet">
+  <figure class="ldraw"><img src="assets/plant.webp" alt="Line drawing of the process area of the plant" width="2800" height="1524"></figure>
+  <div class="lmain">
+    <div class="lhead"><div class="lno">3D</div><div><h2>MPW gasification for the production of methanol and hydrogen</h2><p class="sub">A live tour from orbit to the plant in Jubail Industrial City, drawn from the 3D model of the design.</p></div></div>
+    <dl class="ltb"><div><dt>Drawing</dt><dd class="no">MPW-3D-00</dd></div><div><dt>Slides</dt><dd class="no">19</dd></div><div><dt>Issued</dt><dd>November 2026</dd></div>
+      <div class="wide"><dt>Drawn by</dt><dd>Meshari A. Almuhaysin, Mohammed F. Alotaibi. King Saud University, Department of Chemical Engineering</dd></div></dl>
+    <div id="lbar"><i></i></div><div id="lst">Loading…</div>
+    <div class="lcta"><button id="start">Start the tour</button><a class="twinback" href="../" data-twin>Back to the digital twin</a></div>
+    <div id="hint">Arrow keys move between slides. Drag to look around and select any unit for its data sheet. P shows the whole plant, M lists the slides, T returns to the digital twin.</div>
+    <div class="crl">© 2026 Meshari A. Almuhaysin and Mohammed F. Alotaibi. All rights reserved.</div>
+  </div></div></div></div>
+<script>
+// Back to the digital twin: the browser history is used when the presentation was opened from the twin (the page comes back exactly as it was);
+// otherwise the twin opens at the sheet saved for this tab.
+(function () {
+  function back(e) { if (e) e.preventDefault(); var twin = new URL('../', location.href), r = null, from = false;
+    try { r = JSON.parse(sessionStorage.getItem('mpw-twin-return') || 'null'); } catch (x) {}
+    try { from = !!document.referrer && new URL(document.referrer).origin === location.origin && new URL(document.referrer).pathname.replace(/index\.html$/, '') === twin.pathname; } catch (x) {}
+    if (from && history.length > 1) { history.back(); setTimeout(function () { location.href = twin.pathname + '?back=1#/' + ((r && r.page) || 'overview'); }, 700); return; }
+    location.href = twin.pathname + '?back=1#/' + ((r && r.page) || 'overview'); }
+  document.querySelectorAll('#bTwin,[data-twin]').forEach(function (a) { a.addEventListener('click', back); });
+  addEventListener('keydown', function (e) { if ((e.key === 't' || e.key === 'T') && !e.ctrlKey && !e.metaKey && !(e.target.closest && e.target.closest('input,textarea'))) back(e); });
+})();
+</script>
+<script type="module" src="main.js"></script>
+</body>
+</html>
